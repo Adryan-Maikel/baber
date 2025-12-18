@@ -1,8 +1,76 @@
 const API_URL = "";
 
-// Utils
+// Theme Management
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+}
+
+function updateThemeIcon(theme) {
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+}
+
+// Authentication Management
+function getAuthToken() {
+    return localStorage.getItem('access_token');
+}
+
+function isAuthenticated() {
+    return !!getAuthToken();
+}
+
+function logout() {
+    localStorage.removeItem('access_token');
+    window.location.href = '/login';
+}
+
+// Check if user is authenticated for admin pages
+function checkAuth() {
+    if (window.location.pathname.includes('/admin')) {
+        if (!isAuthenticated()) {
+            window.location.href = '/login';
+            return false;
+        }
+    }
+    return true;
+}
+
+// Utils - Enhanced with auth
 async function fetchAPI(endpoint, options = {}) {
+    // Add auth token for admin routes
+    if (endpoint.startsWith('/admin')) {
+        const token = getAuthToken();
+        if (token) {
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
+            };
+        }
+    }
+
     const res = await fetch(`${API_URL}${endpoint}`, options);
+
+    // Handle 401 Unauthorized
+    if (res.status === 401) {
+        if (window.location.pathname.includes('/admin')) {
+            alert('Sessão expirada. Faça login novamente.');
+            logout();
+        }
+        throw new Error('Unauthorized');
+    }
+
     if (!res.ok) {
         const err = await res.json();
         alert(err.detail || "Erro na requisição");
@@ -17,6 +85,12 @@ let selectedDate = null;
 let selectedSlot = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize theme
+    initTheme();
+
+    // Check authentication for admin pages
+    checkAuth();
+
     // Determine page
     if (document.getElementById("services-list")) {
         loadServicesAdmin();
@@ -83,7 +157,7 @@ async function loadServicesAdmin() {
                 <h3>${s.name}</h3>
                 <p style="color: var(--text-secondary);">${s.duration_minutes} min • ${s.price}</p>
             </div>
-            <button class="btn" style="color: var(--danger);" onclick="deleteService(${s.id})"><i class="fa-solid fa-trash"></i></button>
+            <button class="btn btn-danger" onclick="deleteService(${s.id})"><i class="fa-solid fa-trash"></i></button>
         </div>
     `).join('');
 }

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Admin{% endblock %}
+
+{% block head %}
+<style>
+    /* Hide theme toggle on login page for cleaner look */
+    .theme-toggle {
+        display: flex;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="card login-card fade-in">
+        <div class="login-header">
+            <i class="fa-solid fa-scissors" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+            <h1>BarberAdmin</h1>
+            <p>Acesse o painel administrativo</p>
+        </div>
+
+        <div id="error-message" class="error-message">
+            Usuário ou senha incorretos
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div>
+                <label for="username">
+                    <i class="fa-solid fa-user"></i> Usuário
+                </label>
+                <input type="text" id="username" name="username" placeholder="Digite seu usuário" required
+                    autocomplete="username">
+            </div>
+
+            <div>
+                <label for="password">
+                    <i class="fa-solid fa-lock"></i> Senha
+                </label>
+                <input type="password" id="password" name="password" placeholder="Digite sua senha" required
+                    autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Entrar
+            </button>
+        </form>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center;">
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                <i class="fa-solid fa-info-circle"></i> Primeiro acesso? Use <strong>admin</strong> /
+                <strong>admin123</strong>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function handleLogin(e) {
+        e.preventDefault();
+
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.classList.remove('show');
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            // OAuth2 requires form data format
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Login failed');
+            }
+
+            const data = await response.json();
+
+            // Store token in localStorage
+            localStorage.setItem('access_token', data.access_token);
+
+            // Redirect to admin panel
+            window.location.href = '/admin';
+
+        } catch (error) {
+            errorDiv.classList.add('show');
+            document.getElementById('password').value = '';
+        }
+    }
+</script>
+{% endblock %}

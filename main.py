@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routers import admin, user
+from routers import admin, user, auth
 import models
 
 # Create tables
@@ -26,13 +26,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="templates")
 
-# Robots
+# Routers
+app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(user.router)
 
 @app.get("/")
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/login")
+def read_login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
 @app.get("/admin")
 def read_admin(request: Request):

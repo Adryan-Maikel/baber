@@ -3,6 +3,7 @@
 {% block title %}Painel Administrativo{% endblock %}
 
 {% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     .admin-layout {
         display: flex;
@@ -10,17 +11,21 @@
     }
 
     .sidebar {
-        width: 250px;
+        width: 280px;
         background-color: var(--card-bg);
-        padding: 2rem 1rem;
+        padding: 2rem 0;
         display: flex;
         flex-direction: column;
         border-right: 1px solid var(--border);
+        height: 100vh;
+        position: sticky;
+        top: 0;
     }
 
     .sidebar-menu {
         list-style: none;
-        margin-top: 2rem;
+        padding: 0 1rem;
+        flex: 1;
     }
 
     .sidebar-menu li {
@@ -68,7 +73,16 @@
 {% block content %}
 <div class="admin-layout">
     <aside class="sidebar">
-        <h2 style="padding-left: 1rem;"><i class="fa-solid fa-scissors"></i> BarberAdmin</h2>
+        <div style="padding: 0 1rem;">
+            <h2 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-scissors" style="color: var(--accent);"></i>
+                BarberAdmin
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem;">
+                <i class="fa-solid fa-user-shield"></i> Painel de Administração
+            </p>
+        </div>
+
         <ul class="sidebar-menu">
             <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-line"></i>
                     Dashboard</a></li>
@@ -77,6 +91,12 @@
             <li><a href="#" onclick="showSection('services')"><i class="fa-solid fa-list"></i> Cortes/Serviços</a></li>
             <li><a href="#" onclick="showSection('schedule')"><i class="fa-solid fa-clock"></i> Horários</a></li>
         </ul>
+
+        <div style="margin-top: auto; padding: 1rem; border-top: 1px solid var(--border);">
+            <button class="btn" onclick="logout()" style="width: 100%; justify-content: center; color: var(--danger);">
+                <i class="fa-solid fa-right-from-bracket"></i> Sair
+            </button>
+        </div>
     </aside>
 
     <main class="content">
@@ -88,6 +108,21 @@
                 <div class="card">
                     <h3>Agendamentos Hoje</h3>
                     <h1 id="count-today" style="color: var(--accent); font-size: 3rem;">0</h1>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                <div class="card">
+                    <h3>Atendimentos e Receita (7 dias)</h3>
+                    <canvas id="appointmentsChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Serviços Mais Populares</h3>
+                    <div style="max-height: 300px; display: flex; justify-content: center;">
+                        <canvas id="servicesChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -154,4 +189,156 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.getElementById('dashboard').classList.contains('active')) {
+            loadDashboardStats();
+        }
+    });
+
+    async function loadDashboardStats() {
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/admin/dashboard-stats', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.error('Unauthorized - Redirecting to login');
+                    window.location.href = '/login';
+                    return;
+                }
+                console.error('Failed to fetch stats');
+                return;
+            }
+            const data = await response.json();
+
+            // Update big number
+            document.getElementById('count-today').textContent = data.count_today;
+
+            // Render Line Chart (Appointments & Revenue)
+            const ctxApp = document.getElementById('appointmentsChart').getContext('2d');
+            new Chart(ctxApp, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Atendimentos',
+                            data: data.appointments_data,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Receita (R$)',
+                            data: data.revenue_data,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Qtd Atendimentos' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            title: { display: true, text: 'Receita (R$)' }
+                        }
+                    }
+                }
+            });
+
+            // Render Doughnut Chart (Services)
+            const ctxSvc = document.getElementById('servicesChart').getContext('2d');
+            new Chart(ctxSvc, {
+                type: 'doughnut',
+                data: {
+                    labels: data.service_distribution.labels,
+                    datasets: [{
+                        data: data.service_distribution.data,
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+        }
+    }
+
+    // Hook into existing showSection if possible to reload stats when clicking Dashboard
+    const originalShowSection = window.showSection;
+    window.showSection = function (sectionId) {
+        // Find the original function in the global scope if it exists there, 
+        // or just implement the show functionality here if we can't find it easily.
+        // Assuming the original script is loaded before this block.
+
+        // Re-implementing base showSection logic to be safe + adding custom hook
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+
+        document.getElementById(sectionId).classList.add('active');
+        // Find link that calls this section
+        const link = document.querySelector(`a[onclick="showSection('${sectionId}')"]`);
+        if (link) link.classList.add('active');
+
+        if (sectionId === 'dashboard') {
+            // Destroy old charts to prevent duplicate hover effects if strict ref isn't kept? 
+            // Actually Chart.js might complain if canvas is reused without destroy.
+            // For simplicity, we just reload stats. If chart exists, replace logic might be needed.
+            // A simple refresh approach for this prototype:
+            // Check if chart instance exists usually requires storing it.
+            // For now, let's just clear the canvas wrapper or rely on Chart.js 3+ auto handling if we reused the variable properly (we didn't store it globally).
+            // A better way is to clear the chart before re-creating.
+
+            // To make it robust without global vars:
+            const chart1 = Chart.getChart("appointmentsChart");
+            if (chart1) chart1.destroy();
+
+            const chart2 = Chart.getChart("servicesChart");
+            if (chart2) chart2.destroy();
+
+            loadDashboardStats();
+        }
+    }
+</script>
 {% endblock %}
