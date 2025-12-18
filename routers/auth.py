@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -22,7 +22,67 @@ if "INSECURE" in SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours default
 
+# Rate limiting configuration
+RATE_LIMIT_DELAYS = [0, 0, 5, 30, 60, 120]  # seconds per attempt count
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def get_rate_limit_delay(attempts: int) -> int:
+    """Get delay in seconds based on attempt count"""
+    if attempts < len(RATE_LIMIT_DELAYS):
+        return RATE_LIMIT_DELAYS[attempts]
+    return RATE_LIMIT_DELAYS[-1]
+
+
+def check_rate_limit(db: Session, identifier: str) -> Optional[int]:
+    """Check if identifier is rate limited. Returns seconds to wait or None if allowed."""
+    attempt = db.query(models.LoginAttempt).filter(
+        models.LoginAttempt.identifier == identifier
+    ).first()
+    
+    if not attempt:
+        return None
+    
+    if attempt.locked_until and attempt.locked_until > datetime.utcnow():
+        remaining = (attempt.locked_until - datetime.utcnow()).total_seconds()
+        return int(remaining) + 1
+    
+    return None
+
+
+def record_failed_attempt(db: Session, identifier: str):
+    """Record a failed login attempt and set lockout if needed"""
+    attempt = db.query(models.LoginAttempt).filter(
+        models.LoginAttempt.identifier == identifier
+    ).first()
+    
+    if not attempt:
+        attempt = models.LoginAttempt(
+            identifier=identifier,
+            attempts=1,
+            last_attempt=datetime.utcnow()
+        )
+        db.add(attempt)
+    else:
+        attempt.attempts += 1
+        attempt.last_attempt = datetime.utcnow()
+    
+    # Set lockout based on attempts
+    delay = get_rate_limit_delay(attempt.attempts)
+    if delay > 0:
+        attempt.locked_until = datetime.utcnow() + timedelta(seconds=delay)
+    
+    db.commit()
+    return delay
+
+
+def clear_failed_attempts(db: Session, identifier: str):
+    """Clear failed attempts after successful login"""
+    db.query(models.LoginAttempt).filter(
+        models.LoginAttempt.identifier == identifier
+    ).delete()
+    db.commit()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -91,15 +151,41 @@ def get_current_admin_user(current_user: models.User = Depends(get_current_user)
 
 
 @router.post("/login", response_model=schemas.Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Login endpoint to get access token"""
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
+    """Login endpoint with rate limiting"""
+    # Use IP address as identifier for rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    identifier = f"{client_ip}:{form_data.username}"
+    
+    # Check rate limit
+    wait_time = check_rate_limit(db, identifier)
+    if wait_time:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Muitas tentativas. Aguarde {wait_time} segundos.",
+            headers={"Retry-After": str(wait_time)}
+        )
+    
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        # Record failed attempt
+        delay = record_failed_attempt(db, identifier)
+        detail = "Usuário ou senha incorretos"
+        if delay > 0:
+            detail += f". Aguarde {delay} segundos para tentar novamente."
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Clear failed attempts on success
+    clear_failed_attempts(db, identifier)
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires

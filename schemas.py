@@ -188,9 +188,31 @@ class AppointmentCreate(AppointmentBase):
 class Appointment(AppointmentBase):
     id: int
     end_time: datetime
+    status: str = "scheduled"
     barber: Optional[BarberSimple] = None
     barber_service: Optional[BarberService] = None
     service: Optional[Service] = None  # Legacy
     
     class Config:
         from_attributes = True
+
+# =============== Appointment Media Schemas ===============
+
+class AppointmentMediaBase(BaseModel):
+    media_url: str
+    media_type: str = "image"  # image or video
+
+class AppointmentMediaCreate(AppointmentMediaBase):
+    appointment_id: int
+
+class AppointmentMedia(AppointmentMediaBase):
+    id: int
+    appointment_id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class AppointmentWithMedia(Appointment):
+    """Appointment with associated media"""
+    media: List[AppointmentMedia] = []

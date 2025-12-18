@@ -8,14 +8,112 @@
     .theme-toggle {
         display: flex;
     }
+
+    /* Toast notification */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        transform: translateX(150%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        max-width: 350px;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+    }
+
+    .toast.error {
+        border-color: var(--danger);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), var(--card));
+    }
+
+    .toast.warning {
+        border-color: #f1c40f;
+        background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), var(--card));
+    }
+
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .toast-icon {
+        font-size: 1.25rem;
+    }
+
+    .toast.error .toast-icon {
+        color: var(--danger);
+    }
+
+    .toast.warning .toast-icon {
+        color: #f1c40f;
+    }
+
+    .toast-message {
+        flex: 1;
+    }
+
+    .toast-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .toast-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* Countdown timer */
+    .countdown {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-left: auto;
+    }
+
+    /* Disabled button state */
+    .btn-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Logo styling */
+    .login-logo {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Toast notification container -->
+<div id="toast" class="toast">
+    <div class="toast-content">
+        <i id="toast-icon" class="toast-icon fa-solid fa-exclamation-circle"></i>
+        <div class="toast-message">
+            <div id="toast-title" class="toast-title"></div>
+            <div id="toast-text" class="toast-text"></div>
+        </div>
+        <div id="countdown" class="countdown"></div>
+    </div>
+</div>
+
 <div class="login-container">
     <div class="card login-card fade-in">
         <div class="login-header">
-            <i class="fa-solid fa-scissors" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+            <img src="/static/img/icon.png" alt="Logo" class="login-logo">
             <h1>BarberAdmin</h1>
             <p>Acesse o painel administrativo</p>
         </div>
@@ -41,9 +139,9 @@
                     autocomplete="current-password">
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; justify-content: center;">
                 <i class="fa-solid fa-right-to-bracket"></i>
-                Entrar
+                <span id="btn-text">Entrar</span>
             </button>
         </form>
 
@@ -57,11 +155,84 @@
 </div>
 
 <script>
+    let lockoutEndTime = null;
+    let countdownInterval = null;
+
+    function showToast(type, title, text, seconds = null) {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toast-icon');
+        const titleEl = document.getElementById('toast-title');
+        const textEl = document.getElementById('toast-text');
+        const countdown = document.getElementById('countdown');
+
+        toast.className = `toast ${type} show`;
+        titleEl.textContent = title;
+        textEl.textContent = text;
+
+        if (type === 'error') {
+            icon.className = 'toast-icon fa-solid fa-exclamation-circle';
+        } else if (type === 'warning') {
+            icon.className = 'toast-icon fa-solid fa-clock';
+        }
+
+        if (seconds) {
+            countdown.textContent = seconds + 's';
+        } else {
+            countdown.textContent = '';
+        }
+
+        // Auto-hide after 5 seconds if no countdown
+        if (!seconds) {
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+    }
+
+    function hideToast() {
+        document.getElementById('toast').classList.remove('show');
+    }
+
+    function startLockout(seconds) {
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+
+        lockoutEndTime = Date.now() + (seconds * 1000);
+        submitBtn.classList.add('btn-disabled');
+
+        function updateCountdown() {
+            const remaining = Math.ceil((lockoutEndTime - Date.now()) / 1000);
+
+            if (remaining <= 0) {
+                clearInterval(countdownInterval);
+                lockoutEndTime = null;
+                submitBtn.classList.remove('btn-disabled');
+                btnText.textContent = 'Entrar';
+                hideToast();
+                return;
+            }
+
+            btnText.textContent = `Aguarde ${remaining}s`;
+            document.getElementById('countdown').textContent = remaining + 's';
+        }
+
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 1000);
+
+        showToast('warning', 'Muitas tentativas', 'Você foi temporariamente bloqueado.', seconds);
+    }
+
     async function handleLogin(e) {
         e.preventDefault();
 
+        // Check if currently locked out
+        if (lockoutEndTime && Date.now() < lockoutEndTime) {
+            return;
+        }
+
         const errorDiv = document.getElementById('error-message');
         errorDiv.classList.remove('show');
+        hideToast();
 
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
@@ -80,8 +251,26 @@
                 body: formData
             });
 
+            if (response.status === 429) {
+                // Rate limited
+                const retryAfter = parseInt(response.headers.get('Retry-After')) || 30;
+                startLockout(retryAfter);
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error('Login failed');
+                const data = await response.json();
+
+                // Check if there's a wait time in the message
+                const waitMatch = data.detail && data.detail.match(/Aguarde (\d+) segundos/);
+                if (waitMatch) {
+                    startLockout(parseInt(waitMatch[1]));
+                } else {
+                    showToast('error', 'Erro no login', data.detail || 'Usuário ou senha incorretos');
+                }
+
+                document.getElementById('password').value = '';
+                return;
             }
 
             const data = await response.json();
@@ -93,7 +282,7 @@
             window.location.href = '/admin';
 
         } catch (error) {
-            errorDiv.classList.add('show');
+            showToast('error', 'Erro', 'Falha na conexão com o servidor');
             document.getElementById('password').value = '';
         }
     }

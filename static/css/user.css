@@ -1,0 +1,145 @@
+/* ============================================
+   USER/PUBLIC PAGE STYLES
+   ============================================ */
+
+/* Mobile-first user layout */
+.user-layout {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Barber Card */
+.barber-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.barber-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px -5px var(--shadow);
+    border-color: var(--accent);
+}
+
+.barber-avatar {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-light);
+    border-radius: 50%;
+}
+
+/* User menu dropdown */
+.user-menu-container {
+    position: relative;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-secondary);
+}
+
+/* Service cards */
+.service-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.service-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+/* Time slots */
+.slot-btn {
+    background-color: var(--card-bg);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.slot-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* Step indicator */
+.step {
+    margin-bottom: 2rem;
+}
+
+.step h2 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+/* Modal overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+/* Price display */
+.price-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-original {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.price-discount {
+    color: var(--success);
+    font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .user-layout {
+        padding: 0.5rem;
+    }
+
+    .barber-avatar {
+        width: 50px;
+        height: 50px;
+    }
+}

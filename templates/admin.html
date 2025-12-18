@@ -2,6 +2,10 @@
 
 {% block title %}Painel Administrativo{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="/static/css/admin.css">
+{% endblock %}
+
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -96,8 +100,8 @@
     }
 
     .barber-avatar-admin {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         background: var(--accent-light);
         display: flex;
@@ -105,6 +109,148 @@
         justify-content: center;
         font-size: 1.5rem;
         color: var(--accent);
+        position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+
+    .barber-avatar-admin img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .barber-avatar-admin:hover {
+        transform: scale(1.05);
+    }
+
+    .barber-avatar-admin:hover .avatar-overlay {
+        opacity: 1;
+    }
+
+    .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+        color: white;
+        font-size: 1.25rem;
+    }
+
+    .avatar-upload-input {
+        display: none;
+    }
+
+    /* Modal Avatar Styles */
+    .modal-avatar-container {
+        display: flex;
+        flex-direction: row;
+        margin: 1.5rem 0;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .modal-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .modal-avatar:hover {
+        transform: scale(1.05);
+    }
+
+    .modal-avatar:hover .avatar-overlay {
+        opacity: 1;
+    }
+
+    .modal-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .modal-avatar-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    /* Delete overlay (red) */
+    .avatar-overlay.overlay-delete {
+        background: rgba(231, 76, 60, 0.8);
+    }
+
+    /* Confirmation Modal */
+    .confirm-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .confirm-modal.show {
+        display: flex;
+    }
+
+    .confirm-modal-content {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 2rem;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .confirm-modal-icon {
+        font-size: 3rem;
+        color: var(--danger);
+        margin-bottom: 1rem;
+    }
+
+    .confirm-modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .confirm-modal-text {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    .confirm-modal-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
     }
 
     .barber-info h3 {
@@ -343,25 +489,38 @@
         <h2 id="barber-modal-title"><i class="fa-solid fa-user-plus"></i> Novo Profissional</h2>
         <form id="barber-form" onsubmit="saveBarber(event)">
             <input type="hidden" id="barber-id">
+            <input type="hidden" id="barber-avatar-url">
 
-            <div class="form-row">
-                <div>
-                    <label>Nome *</label>
-                    <input type="text" id="barber-name" placeholder="Nome do profissional" required>
+            <!-- Avatar Upload Section -->
+            <div class="modal-avatar-container">
+                <div class="modal-avatar" id="modal-avatar-preview" onclick="handleModalAvatarClick()"
+                    title="Clique para alterar foto">
+                    <i class="fa-solid fa-user"></i>
+                    <div class="avatar-overlay" id="modal-avatar-overlay">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
                 </div>
-                <div>
-                    <label>Telefone</label>
-                    <input type="tel" id="barber-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                <div class="form-column">
+                    <div>
+                        <label for="barber-name">Nome *</label>
+                        <input type="text" id="barber-name" placeholder="Nome do profissional" required>
+                    </div>
+                    <div>
+                        <label for="barber-phone">Telefone</label>
+                        <input type="tel" id="barber-phone" placeholder="(11) 99999-1234"
+                            oninput="formatPhoneInput(this)">
+                    </div>
                 </div>
             </div>
 
+
             <div class="form-row">
                 <div>
-                    <label>Horario Inicio *</label>
+                    <label for="barber-start-time">Horario Inicio *</label>
                     <input type="time" id="barber-start-time" value="09:00" required>
                 </div>
                 <div>
-                    <label>Horario Fim *</label>
+                    <label for="barber-end-time">Horario Fim *</label>
                     <input type="time" id="barber-end-time" value="18:00" required>
                 </div>
             </div>
@@ -379,6 +538,21 @@
                 <button type="submit" class="btn btn-primary">Salvar</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Confirm Remove Avatar Modal -->
+<div id="confirm-avatar-modal" class="confirm-modal">
+    <div class="confirm-modal-content card">
+        <div class="confirm-modal-icon">
+            <i class="fa-solid fa-trash"></i>
+        </div>
+        <div class="confirm-modal-title">Remover Foto</div>
+        <div class="confirm-modal-text">Tem certeza que deseja remover a foto do profissional?</div>
+        <div class="confirm-modal-buttons">
+            <button type="button" class="btn" onclick="closeConfirmAvatarModal()">Cancelar</button>
+            <button type="button" class="btn btn-danger" onclick="confirmRemoveAvatar()">Remover</button>
+        </div>
     </div>
 </div>
 
@@ -608,8 +782,14 @@
             container.innerHTML = barbers.map(b => `
                 <div class="barber-admin-card">
                     <div class="barber-header">
-                        <div class="barber-avatar-admin">
-                            <i class="fa-solid fa-user-tie"></i>
+                        <div class="barber-avatar-admin" onclick="triggerAvatarUpload(${b.id})" title="Clique para alterar foto">
+                            ${b.avatar_url
+                    ? `<img src="${b.avatar_url}" alt="${b.name}">`
+                    : `<i class="fa-solid fa-user-tie"></i>`
+                }
+                            <div class="avatar-overlay">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
                         </div>
                         <div class="barber-info">
                             <h3>${b.name}</h3>
@@ -663,19 +843,79 @@
 
     function openBarberModal() {
         editingBarberId = null;
+        pendingModalAvatarFile = null;
+        pendingAvatarRemoval = false;
         document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Novo Profissional';
         document.getElementById('barber-id').value = '';
+        document.getElementById('barber-avatar-url').value = '';
         document.getElementById('barber-name').value = '';
         document.getElementById('barber-phone').value = '';
         document.getElementById('barber-start-time').value = '09:00';
         document.getElementById('barber-end-time').value = '18:00';
         document.getElementById('services-container').innerHTML = '';
+
+        // Reset avatar preview
+        resetModalAvatarPreview();
+
         addServiceField(); // Add one empty service field
         document.getElementById('barber-modal').style.display = 'flex';
     }
 
     function closeBarberModal() {
         document.getElementById('barber-modal').style.display = 'none';
+        pendingModalAvatarFile = null;
+        pendingAvatarRemoval = false;
+    }
+
+    function resetModalAvatarPreview() {
+        const avatarPreview = document.getElementById('modal-avatar-preview');
+        avatarPreview.innerHTML = `
+            <i class="fa-solid fa-user"></i>
+            <div class="avatar-overlay" id="modal-avatar-overlay">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+        `;
+        avatarPreview.dataset.hasPhoto = 'false';
+    }
+
+    function setModalAvatarPreview(imageUrl) {
+        const avatarPreview = document.getElementById('modal-avatar-preview');
+        avatarPreview.innerHTML = `
+            <img src="${imageUrl}" alt="Avatar">
+            <div class="avatar-overlay overlay-delete" id="modal-avatar-overlay">
+                <i class="fa-solid fa-trash"></i>
+            </div>
+        `;
+        avatarPreview.dataset.hasPhoto = 'true';
+    }
+
+    function handleModalAvatarClick() {
+        const avatarPreview = document.getElementById('modal-avatar-preview');
+        const hasPhoto = avatarPreview.dataset.hasPhoto === 'true';
+
+        if (hasPhoto) {
+            // Show confirmation modal to remove
+            openConfirmAvatarModal();
+        } else {
+            // Open file picker to add photo
+            triggerModalAvatarUpload();
+        }
+    }
+
+    function openConfirmAvatarModal() {
+        document.getElementById('confirm-avatar-modal').classList.add('show');
+    }
+
+    function closeConfirmAvatarModal() {
+        document.getElementById('confirm-avatar-modal').classList.remove('show');
+    }
+
+    function confirmRemoveAvatar() {
+        closeConfirmAvatarModal();
+        resetModalAvatarPreview();
+        pendingModalAvatarFile = null;
+        pendingAvatarRemoval = true;
+        document.getElementById('barber-avatar-url').value = '';
     }
 
     async function editBarber(id) {
@@ -687,12 +927,22 @@
         const barber = await res.json();
 
         editingBarberId = id;
+        pendingModalAvatarFile = null;
+        pendingAvatarRemoval = false;
         document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Editar Profissional';
         document.getElementById('barber-id').value = id;
+        document.getElementById('barber-avatar-url').value = barber.avatar_url || '';
         document.getElementById('barber-name').value = barber.name;
         document.getElementById('barber-phone').value = barber.phone || '';
         document.getElementById('barber-start-time').value = barber.start_time || '09:00';
         document.getElementById('barber-end-time').value = barber.end_time || '18:00';
+
+        // Update avatar preview
+        if (barber.avatar_url) {
+            setModalAvatarPreview(barber.avatar_url, true);
+        } else {
+            resetModalAvatarPreview();
+        }
 
         const container = document.getElementById('services-container');
         container.innerHTML = '';
@@ -715,6 +965,11 @@
             end_time: document.getElementById('barber-end-time').value,
             is_active: true
         };
+
+        // If user wants to remove avatar, set it to null
+        if (pendingAvatarRemoval) {
+            barberData.avatar_url = null;
+        }
 
         // Collect services
         const serviceItems = document.querySelectorAll('.service-form-item');
@@ -773,6 +1028,17 @@
                         body: JSON.stringify({ name: svc.name, duration_minutes: svc.duration_minutes, price: svc.price, discount_price: svc.discount_price })
                     });
                 }
+            }
+
+            // Upload avatar if there's a pending file
+            if (pendingModalAvatarFile) {
+                try {
+                    await uploadBarberAvatar(barberId, pendingModalAvatarFile);
+                } catch (avatarError) {
+                    console.error('Avatar upload failed:', avatarError);
+                    // Don't block the save, just log the error
+                }
+                pendingModalAvatarFile = null;
             }
 
             closeBarberModal();
@@ -892,6 +1158,94 @@
         } catch (e) {
             container.innerHTML = '<li style="color: var(--danger);">Erro ao carregar agendamentos.</li>';
         }
+    }
+
+    // =============== AVATAR UPLOAD ===============
+
+    // Create hidden file input for avatar uploads (list view)
+    const avatarInput = document.createElement('input');
+    avatarInput.type = 'file';
+    avatarInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+    avatarInput.className = 'avatar-upload-input';
+    avatarInput.id = 'avatar-upload-input';
+    document.body.appendChild(avatarInput);
+
+    // Create hidden file input for modal avatar uploads
+    const modalAvatarInput = document.createElement('input');
+    modalAvatarInput.type = 'file';
+    modalAvatarInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+    modalAvatarInput.className = 'avatar-upload-input';
+    modalAvatarInput.id = 'modal-avatar-input';
+    document.body.appendChild(modalAvatarInput);
+
+    let currentAvatarBarberId = null;
+    let pendingModalAvatarFile = null;
+    let pendingAvatarRemoval = false;
+
+    // List view avatar upload handler
+    avatarInput.addEventListener('change', async function (e) {
+        if (!e.target.files || !e.target.files[0]) return;
+        if (!currentAvatarBarberId) return;
+
+        const file = e.target.files[0];
+        await uploadBarberAvatar(currentAvatarBarberId, file);
+        loadBarbersAdmin();
+
+        // Reset input
+        avatarInput.value = '';
+        currentAvatarBarberId = null;
+    });
+
+    // Modal avatar upload handler - just preview, upload happens on save
+    modalAvatarInput.addEventListener('change', function (e) {
+        if (!e.target.files || !e.target.files[0]) return;
+
+        const file = e.target.files[0];
+        pendingModalAvatarFile = file;
+        pendingAvatarRemoval = false;
+
+        // Show preview using FileReader
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+            setModalAvatarPreview(evt.target.result, true);
+        };
+        reader.readAsDataURL(file);
+
+        // Reset input for potential re-selection
+        modalAvatarInput.value = '';
+    });
+
+    async function uploadBarberAvatar(barberId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const res = await fetch(`/upload/barber/${barberId}/avatar`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Erro ao fazer upload');
+            }
+
+            return await res.json();
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    function triggerAvatarUpload(barberId) {
+        currentAvatarBarberId = barberId;
+        avatarInput.click();
+    }
+
+    function triggerModalAvatarUpload() {
+        modalAvatarInput.click();
     }
 
     // =============== HELPERS ===============

@@ -2,6 +2,10 @@
 
 {% block title %}Agendar Horário{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="/static/css/user.css">
+{% endblock %}
+
 {% block content %}
 <div class="container user-layout">
     <header style="text-align: center; margin: 2rem 0; position: relative;">
@@ -56,8 +60,7 @@
     <!-- Step 1: Select Barber -->
     <div id="step-1" class="step fade-in">
         <h2>1. Escolha o profissional</h2>
-        <div id="barbers-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
-        </div>
+        <div id="barbers-list" style="display: grid; gap: 1rem; margin-top: 1rem;"></div>
     </div>
 
     <!-- Step 2: Select Service -->
@@ -65,8 +68,7 @@
         <button class="btn" onclick="goToStep(1)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
             Voltar</button>
         <h2>2. Escolha o serviço</h2>
-        <div id="user-services-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
-        </div>
+        <div id="user-services-list" style="display: grid; gap: 1rem; margin-top: 1rem;"></div>
     </div>
 
     <!-- Step 3: Date & Time -->
@@ -74,11 +76,10 @@
         <button class="btn" onclick="goToStep(2)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
             Voltar</button>
         <h2>3. Escolha o horário</h2>
-        <label>Data</label>
+        <label for="booking-date">Data</label>
         <input type="date" id="booking-date" onchange="loadSlots()">
         <div id="slots-container"
-            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem;">
-        </div>
+            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem;"></div>
     </div>
 
     <!-- Step 4: Confirm -->
@@ -89,7 +90,7 @@
         <div class="card">
             <h3 id="confirm-barber-name" style="color: var(--accent);"></h3>
             <h3 id="confirm-service-name">Service</h3>
-            <p id="confirm-date-time" style="color: var(--text-secondary); margin-bottom: 1rem;">Date Time</p>
+            <p id="confirm-date-time" style="color: var(--text-secondary); margin-bottom: 1rem;"></p>
 
             <!-- Logged in customer info -->
             <div id="customer-logged-info"
@@ -99,33 +100,30 @@
                 <p style="color: var(--text-secondary);" id="logged-customer-phone"></p>
             </div>
 
-            <!-- Guest booking form with account creation -->
+            <!-- Guest booking form -->
             <form onsubmit="confirmBooking(event)" id="guest-booking-form">
                 <div id="guest-fields">
-                    <label>Seu Nome</label>
+                    <label for="customer-name">Seu Nome</label>
                     <input type="text" id="customer-name" required>
-                    <label>Telefone</label>
+                    <label for="customer-phone">Telefone</label>
                     <input type="tel" id="customer-phone" placeholder="(11) 99999-1234" required
                         oninput="formatPhoneInput(this); checkPhoneExists()">
 
-                    <!-- Phone check message -->
                     <p id="phone-check-msg" style="display: none; font-size: 0.875rem; margin-top: 0.5rem;"></p>
 
-                    <!-- Password for new account -->
                     <div id="password-section"
                         style="display: none; margin-top: 1rem; padding: 1rem; background: var(--accent-light); border-radius: 0.5rem;">
                         <p style="color: var(--accent); margin-bottom: 0.5rem;"><i class="fa-solid fa-user-plus"></i>
-                            Crie sua conta para agendamentos mais rápidos!</p>
-                        <label>Senha (6+ caracteres)</label>
+                            Crie sua conta!</p>
+                        <label for="customer-password">Senha (6+ caracteres)</label>
                         <input type="password" id="customer-password" placeholder="Sua senha" minlength="6">
                     </div>
 
-                    <!-- Password for existing account login -->
                     <div id="login-section"
                         style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem;">
                         <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><i class="fa-solid fa-user"></i>
-                            Telefone já cadastrado. Faça login:</p>
-                        <label>Sua Senha</label>
+                            Telefone cadastrado:</p>
+                        <label for="existing-password">Sua Senha</label>
                         <input type="password" id="existing-password" placeholder="Digite sua senha">
                     </div>
                 </div>
@@ -141,7 +139,7 @@
         <h2 style="margin-top: 1rem;">Agendado!</h2>
         <p>Seu horário foi confirmado.</p>
         <p id="account-created-msg" style="display: none; color: var(--accent); margin-top: 1rem;">
-            <i class="fa-solid fa-user-check"></i> Sua conta foi criada! Seus dados já estarão salvos.
+            <i class="fa-solid fa-user-check"></i> Sua conta foi criada!
         </p>
         <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
     </div>
@@ -154,10 +152,10 @@
         <div id="auth-login-form">
             <h2><i class="fa-solid fa-user"></i> Entrar</h2>
             <form onsubmit="customerLogin(event)">
-                <label>Telefone</label>
+                <label for="login-phone">Telefone</label>
                 <input type="tel" id="login-phone" placeholder="(11) 99999-1234" required
                     oninput="formatPhoneInput(this)">
-                <label>Senha</label>
+                <label for="login-password">Senha</label>
                 <input type="password" id="login-password" required>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Entrar</button>
             </form>
@@ -170,12 +168,12 @@
         <div id="auth-register-form" style="display: none;">
             <h2><i class="fa-solid fa-user-plus"></i> Cadastro</h2>
             <form onsubmit="customerRegister(event)">
-                <label>Nome</label>
+                <label for="register-name">Nome</label>
                 <input type="text" id="register-name" placeholder="Seu nome" required>
-                <label>Telefone</label>
+                <label for="register-phone">Telefone</label>
                 <input type="tel" id="register-phone" placeholder="(11) 99999-1234" required
                     oninput="formatPhoneInput(this)">
-                <label>Senha</label>
+                <label for="register-password">Senha</label>
                 <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required minlength="6">
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar
                     Conta</button>
@@ -199,24 +197,8 @@
             style="width: 100%; margin-top: 1rem;">Fechar</button>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        width: 100%;
-        padding: 0.75rem 1rem;
-        background: none;
-        border: none;
-        color: var(--text-primary);
-        cursor: pointer;
-        text-align: left;
-        font-size: 0.9rem;
-    }
-
-    .dropdown-item:hover {
-        background: var(--bg-secondary);
-    }
-</style>
+{% block scripts %}
+<script src="/static/js/user.js"></script>
 {% endblock %}

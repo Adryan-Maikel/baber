@@ -287,3 +287,59 @@ def get_dashboard_stats(
         stats["service_distribution"]["data"].append(count)
         
     return stats
+
+# =============== APPOINTMENT STATUS ===============
+
+@router.put("/appointments/{appointment_id}/complete")
+def complete_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Mark appointment as completed"""
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+    
+    appointment.status = "completed"
+    db.commit()
+    return {"ok": True, "status": "completed"}
+
+
+@router.put("/appointments/{appointment_id}/no-show")
+def mark_no_show(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Mark appointment as no-show (customer didn't come)"""
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+    
+    appointment.status = "no_show"
+    db.commit()
+    return {"ok": True, "status": "no_show"}
+
+
+@router.get("/appointments/{appointment_id}/media")
+def get_appointment_media(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Get all media for an appointment"""
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+    
+    media_list = []
+    for media in appointment.media:
+        media_list.append({
+            "id": media.id,
+            "media_url": media.media_url,
+            "media_type": media.media_type,
+            "created_at": media.created_at.isoformat()
+        })
+    
+    return media_list

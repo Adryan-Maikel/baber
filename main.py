@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routers import admin, user, auth, customer
+from routers import admin, user, auth, customer, upload, stories
 import models
 import os
 
@@ -35,6 +35,8 @@ app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(user.router)
 app.include_router(customer.router)
+app.include_router(upload.router)
+app.include_router(stories.router)
 
 @app.get("/")
 def read_root(request: Request):
