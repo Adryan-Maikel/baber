@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Agendar Horário{% endblock %}
+
+{% block content %}
+<div class="container user-layout">
+    <header style="text-align: center; margin: 2rem 0;">
+        <h1><i class="fa-solid fa-scissors"></i> Barbearia</h1>
+        <p style="color: var(--text-secondary);">Agende seu horário com facilidade</p>
+    </header>
+
+    <!-- Step 1: Select Service -->
+    <div id="step-1" class="step fade-in">
+        <h2>1. Escolha o serviço</h2>
+        <div id="user-services-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
+            <!-- Loaded via JS -->
+        </div>
+    </div>
+
+    <!-- Step 2: Date & Time -->
+    <div id="step-2" class="step fade-in" style="display: none;">
+        <button class="btn" onclick="goToStep(1)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
+            Voltar</button>
+        <h2>2. Escolha o horário</h2>
+        <label>Data</label>
+        <input type="date" id="booking-date" onchange="loadSlots()">
+
+        <div id="slots-container"
+            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem;">
+            <!-- Slots loaded here -->
+        </div>
+    </div>
+
+    <!-- Step 3: Confirm -->
+    <div id="step-3" class="step fade-in" style="display: none;">
+        <button class="btn" onclick="goToStep(2)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
+            Voltar</button>
+        <h2>3. Seus Dados</h2>
+        <div class="card">
+            <h3 id="confirm-service-name">Service</h3>
+            <p id="confirm-date-time" style="color: var(--accent); margin-bottom: 1rem;">Date Time</p>
+
+            <form onsubmit="confirmBooking(event)">
+                <label>Seu Nome</label>
+                <input type="text" id="customer-name" required>
+                <label>Telefone</label>
+                <input type="tel" id="customer-phone" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Confirmar Agendamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success -->
+    <div id="step-success" class="step fade-in" style="display: none; text-align: center; padding: 2rem;">
+        <i class="fa-solid fa-circle-check" style="font-size: 4rem; color: var(--success);"></i>
+        <h2 style="margin-top: 1rem;">Agendado!</h2>
+        <p>Seu horário foi confirmado.</p>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
+    </div>
+
+</div>
+{% endblock %}

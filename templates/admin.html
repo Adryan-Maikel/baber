@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo{% endblock %}
+
+{% block head %}
+<style>
+    .admin-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: 250px;
+        background-color: var(--card-bg);
+        padding: 2rem 1rem;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border);
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        margin-top: 2rem;
+    }
+
+    .sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-menu a {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .sidebar-menu a:hover,
+    .sidebar-menu a.active {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+
+    .sidebar-menu i {
+        width: 20px;
+        text-align: center;
+    }
+
+    .content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+
+    .section {
+        display: none;
+    }
+
+    .section.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h2 style="padding-left: 1rem;"><i class="fa-solid fa-scissors"></i> BarberAdmin</h2>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-line"></i>
+                    Dashboard</a></li>
+            <li><a href="#" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-check"></i>
+                    Agendamentos</a></li>
+            <li><a href="#" onclick="showSection('services')"><i class="fa-solid fa-list"></i> Cortes/Serviços</a></li>
+            <li><a href="#" onclick="showSection('schedule')"><i class="fa-solid fa-clock"></i> Horários</a></li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        <div id="dashboard" class="section active fade-in">
+            <h1>Visão Geral</h1>
+            <p style="color: var(--text-secondary);">Bem-vindo ao painel administrativo.</p>
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                <div class="card">
+                    <h3>Agendamentos Hoje</h3>
+                    <h1 id="count-today" style="color: var(--accent); font-size: 3rem;">0</h1>
+                </div>
+            </div>
+        </div>
+
+        <div id="appointments" class="section fade-in">
+            <h1>Agendamentos</h1>
+            <div class="card" style="margin-top: 1rem;">
+                <!-- List will be populated by JS -->
+                <ul id="appointment-list" style="list-style: none;"></ul>
+            </div>
+        </div>
+
+        <div id="services" class="section fade-in">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Serviços</h1>
+                <button class="btn btn-primary" onclick="openServiceModal()">
+                    <i class="fa-solid fa-plus"></i> Novo Serviço
+                </button>
+            </div>
+            <div id="services-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                <!-- Services -->
+            </div>
+        </div>
+
+        <div id="schedule" class="section fade-in">
+            <h1>Configurar Horários</h1>
+            <div class="card" style="margin-top: 1rem;">
+                <form id="schedule-form" onsubmit="saveSchedule(event)">
+                    <p style="margin-bottom: 1rem;">Definir horário padrão de atendimento.</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label>Inicio</label>
+                            <input type="time" name="start_time" required>
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" name="end_time" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar Horário</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Simple Modal for Add Service -->
+<div id="service-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
+    <div class="card" style="width: 400px; max-width: 90%;">
+        <h2>Novo Serviço</h2>
+        <form id="service-form" onsubmit="createService(event)">
+            <label>Nome do Corte</label>
+            <input type="text" name="name" placeholder="Ex: Corte Masculino" required>
+            <label>Duração (minutos)</label>
+            <input type="number" name="duration" placeholder="Ex: 30" required>
+            <label>Preço</label>
+            <input type="text" name="price" placeholder="Ex: R$ 30,00" required>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="button" class="btn"
+                    onclick="document.getElementById('service-modal').style.display='none'">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
