@@ -4,61 +4,78 @@
 
 /* Theme System - Dark and Light Palettes */
 body[data-theme="dark"] {
-    --bg-color: #0a0e1a;
-    --bg-secondary: #0f172a;
-    --card-bg: #151b2e;
-    --card-hover: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --accent: #4f46e5;
-    --accent-hover: #6366f1;
-    --accent-light: rgba(79, 70, 229, 0.1);
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --success: #10b981;
-    --success-hover: #059669;
-    --border: #334155;
-    --shadow: rgba(0, 0, 0, 0.5);
+    /* Backgrounds: Deep Black/Gray */
+    --bg-color: #050505;
+    --bg-secondary: #0a0a0a;
+    --card-bg: #141414;
+    --card-hover: #1f1f1f;
+
+    /* Text: High Contrast White */
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+
+    /* Accents: Classic Barbershop Blue & Red */
+    --accent: #2563eb;
+    /* Royal Blue */
+    --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.15);
+
+    --danger: #dc2626;
+    /* Classic Red */
+    --danger-hover: #b91c1c;
+
+    --success: #16a34a;
+    --success-hover: #15803d;
+
+    --border: #262626;
+    --shadow: rgba(0, 0, 0, 0.7);
     --font-main: 'Outfit', sans-serif;
 }
 
 body[data-theme="light"] {
-    --bg-color: #f8fafc;
-    --bg-secondary: #f1f5f9;
+    --bg-color: #ffffff;
+    --bg-secondary: #f8fafc;
     --card-bg: #ffffff;
-    --card-hover: #f8fafc;
+    --card-hover: #f1f5f9;
+
     --text-primary: #0f172a;
     --text-secondary: #64748b;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --accent-light: rgba(59, 130, 246, 0.1);
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --success: #22c55e;
-    --success-hover: #16a34a;
+
+    --accent: #2563eb;
+    /* Same Blue */
+    --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.1);
+
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+
+    --success: #16a34a;
+    --success-hover: #15803d;
+
     --border: #e2e8f0;
     --shadow: rgba(0, 0, 0, 0.1);
     --font-main: 'Outfit', sans-serif;
 }
 
-/* Default theme variables */
+/* Default theme variables (Maps to Dark Theme) */
 body {
-    --bg-color: #0a0e1a;
-    --bg-secondary: #0f172a;
-    --card-bg: #151b2e;
-    --card-hover: #1e293b;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --accent: #4f46e5;
-    --accent-hover: #6366f1;
-    --accent-light: rgba(79, 70, 229, 0.1);
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --success: #10b981;
-    --success-hover: #059669;
-    --border: #334155;
-    --shadow: rgba(0, 0, 0, 0.5);
+    --bg-color: #050505;
+    --bg-secondary: #0a0a0a;
+    --card-bg: #141414;
+    --card-hover: #1f1f1f;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: rgba(37, 99, 235, 0.15);
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --success: #16a34a;
+    --success-hover: #15803d;
+    --border: #262626;
+    --shadow: rgba(0, 0, 0, 0.7);
     --font-main: 'Outfit', sans-serif;
+
     --transition-speed: 0.3s;
     --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -118,19 +135,19 @@ body {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.5);
+    color: var(--text-primary);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.5);
     border: none;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.6);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.6);
     transform: translateY(-2px);
 }
 
 .btn-danger {
     background: var(--danger);
-    color: white;
+    color: var(--text-primary);
     border: none;
 }
 
@@ -222,7 +239,8 @@ label {
 .login-header h1 {
     font-size: 2rem;
     margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    /* Updated Gradient to be Red/Blue barbershop style or just Blue */
+    background: linear-gradient(135deg, #2563eb, #dc2626);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -230,7 +248,7 @@ label {
 
 .error-message {
     background-color: var(--danger);
-    color: white;
+    color: var(--text-primary);
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
     margin-bottom: 1rem;
@@ -239,4 +257,24 @@ label {
 
 .error-message.show {
     display: block;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 5px;
+    border: 2px solid var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }

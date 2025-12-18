@@ -83,7 +83,7 @@
 
 .slot-btn:hover {
     background: var(--accent);
-    color: white;
+    color: var(--text-primary);
 }
 
 /* Step indicator */

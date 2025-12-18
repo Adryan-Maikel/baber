@@ -33,6 +33,8 @@ class Barber(Base):
     # Working hours for this barber
     start_time = Column(String, default="09:00")  # e.g., "09:00"
     end_time = Column(String, default="18:00")    # e.g., "18:00"
+    start_interval = Column(String, nullable=True) # Break start e.g. "12:00"
+    end_interval = Column(String, nullable=True)   # Break end e.g. "13:00"
     
     services = relationship("BarberService", back_populates="barber", cascade="all, delete-orphan")
     appointments = relationship("Appointment", back_populates="barber")

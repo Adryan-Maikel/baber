@@ -11,7 +11,7 @@ router = APIRouter(
 
 # =============== PUBLIC ENDPOINTS (No Auth Required) ===============
 
-@router.get("/barbers", response_model=List[schemas.BarberSimple])
+@router.get("/barbers", response_model=List[schemas.Barber])
 def get_barbers(db: Session = Depends(get_db)):
     """Get all active barbers (public endpoint)"""
     barbers = db.query(models.Barber).filter(models.Barber.is_active == True).all()
@@ -78,9 +78,21 @@ def get_availability(
     try:
         start_hour, start_min = map(int, barber.start_time.split(':'))
         end_hour, end_min = map(int, barber.end_time.split(':'))
+        
+        # Parse break interval if exists
+        break_start = None
+        break_end = None
+        if barber.start_interval and barber.end_interval:
+             bs_h, bs_m = map(int, barber.start_interval.split(':'))
+             be_h, be_m = map(int, barber.end_interval.split(':'))
+             break_start = datetime.combine(target_date, datetime.min.time()).replace(hour=bs_h, minute=bs_m)
+             break_end = datetime.combine(target_date, datetime.min.time()).replace(hour=be_h, minute=be_m)
+
     except (ValueError, AttributeError):
         start_hour, start_min = 9, 0
         end_hour, end_min = 18, 0
+        break_start = None
+        break_end = None
     
     work_start = datetime.combine(target_date, datetime.min.time()).replace(hour=start_hour, minute=start_min)
     work_end = datetime.combine(target_date, datetime.min.time()).replace(hour=end_hour, minute=end_min)
@@ -98,6 +110,14 @@ def get_availability(
     while current_time + timedelta(minutes=duration_minutes) <= work_end:
         slot_end = current_time + timedelta(minutes=duration_minutes)
         
+        # Check Break Interval Collision
+        if break_start and break_end:
+            # If the slot overlaps with the break
+            # Overlap logic: (StartA < EndB) and (EndA > StartB)
+            if (current_time < break_end) and (slot_end > break_start):
+                current_time += timedelta(minutes=30)
+                continue
+
         # Check collision
         is_free = True
         for apt in appointments:

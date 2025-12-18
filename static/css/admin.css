@@ -172,11 +172,7 @@
 }
 
 .barber-admin-card .service-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
     font-size: 0.875rem;
-    color: var(--text-secondary);
 }
 
 /* Appointment List */
@@ -237,7 +233,7 @@
     top: 0.5rem;
     right: 0.5rem;
     background: var(--danger);
-    color: white;
+    color: var(--text-primary);
     border: none;
     border-radius: 50%;
     width: 24px;
@@ -264,7 +260,7 @@
 /* WhatsApp Button */
 .btn-whatsapp {
     background: #25D366;
-    color: white;
+    color: var(--text-primary);
     border: none;
 }
 
@@ -306,5 +302,55 @@
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Fieldset Styling */
+.form-group-border {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: transparent;
+}
+
+.form-group-border legend {
+    padding: 0 0.5rem;
+    color: var(--text-primary);
+    /* Use accent color to make it look nicer */
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Jornada Layout */
+.jornada-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1.4fr 0.8fr;
+    /* Adjust ratios */
+    gap: 1rem;
+    align-items: center;
+
+}
+
+/* Interval Section specific adjustments */
+.interval-section {
+    margin-bottom: 0;
+    padding: 1rem 1rem 0rem 1rem;
+    /* Tighter padding */
+    margin-top: -6px;
+    /* Visual alignment fix */
+}
+
+.form-row.compact {
+    gap: 0.5rem;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .jornada-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .interval-section {
+        margin-top: 0;
     }
 }

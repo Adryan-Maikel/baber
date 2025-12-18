@@ -67,6 +67,8 @@ class BarberBase(BaseModel):
     is_active: bool = True
     start_time: str = "09:00"
     end_time: str = "18:00"
+    start_interval: Optional[str] = None
+    end_interval: Optional[str] = None
 
 class BarberCreate(BarberBase):
     pass
@@ -78,6 +80,8 @@ class BarberUpdate(BaseModel):
     is_active: Optional[bool] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
+    start_interval: Optional[str] = None
+    end_interval: Optional[str] = None
 
 class Barber(BarberBase):
     id: int

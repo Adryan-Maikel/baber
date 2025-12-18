@@ -141,7 +141,7 @@
         justify-content: center;
         opacity: 0;
         transition: opacity 0.3s;
-        color: white;
+        color: var(--text-primary);
         font-size: 1.25rem;
     }
 
@@ -162,20 +162,26 @@
     }
 
     .modal-avatar {
-        width: 120px;
-        height: 120px;
+        width: 150px;
+        height: 150px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        background: var(--bg-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 3rem;
-        color: white;
+        font-size: 2.7rem;
+        color: var(--text-primary);
         position: relative;
         overflow: hidden;
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0px 10px -5px var(--accent-light);
         cursor: pointer;
         transition: all 0.3s;
+
+    }
+
+    /* Delete overlay (red) */
+    .avatar-overlay.overlay-delete i {
+        color: var(--danger);
     }
 
     .modal-avatar:hover {
@@ -196,11 +202,6 @@
         display: flex;
         gap: 0.5rem;
         margin-top: 0.75rem;
-    }
-
-    /* Delete overlay (red) */
-    .avatar-overlay.overlay-delete {
-        background: rgba(231, 76, 60, 0.8);
     }
 
     /* Confirmation Modal */
@@ -264,6 +265,8 @@
 
     .barber-schedule {
         display: flex;
+        align-items: center;
+        justify-content: space-around;
         gap: 0.5rem;
         margin: 1rem 0;
         padding: 0.75rem;
@@ -276,7 +279,9 @@
     }
 
     .service-list {
-        margin-top: 1rem;
+        gap: 7px;
+        display: flex;
+        flex-direction: column;
     }
 
     .service-item {
@@ -286,7 +291,6 @@
         padding: 0.75rem;
         background: var(--bg-secondary);
         border-radius: 0.5rem;
-        margin-bottom: 0.5rem;
     }
 
     .service-item .price-original {
@@ -332,7 +336,7 @@
         right: 0.5rem;
         background: var(--danger);
         border: none;
-        color: white;
+        color: var(--text-primary);
         width: 24px;
         height: 24px;
         border-radius: 50%;
@@ -495,35 +499,55 @@
             <div class="modal-avatar-container">
                 <div class="modal-avatar" id="modal-avatar-preview" onclick="handleModalAvatarClick()"
                     title="Clique para alterar foto">
-                    <i class="fa-solid fa-user"></i>
-                    <div class="avatar-overlay" id="modal-avatar-overlay">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <div class="avatar-overlay">
                         <i class="fa-solid fa-camera"></i>
                     </div>
                 </div>
                 <div class="form-column">
-                    <div>
-                        <label for="barber-name">Nome *</label>
+                    <label for="barber-name">
+                        Nome *
                         <input type="text" id="barber-name" placeholder="Nome do profissional" required>
-                    </div>
-                    <div>
-                        <label for="barber-phone">Telefone</label>
+                    </label>
+                    <label for="barber-phone">
+                        Telefone
                         <input type="tel" id="barber-phone" placeholder="(11) 99999-1234"
                             oninput="formatPhoneInput(this)">
+                    </label>
+                </div>
+
+                <fieldset class="form-group-border jornada-section">
+                    <legend>Jornada</legend>
+
+                    <div class="jornada-grid">
+                        <div class="input-wrapper">
+                            <label for="barber-start-time">Inicio *</label>
+                            <input type="time" id="barber-start-time" value="09:00" required>
+                        </div>
+
+                        <fieldset class="form-group-border interval-section">
+                            <legend>Intervalo</legend>
+                            <div class="form-row compact">
+                                <label>
+                                    Inicio *
+                                    <input type="time" id="barber-start-time-interval" required>
+                                </label>
+                                <label>
+                                    Fim *
+                                    <input type="time" id="barber-end-time-interval" required>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="input-wrapper">
+                            <label for="barber-end-time">Fim *</label>
+                            <input type="time" id="barber-end-time" value="18:00" required>
+                        </div>
                     </div>
-                </div>
+                </fieldset>
             </div>
 
 
-            <div class="form-row">
-                <div>
-                    <label for="barber-start-time">Horario Inicio *</label>
-                    <input type="time" id="barber-start-time" value="09:00" required>
-                </div>
-                <div>
-                    <label for="barber-end-time">Horario Fim *</label>
-                    <input type="time" id="barber-end-time" value="18:00" required>
-                </div>
-            </div>
 
             <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-list"></i> Servicos</h3>
             <div id="services-container">
@@ -793,7 +817,7 @@
                         </div>
                         <div class="barber-info">
                             <h3>${b.name}</h3>
-                            <p>${b.phone || 'Sem telefone'}</p>
+                            <p>${formatPhone(b.phone) || 'Sem telefone'}</p>
                             <span style="color: ${b.is_active ? 'var(--success)' : 'var(--danger)'};">
                                 <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i> 
                                 ${b.is_active ? 'Ativo' : 'Inativo'}
@@ -802,8 +826,16 @@
                     </div>
                     
                     <div class="barber-schedule">
-                        <i class="fa-solid fa-clock"></i>
-                        <span>${b.start_time || '09:00'} - ${b.end_time || '18:00'}</span>
+                        <div>
+                            <i class="fa-solid fa-clock"></i>
+                            <span>${b.start_time || '09:00'} - ${b.end_time || '18:00'}</span>
+                        </div>
+                        ${b.start_interval ? `
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="fa-solid fa-mug-hot"></i>
+                            <span>${b.start_interval} - ${b.end_interval}</span>
+                        </div>
+                        ` : ''}
                     </div>
 
                     <div class="service-list">
@@ -852,6 +884,8 @@
         document.getElementById('barber-phone').value = '';
         document.getElementById('barber-start-time').value = '09:00';
         document.getElementById('barber-end-time').value = '18:00';
+        document.getElementById('barber-start-time-interval').value = '';
+        document.getElementById('barber-end-time-interval').value = '';
         document.getElementById('services-container').innerHTML = '';
 
         // Reset avatar preview
@@ -870,8 +904,8 @@
     function resetModalAvatarPreview() {
         const avatarPreview = document.getElementById('modal-avatar-preview');
         avatarPreview.innerHTML = `
-            <i class="fa-solid fa-user"></i>
-            <div class="avatar-overlay" id="modal-avatar-overlay">
+            <i class="fa-solid fa-user-tie"></i>
+            <div class="avatar-overlay">
                 <i class="fa-solid fa-camera"></i>
             </div>
         `;
@@ -882,7 +916,7 @@
         const avatarPreview = document.getElementById('modal-avatar-preview');
         avatarPreview.innerHTML = `
             <img src="${imageUrl}" alt="Avatar">
-            <div class="avatar-overlay overlay-delete" id="modal-avatar-overlay">
+            <div class="avatar-overlay overlay-delete">
                 <i class="fa-solid fa-trash"></i>
             </div>
         `;
@@ -936,8 +970,10 @@
         document.getElementById('barber-phone').value = barber.phone || '';
         document.getElementById('barber-start-time').value = barber.start_time || '09:00';
         document.getElementById('barber-end-time').value = barber.end_time || '18:00';
+        document.getElementById('barber-start-time-interval').value = barber.start_interval || '';
+        document.getElementById('barber-end-time-interval').value = barber.end_interval || '';
 
-        // Update avatar preview
+        // Handle Avatar Preview
         if (barber.avatar_url) {
             setModalAvatarPreview(barber.avatar_url, true);
         } else {
@@ -960,10 +996,13 @@
 
         const barberData = {
             name: document.getElementById('barber-name').value,
-            phone: document.getElementById('barber-phone').value || null,
+            phone: document.getElementById('barber-phone').value,
+            avatar_url: document.getElementById('barber-avatar-url').value,
             start_time: document.getElementById('barber-start-time').value,
             end_time: document.getElementById('barber-end-time').value,
-            is_active: true
+            start_interval: document.getElementById('barber-start-time-interval').value || null,
+            end_interval: document.getElementById('barber-end-time-interval').value || null,
+            is_active: true // default
         };
 
         // If user wants to remove avatar, set it to null
@@ -1135,19 +1174,19 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <span style="background: var(--accent); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">
+                                <span style="background: var(--accent); color: var(--text-primary);; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">
                                     ${time}
                                 </span>
                                 <span style="color: var(--text-secondary); font-size: 0.875rem;">${date}</span>
                             </div>
                             <strong style="font-size: 1.1rem;">${a.customer_name}</strong>
-                            <p style="color: var(--text-secondary); font-size: 0.875rem;">${a.customer_phone || 'Sem telefone'}</p>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">${formatPhone(a.customer_phone) || 'Sem telefone'}</p>
                             ${a.barber ? `<p style="color: var(--accent);"><i class="fa-solid fa-user-tie"></i> ${a.barber.name}</p>` : ''}
                             ${a.barber_service ? `<p style="color: var(--text-secondary);"><i class="fa-solid fa-scissors"></i> ${a.barber_service.name}</p>` : ''}
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                             ${whatsappUrl ? `
-                                <a href="${whatsappUrl}" target="_blank" class="btn" style="background: #25D366; color: white; padding: 0.5rem 1rem;">
+                                <a href="${whatsappUrl}" target="_blank" class="btn" style="background: #25D366; color: var(--text-primary);; padding: 0.5rem 1rem;">
                                     <i class="fa-brands fa-whatsapp"></i> WhatsApp
                                 </a>
                             ` : ''}
@@ -1260,6 +1299,15 @@
             else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
         }
         input.value = value;
+    }
+
+    function formatPhone(phone) {
+        if (!phone) return null;
+        const value = phone.replace(/\D/g, '');
+        if (value.length > 11) return value; // Invalid length, return as is or handle
+        if (value.length <= 2) return `(${value}`;
+        if (value.length <= 10) return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+        return `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
     }
 </script>
 {% endblock %}
