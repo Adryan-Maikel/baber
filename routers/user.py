@@ -115,8 +115,12 @@ def get_availability(
 # =============== BOOKING ===============
 
 @router.post("/book", response_model=schemas.Appointment)
-def book_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)):
-    """Book an appointment with a barber"""
+def book_appointment(
+    appointment: schemas.AppointmentCreate, 
+    customer_token: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Book an appointment with a barber. Optionally link to customer profile."""
     
     # Validate barber
     barber = db.query(models.Barber).filter(models.Barber.id == appointment.barber_id).first()
@@ -142,12 +146,21 @@ def book_appointment(appointment: schemas.AppointmentCreate, db: Session = Depen
         duration_minutes = service.duration_minutes
     else:
         raise HTTPException(status_code=400, detail="É necessário informar um serviço")
+    
+    # Try to get customer from token
+    customer_id = None
+    if customer_token:
+        from routers.customer import get_current_customer
+        customer = get_current_customer(customer_token, db)
+        if customer:
+            customer_id = customer.id
         
     # Calculate end time
     end_time = appointment.start_time + timedelta(minutes=duration_minutes)
     
     db_appointment = models.Appointment(
         **appointment.model_dump(),
+        customer_id=customer_id,
         end_time=end_time
     )
     db.add(db_appointment)

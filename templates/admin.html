@@ -228,24 +228,58 @@
     <main class="content">
         <!-- Dashboard Section -->
         <div id="dashboard" class="section active fade-in">
-            <h1>Visao Geral</h1>
-            <p style="color: var(--text-secondary);">Bem-vindo ao painel administrativo.</p>
             <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
-                <div class="card">
-                    <h3>Agendamentos Hoje</h3>
-                    <h1 id="count-today" style="color: var(--accent); font-size: 3rem;">0</h1>
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1>Visao Geral</h1>
+                    <p style="color: var(--text-secondary);">Dados atualizados automaticamente</p>
                 </div>
-                <div class="card">
-                    <h3>Profissionais Ativos</h3>
-                    <h1 id="barber-count" style="color: var(--success); font-size: 3rem;">0</h1>
+
+                <!-- Dashboard Filters -->
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <select id="dashboard-barber-filter" onchange="refreshDashboard()"
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+                        <option value="">Todos Profissionais</option>
+                    </select>
+
+                    <input type="date" id="dashboard-start-date" onchange="refreshDashboard()"
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+                    <span style="color: var(--text-secondary);">até</span>
+                    <input type="date" id="dashboard-end-date" onchange="refreshDashboard()"
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+
+                    <div style="display: flex; gap: 0.25rem;">
+                        <button class="btn" onclick="setDashboardPeriod(0)" title="Hoje">Hoje</button>
+                        <button class="btn" onclick="setDashboardPeriod(7)" title="7 dias">7d</button>
+                        <button class="btn" onclick="setDashboardPeriod(30)" title="30 dias">30d</button>
+                    </div>
                 </div>
             </div>
 
             <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
                 <div class="card">
-                    <h3>Atendimentos e Receita (7 dias)</h3>
+                    <h3>Agendamentos Hoje</h3>
+                    <h1 id="count-today" style="color: var(--accent); font-size: 2.5rem;">0</h1>
+                </div>
+                <div class="card">
+                    <h3>Total no Periodo</h3>
+                    <h1 id="count-period" style="color: var(--accent); font-size: 2.5rem;">0</h1>
+                </div>
+                <div class="card">
+                    <h3>Receita Total</h3>
+                    <h1 id="total-revenue" style="color: var(--success); font-size: 2.5rem;">R$ 0</h1>
+                </div>
+                <div class="card">
+                    <h3>Profissionais</h3>
+                    <h1 id="barber-count" style="color: var(--text-secondary); font-size: 2.5rem;">0</h1>
+                </div>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+                <div class="card">
+                    <h3>Atendimentos e Receita</h3>
                     <canvas id="appointmentsChart"></canvas>
                 </div>
                 <div class="card">
@@ -255,11 +289,33 @@
                     </div>
                 </div>
             </div>
+
+            <p id="last-refresh" style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.875rem;"></p>
         </div>
 
         <!-- Appointments Section -->
         <div id="appointments" class="section fade-in">
-            <h1>Agendamentos</h1>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <h1>Agendamentos</h1>
+
+                <!-- Appointments Filters -->
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="color: var(--text-secondary);">Data:</label>
+                    <input type="date" id="appointments-date-filter" onchange="loadAppointmentsAdmin()"
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+
+                    <select id="appointments-barber-filter" onchange="loadAppointmentsAdmin()"
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+                        <option value="">Todos Profissionais</option>
+                    </select>
+
+                    <button class="btn" onclick="setAppointmentsToday()">
+                        <i class="fa-solid fa-calendar-day"></i> Hoje
+                    </button>
+                </div>
+            </div>
+
             <div class="card" style="margin-top: 1rem;">
                 <ul id="appointment-list" style="list-style: none;"></ul>
             </div>
@@ -329,20 +385,108 @@
 <script>
     // =============== ADMIN JS ===============
 
-    let editingBarberId = null;
+    let autoRefreshInterval = null;
+    let barbersCache = [];
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
+        // Load barbers for filter dropdowns
+        await loadBarbersForFilters();
+
+        // Set default dates
+        initializeDashboardDates();
+        initializeAppointmentsDate();
+
         if (document.getElementById('dashboard').classList.contains('active')) {
             loadDashboardStats();
+            startAutoRefresh();
         }
     });
+
+    async function loadBarbersForFilters() {
+        const token = localStorage.getItem('access_token');
+        try {
+            const res = await fetch('/admin/barbers', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                barbersCache = await res.json();
+                populateBarberSelects();
+            }
+        } catch (e) { }
+    }
+
+    function populateBarberSelects() {
+        const dashboardSelect = document.getElementById('dashboard-barber-filter');
+        const appointmentsSelect = document.getElementById('appointments-barber-filter');
+
+        const options = barbersCache.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+        if (dashboardSelect) dashboardSelect.innerHTML = '<option value="">Todos Profissionais</option>' + options;
+        if (appointmentsSelect) appointmentsSelect.innerHTML = '<option value="">Todos Profissionais</option>' + options;
+    }
+
+    function initializeDashboardDates() {
+        const today = new Date();
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 6);
+
+        document.getElementById('dashboard-start-date').value = weekAgo.toISOString().split('T')[0];
+        document.getElementById('dashboard-end-date').value = today.toISOString().split('T')[0];
+    }
+
+    function initializeAppointmentsDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('appointments-date-filter').value = today;
+    }
+
+    function setDashboardPeriod(days) {
+        const today = new Date();
+        const startDate = new Date(today);
+        if (days > 0) {
+            startDate.setDate(startDate.getDate() - (days - 1));
+        }
+        document.getElementById('dashboard-start-date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('dashboard-end-date').value = today.toISOString().split('T')[0];
+        refreshDashboard();
+    }
+
+    function setAppointmentsToday() {
+        document.getElementById('appointments-date-filter').value = new Date().toISOString().split('T')[0];
+        loadAppointmentsAdmin();
+    }
+
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                refreshDashboard();
+            }
+        }, 30000); // 30 seconds
+    }
+
+    function refreshDashboard() {
+        const chart1 = Chart.getChart("appointmentsChart");
+        if (chart1) chart1.destroy();
+        const chart2 = Chart.getChart("servicesChart");
+        if (chart2) chart2.destroy();
+        loadDashboardStats();
+    }
 
     // =============== DASHBOARD ===============
 
     async function loadDashboardStats() {
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('/admin/dashboard-stats', {
+            const barberId = document.getElementById('dashboard-barber-filter')?.value || '';
+            const startDate = document.getElementById('dashboard-start-date')?.value || '';
+            const endDate = document.getElementById('dashboard-end-date')?.value || '';
+
+            let url = '/admin/dashboard-stats?';
+            if (barberId) url += `barber_id=${barberId}&`;
+            if (startDate) url += `start_date=${startDate}&`;
+            if (endDate) url += `end_date=${endDate}&`;
+
+            const response = await fetch(url, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
 
@@ -356,7 +500,10 @@
             const data = await response.json();
 
             document.getElementById('count-today').textContent = data.count_today;
+            document.getElementById('count-period').textContent = data.total_appointments || 0;
+            document.getElementById('total-revenue').textContent = 'R$ ' + (data.total_revenue || 0).toFixed(2);
             document.getElementById('barber-count').textContent = data.barber_count || 0;
+            document.getElementById('last-refresh').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
 
             // Charts
             const ctxApp = document.getElementById('appointmentsChart').getContext('2d');
@@ -423,11 +570,8 @@
         if (link) link.classList.add('active');
 
         if (sectionId === 'dashboard') {
-            const chart1 = Chart.getChart("appointmentsChart");
-            if (chart1) chart1.destroy();
-            const chart2 = Chart.getChart("servicesChart");
-            if (chart2) chart2.destroy();
-            loadDashboardStats();
+            refreshDashboard();
+            startAutoRefresh();
         } else if (sectionId === 'barbers') {
             loadBarbersAdmin();
         } else if (sectionId === 'appointments') {
@@ -688,29 +832,63 @@
         const container = document.getElementById('appointment-list');
         const token = localStorage.getItem('access_token');
 
+        const dateFilter = document.getElementById('appointments-date-filter')?.value || '';
+        const barberFilter = document.getElementById('appointments-barber-filter')?.value || '';
+
         try {
-            const res = await fetch('/admin/appointments', {
+            let url = '/admin/appointments?';
+            if (dateFilter) url += `date_filter=${dateFilter}&`;
+            if (barberFilter) url += `barber_id=${barberFilter}&`;
+
+            const res = await fetch(url, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const apps = await res.json();
 
             if (apps.length === 0) {
-                container.innerHTML = '<li style="text-align: center; color: var(--text-secondary);">Nenhum agendamento encontrado.</li>';
+                container.innerHTML = `
+                    <li style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>Nenhum agendamento encontrado para esta data.</p>
+                    </li>`;
                 return;
             }
 
-            container.innerHTML = apps.map(a => `
-                <li class="card" style="margin-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>${new Date(a.start_time).toLocaleString('pt-BR')}</strong>
-                            <br>${a.customer_name} - ${a.customer_phone}
-                            ${a.barber ? `<br><span style="color: var(--accent);"><i class="fa-solid fa-user"></i> ${a.barber.name}</span>` : ''}
-                            ${a.barber_service ? `<br><span style="color: var(--text-secondary);">${a.barber_service.name}</span>` : ''}
+            container.innerHTML = apps.map(a => {
+                // Format time
+                const time = new Date(a.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const date = new Date(a.start_time).toLocaleDateString('pt-BR');
+
+                // WhatsApp button - validate phone
+                const phoneDigits = a.customer_phone ? a.customer_phone.replace(/\D/g, '') : '';
+                const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
+                const whatsappUrl = hasValidPhone ? `https://wa.me/55${phoneDigits}` : null;
+
+                return `
+                <li class="card" style="margin-bottom: 0.75rem; padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span style="background: var(--accent); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: bold;">
+                                    ${time}
+                                </span>
+                                <span style="color: var(--text-secondary); font-size: 0.875rem;">${date}</span>
+                            </div>
+                            <strong style="font-size: 1.1rem;">${a.customer_name}</strong>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">${a.customer_phone || 'Sem telefone'}</p>
+                            ${a.barber ? `<p style="color: var(--accent);"><i class="fa-solid fa-user-tie"></i> ${a.barber.name}</p>` : ''}
+                            ${a.barber_service ? `<p style="color: var(--text-secondary);"><i class="fa-solid fa-scissors"></i> ${a.barber_service.name}</p>` : ''}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            ${whatsappUrl ? `
+                                <a href="${whatsappUrl}" target="_blank" class="btn" style="background: #25D366; color: white; padding: 0.5rem 1rem;">
+                                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                                </a>
+                            ` : ''}
                         </div>
                     </div>
                 </li>
-            `).join('');
+            `}).join('');
         } catch (e) {
             container.innerHTML = '<li style="color: var(--danger);">Erro ao carregar agendamentos.</li>';
         }

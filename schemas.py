@@ -122,6 +122,51 @@ def validate_brazilian_phone(phone: str) -> str:
     else:
         return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
 
+# =============== Customer Schemas ===============
+
+class CustomerCreate(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = None
+    password: str
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        return validate_brazilian_phone(v)
+
+class CustomerLogin(BaseModel):
+    phone: str
+    password: str
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+class Customer(BaseModel):
+    id: int
+    name: str
+    phone: str
+    email: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class CustomerToken(BaseModel):
+    access_token: str
+    token_type: str
+    customer: Customer
+
+class AppointmentHistory(BaseModel):
+    id: int
+    start_time: datetime
+    end_time: datetime
+    barber_name: Optional[str] = None
+    service_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
 # =============== Appointment Schemas ===============
 
 class AppointmentBase(BaseModel):

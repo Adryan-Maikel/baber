@@ -57,6 +57,9 @@ body {
     --border: #334155;
     --shadow: rgba(0, 0, 0, 0.5);
     --font-main: 'Outfit', sans-serif;
+    /* Transition speed for synchronized animations */
+    --transition-speed: 0.3s;
+    --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -66,13 +69,24 @@ body {
     font-family: var(--font-main);
 }
 
+/* Apply synchronized transitions to all interactive elements */
+*,
+*::before,
+*::after {
+    transition: background-color var(--transition-speed) var(--transition-ease),
+        color var(--transition-speed) var(--transition-ease),
+        border-color var(--transition-speed) var(--transition-ease),
+        box-shadow var(--transition-speed) var(--transition-ease),
+        transform var(--transition-speed) var(--transition-ease),
+        opacity var(--transition-speed) var(--transition-ease);
+}
+
 body {
     background-color: var(--bg-color);
     color: var(--text-primary);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Theme Toggle Button */

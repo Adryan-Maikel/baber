@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import date, timedelta, datetime
 import models, schemas
 from database import get_db
@@ -149,17 +149,81 @@ def delete_service(service_id: int, db: Session = Depends(get_db), current_user:
 # =============== APPOINTMENTS ===============
 
 @router.get("/appointments", response_model=List[schemas.Appointment])
-def read_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
-    return db.query(models.Appointment).order_by(desc(models.Appointment.start_time)).offset(skip).limit(limit).all()
+def read_appointments(
+    date_filter: Optional[str] = None,  # YYYY-MM-DD
+    barber_id: Optional[int] = None,
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Get appointments with optional date and barber filters"""
+    query = db.query(models.Appointment)
+    
+    # Filter by date (default: today)
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
+            start_of_day = datetime.combine(filter_date, datetime.min.time())
+            end_of_day = datetime.combine(filter_date, datetime.max.time())
+            query = query.filter(
+                models.Appointment.start_time >= start_of_day,
+                models.Appointment.start_time <= end_of_day
+            )
+        except ValueError:
+            pass
+    
+    # Filter by barber
+    if barber_id:
+        query = query.filter(models.Appointment.barber_id == barber_id)
+    
+    # Order by start_time ascending (earliest first)
+    return query.order_by(models.Appointment.start_time.asc()).offset(skip).limit(limit).all()
 
 # =============== DASHBOARD STATS ===============
 
 @router.get("/dashboard-stats")
-def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+def get_dashboard_stats(
+    barber_id: Optional[int] = None,
+    start_date: Optional[str] = None,  # YYYY-MM-DD
+    end_date: Optional[str] = None,    # YYYY-MM-DD
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Get dashboard stats with optional filters"""
     today = date.today()
-    start_date = today - timedelta(days=6)
     
-    appointments = db.query(models.Appointment).filter(models.Appointment.start_time >= start_date).all()
+    # Parse dates or use defaults (last 7 days)
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        except ValueError:
+            start_dt = today - timedelta(days=6)
+    else:
+        start_dt = today - timedelta(days=6)
+    
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            end_dt = today
+    else:
+        end_dt = today
+    
+    # Build query
+    query = db.query(models.Appointment).filter(
+        models.Appointment.start_time >= datetime.combine(start_dt, datetime.min.time()),
+        models.Appointment.start_time <= datetime.combine(end_dt, datetime.max.time())
+    )
+    
+    # Filter by barber if specified
+    if barber_id:
+        query = query.filter(models.Appointment.barber_id == barber_id)
+    
+    appointments = query.all()
+    
+    # Calculate number of days in range
+    num_days = (end_dt - start_dt).days + 1
     
     stats = {
         "labels": [],
@@ -168,12 +232,15 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
         "service_distribution": {"labels": [], "data": []},
         "total_revenue": 0.0,
         "count_today": 0,
-        "barber_count": db.query(models.Barber).filter(models.Barber.is_active == True).count()
+        "barber_count": db.query(models.Barber).filter(models.Barber.is_active == True).count(),
+        "total_appointments": len(appointments),
+        "start_date": start_dt.isoformat(),
+        "end_date": end_dt.isoformat()
     }
     
     daily_stats = {}
-    for i in range(7):
-        d = start_date + timedelta(days=i)
+    for i in range(num_days):
+        d = start_dt + timedelta(days=i)
         d_str = d.strftime("%d/%m")
         stats["labels"].append(d_str)
         daily_stats[d_str] = {"count": 0, "revenue": 0.0}
@@ -191,6 +258,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
             
             # Calculate revenue from barber_service (new) or service (legacy)
             price = 0.0
+            s_name = None
             if app.barber_service:
                 price = app.barber_service.discount_price or app.barber_service.price
                 s_name = app.barber_service.name
@@ -200,9 +268,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
                     price = float(price_str)
                     s_name = app.service.name
                 except ValueError:
-                    s_name = None
-            else:
-                s_name = None
+                    pass
             
             daily_stats[app_date_str]["revenue"] += price
             stats["total_revenue"] += price

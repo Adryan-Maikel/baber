@@ -79,47 +79,273 @@ async function fetchAPI(endpoint, options = {}) {
     return res.json();
 }
 
-// =========== User Profile Management ===========
+// =========== Customer Authentication ===========
 
-function getUserProfile() {
-    const profile = localStorage.getItem('user_profile');
-    return profile ? JSON.parse(profile) : { name: '', phone: '' };
+let currentCustomer = null;
+const CUSTOMER_TOKEN_KEY = 'customer_token';
+let phoneCheckTimeout = null;
+let phoneExists = false;
+
+function getCustomerToken() {
+    return localStorage.getItem(CUSTOMER_TOKEN_KEY);
 }
 
-function saveUserProfile(e) {
-    if (e) e.preventDefault();
-    const name = document.getElementById('profile-name').value;
-    const phone = document.getElementById('profile-phone').value;
-
-    localStorage.setItem('user_profile', JSON.stringify({ name, phone }));
-    document.getElementById('profile-modal').style.display = 'none';
-
-    // Show success feedback
-    alert('Perfil salvo com sucesso!');
+function isCustomerLoggedIn() {
+    return !!getCustomerToken() && !!currentCustomer;
 }
 
-function loadUserProfileToForm() {
-    const profile = getUserProfile();
-    const nameInput = document.getElementById('profile-name');
-    const phoneInput = document.getElementById('profile-phone');
-
-    if (nameInput) nameInput.value = profile.name || '';
-    if (phoneInput) phoneInput.value = profile.phone || '';
+function logoutCustomer() {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    currentCustomer = null;
+    updateCustomerUI();
+    closeUserMenu();
 }
 
-function openProfileModal() {
-    loadUserProfileToForm();
-    document.getElementById('profile-modal').style.display = 'flex';
+// Toggle user menu dropdown
+function toggleUserMenu() {
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
 }
 
-// Prefill booking form with profile data
-function prefillBookingForm() {
-    const profile = getUserProfile();
-    const nameInput = document.getElementById('customer-name');
+function closeUserMenu() {
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function (e) {
+    const container = document.querySelector('.user-menu-container');
+    if (container && !container.contains(e.target)) {
+        closeUserMenu();
+    }
+});
+
+function updateCustomerUI() {
+    const guestMenu = document.getElementById('guest-menu-items');
+    const loggedMenu = document.getElementById('logged-menu-items');
+    const loggedInfo = document.getElementById('customer-logged-info');
+    const guestFields = document.getElementById('guest-fields');
+    const menuIcon = document.getElementById('user-menu-icon');
+    const menuCustomerName = document.getElementById('menu-customer-name');
+    const menuCustomerPhone = document.getElementById('menu-customer-phone');
+
+    if (isCustomerLoggedIn() && currentCustomer) {
+        // Show logged in state
+        if (guestMenu) guestMenu.style.display = 'none';
+        if (loggedMenu) loggedMenu.style.display = 'block';
+        if (menuIcon) menuIcon.className = 'fa-solid fa-user-check';
+        if (menuCustomerName) menuCustomerName.textContent = currentCustomer.name;
+        if (menuCustomerPhone) menuCustomerPhone.textContent = currentCustomer.phone;
+
+        if (loggedInfo) {
+            loggedInfo.style.display = 'block';
+            document.getElementById('logged-customer-name').textContent = currentCustomer.name;
+            document.getElementById('logged-customer-phone').textContent = currentCustomer.phone;
+        }
+        if (guestFields) {
+            guestFields.style.display = 'none';
+            const nameInput = document.getElementById('customer-name');
+            const phoneInput = document.getElementById('customer-phone');
+            if (nameInput) nameInput.removeAttribute('required');
+            if (phoneInput) phoneInput.removeAttribute('required');
+        }
+    } else {
+        // Show guest state
+        if (guestMenu) guestMenu.style.display = 'block';
+        if (loggedMenu) loggedMenu.style.display = 'none';
+        if (menuIcon) menuIcon.className = 'fa-solid fa-user';
+
+        if (loggedInfo) loggedInfo.style.display = 'none';
+        if (guestFields) {
+            guestFields.style.display = 'block';
+            const nameInput = document.getElementById('customer-name');
+            const phoneInput = document.getElementById('customer-phone');
+            if (nameInput) nameInput.setAttribute('required', '');
+            if (phoneInput) phoneInput.setAttribute('required', '');
+        }
+    }
+}
+
+// Check if phone already exists when user types
+async function checkPhoneExists() {
     const phoneInput = document.getElementById('customer-phone');
+    const msg = document.getElementById('phone-check-msg');
+    const passwordSection = document.getElementById('password-section');
+    const loginSection = document.getElementById('login-section');
 
-    if (nameInput && !nameInput.value) nameInput.value = profile.name || '';
-    if (phoneInput && !phoneInput.value) phoneInput.value = profile.phone || '';
+    if (!phoneInput || !msg) return;
+
+    const phone = phoneInput.value.replace(/\D/g, '');
+
+    // Only check if phone has enough digits
+    if (phone.length < 10) {
+        msg.style.display = 'none';
+        if (passwordSection) passwordSection.style.display = 'none';
+        if (loginSection) loginSection.style.display = 'none';
+        phoneExists = false;
+        return;
+    }
+
+    // Debounce the check
+    clearTimeout(phoneCheckTimeout);
+    phoneCheckTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`/customer/check-phone?phone=${encodeURIComponent(phoneInput.value)}`);
+            if (res.ok) {
+                const data = await res.json();
+                phoneExists = data.exists;
+
+                if (data.exists) {
+                    msg.style.display = 'block';
+                    msg.style.color = 'var(--accent)';
+                    msg.innerHTML = '<i class="fa-solid fa-user"></i> Telefone já cadastrado';
+                    if (passwordSection) passwordSection.style.display = 'none';
+                    if (loginSection) loginSection.style.display = 'block';
+                } else {
+                    msg.style.display = 'block';
+                    msg.style.color = 'var(--success)';
+                    msg.innerHTML = '<i class="fa-solid fa-check"></i> Telefone disponível';
+                    if (passwordSection) passwordSection.style.display = 'block';
+                    if (loginSection) loginSection.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            // Silently fail
+        }
+    }, 500);
+}
+
+function openAuthModal(type) {
+    showAuthForm(type || 'login');
+    document.getElementById('auth-modal').style.display = 'flex';
+}
+
+function closeAuthModal() {
+    document.getElementById('auth-modal').style.display = 'none';
+}
+
+function showAuthForm(type) {
+    const loginForm = document.getElementById('auth-login-form');
+    const registerForm = document.getElementById('auth-register-form');
+    if (type === 'login') {
+        if (loginForm) loginForm.style.display = 'block';
+        if (registerForm) registerForm.style.display = 'none';
+    } else {
+        if (loginForm) loginForm.style.display = 'none';
+        if (registerForm) registerForm.style.display = 'block';
+    }
+}
+
+async function customerLogin(e) {
+    e.preventDefault();
+    const phone = document.getElementById('login-phone').value;
+    const password = document.getElementById('login-password').value;
+
+    try {
+        const res = await fetch('/customer/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, password })
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            alert(error.detail || 'Erro ao fazer login');
+            return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
+        currentCustomer = data.customer;
+        closeAuthModal();
+        updateCustomerUI();
+    } catch (e) {
+        alert('Erro de conexão');
+    }
+}
+
+async function customerRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const phone = document.getElementById('register-phone').value;
+    const password = document.getElementById('register-password').value;
+
+    try {
+        const res = await fetch('/customer/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, password })
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            alert(error.detail || 'Erro ao cadastrar');
+            return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
+        currentCustomer = data.customer;
+        closeAuthModal();
+        updateCustomerUI();
+        alert('Cadastro realizado com sucesso!');
+    } catch (e) {
+        alert('Erro de conexão');
+    }
+}
+
+async function loadCustomerProfile() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    try {
+        const res = await fetch(`/customer/profile?token=${token}`);
+        if (res.ok) {
+            currentCustomer = await res.json();
+            updateCustomerUI();
+        }
+    } catch (e) { }
+}
+
+async function openHistoryModal() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    const historyList = document.getElementById('history-list');
+    historyList.innerHTML = '<p style="color: var(--text-secondary);">Carregando...</p>';
+    document.getElementById('history-modal').style.display = 'flex';
+
+    try {
+        const res = await fetch(`/customer/history?token=${token}`);
+        if (res.ok) {
+            const history = await res.json();
+            if (history.length === 0) {
+                historyList.innerHTML = '<p style="color: var(--text-secondary);">Nenhum agendamento encontrado.</p>';
+            } else {
+                historyList.innerHTML = history.map(h => `
+                    <div class="card" style="margin-bottom: 0.5rem; padding: 1rem;">
+                        <strong>${new Date(h.start_time).toLocaleDateString('pt-BR')}</strong>
+                        <span style="color: var(--accent);">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <p style="color: var(--text-secondary);">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        historyList.innerHTML = '<p style="color: var(--danger);">Erro ao carregar histórico.</p>';
+    }
+}
+
+// Prefill booking form with customer data (for logged in users)
+function prefillBookingForm() {
+    if (isCustomerLoggedIn() && currentCustomer) {
+        const nameInput = document.getElementById('customer-name');
+        const phoneInput = document.getElementById('customer-phone');
+        if (nameInput) nameInput.value = currentCustomer.name;
+        if (phoneInput) phoneInput.value = currentCustomer.phone;
+    }
 }
 
 // =========== Phone Formatting ===========
@@ -418,8 +644,55 @@ function selectSlot(time) {
 
 async function confirmBooking(e) {
     e.preventDefault();
-    const name = document.getElementById("customer-name").value;
-    const phone = document.getElementById("customer-phone").value;
+
+    // Get customer data - from logged in customer or form
+    let name, phone, customerToken = getCustomerToken();
+    let accountCreated = false;
+
+    if (isCustomerLoggedIn() && currentCustomer) {
+        name = currentCustomer.name;
+        phone = currentCustomer.phone;
+    } else {
+        name = document.getElementById("customer-name").value;
+        phone = document.getElementById("customer-phone").value;
+
+        // Check if we need to create account or login
+        const password = document.getElementById("customer-password")?.value;
+        const existingPassword = document.getElementById("existing-password")?.value;
+
+        if (phoneExists && existingPassword) {
+            // Login existing user
+            try {
+                const loginRes = await fetch('/customer/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, password: existingPassword })
+                });
+                if (loginRes.ok) {
+                    const data = await loginRes.json();
+                    customerToken = data.access_token;
+                    localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
+                    currentCustomer = data.customer;
+                }
+            } catch (e) { }
+        } else if (!phoneExists && password && password.length >= 6) {
+            // Create new account
+            try {
+                const regRes = await fetch('/customer/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, password })
+                });
+                if (regRes.ok) {
+                    const data = await regRes.json();
+                    customerToken = data.access_token;
+                    localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
+                    currentCustomer = data.customer;
+                    accountCreated = true;
+                }
+            } catch (e) { }
+        }
+    }
 
     // Construct datetime
     const start_time = `${selectedDate}T${selectedSlot}:00`;
@@ -438,8 +711,14 @@ async function confirmBooking(e) {
         bookingData.service_id = selectedService.id;
     }
 
+    // Build URL with customer token if available
+    let url = '/book';
+    if (customerToken) {
+        url += `?customer_token=${customerToken}`;
+    }
+
     try {
-        await fetchAPI('/book', {
+        await fetchAPI(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bookingData)
@@ -447,7 +726,20 @@ async function confirmBooking(e) {
 
         document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
         document.getElementById('step-success').style.display = 'block';
+
+        // Show account created message
+        if (accountCreated) {
+            const msg = document.getElementById('account-created-msg');
+            if (msg) msg.style.display = 'block';
+        }
+
+        updateCustomerUI();
     } catch (e) {
         // Error already shown by fetchAPI
     }
 }
+
+// Initialize customer profile on page load
+document.addEventListener('DOMContentLoaded', function () {
+    loadCustomerProfile();
+});
