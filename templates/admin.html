@@ -67,6 +67,132 @@
     .section.active {
         display: block;
     }
+
+    /* Barber Cards */
+    .barber-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .barber-admin-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s;
+    }
+
+    .barber-admin-card:hover {
+        box-shadow: 0 10px 25px var(--shadow);
+    }
+
+    .barber-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .barber-avatar-admin {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--accent-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--accent);
+    }
+
+    .barber-info h3 {
+        margin-bottom: 0.25rem;
+    }
+
+    .barber-info p {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .barber-schedule {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+    }
+
+    .barber-schedule i {
+        color: var(--accent);
+    }
+
+    .service-list {
+        margin-top: 1rem;
+    }
+
+    .service-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .service-item .price-original {
+        text-decoration: line-through;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .service-item .price-discount {
+        color: var(--success);
+        font-weight: bold;
+    }
+
+    .barber-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    /* Modal Improvements */
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .service-form-item {
+        background: var(--bg-secondary);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        position: relative;
+    }
+
+    .remove-service-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: var(--danger);
+        border: none;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
 </style>
 {% endblock %}
 
@@ -79,7 +205,7 @@
                 BarberAdmin
             </h2>
             <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem;">
-                <i class="fa-solid fa-user-shield"></i> Painel de Administração
+                <i class="fa-solid fa-user-shield"></i> Painel de Administracao
             </p>
         </div>
 
@@ -88,8 +214,8 @@
                     Dashboard</a></li>
             <li><a href="#" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-check"></i>
                     Agendamentos</a></li>
-            <li><a href="#" onclick="showSection('services')"><i class="fa-solid fa-list"></i> Cortes/Serviços</a></li>
-            <li><a href="#" onclick="showSection('schedule')"><i class="fa-solid fa-clock"></i> Horários</a></li>
+            <li><a href="#" onclick="showSection('barbers')"><i class="fa-solid fa-scissors"></i>
+                    Profissionais</a></li>
         </ul>
 
         <div style="margin-top: auto; padding: 1rem; border-top: 1px solid var(--border);">
@@ -100,8 +226,9 @@
     </aside>
 
     <main class="content">
+        <!-- Dashboard Section -->
         <div id="dashboard" class="section active fade-in">
-            <h1>Visão Geral</h1>
+            <h1>Visao Geral</h1>
             <p style="color: var(--text-secondary);">Bem-vindo ao painel administrativo.</p>
             <div
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
@@ -109,9 +236,12 @@
                     <h3>Agendamentos Hoje</h3>
                     <h1 id="count-today" style="color: var(--accent); font-size: 3rem;">0</h1>
                 </div>
+                <div class="card">
+                    <h3>Profissionais Ativos</h3>
+                    <h1 id="barber-count" style="color: var(--success); font-size: 3rem;">0</h1>
+                </div>
             </div>
 
-            <!-- Charts Section -->
             <div
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1rem; margin-top: 2rem;">
                 <div class="card">
@@ -119,7 +249,7 @@
                     <canvas id="appointmentsChart"></canvas>
                 </div>
                 <div class="card">
-                    <h3>Serviços Mais Populares</h3>
+                    <h3>Servicos Mais Populares</h3>
                     <div style="max-height: 300px; display: flex; justify-content: center;">
                         <canvas id="servicesChart"></canvas>
                     </div>
@@ -127,63 +257,69 @@
             </div>
         </div>
 
+        <!-- Appointments Section -->
         <div id="appointments" class="section fade-in">
             <h1>Agendamentos</h1>
             <div class="card" style="margin-top: 1rem;">
-                <!-- List will be populated by JS -->
                 <ul id="appointment-list" style="list-style: none;"></ul>
             </div>
         </div>
 
-        <div id="services" class="section fade-in">
+        <!-- Barbers Section (NEW) -->
+        <div id="barbers" class="section fade-in">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>Serviços</h1>
-                <button class="btn btn-primary" onclick="openServiceModal()">
-                    <i class="fa-solid fa-plus"></i> Novo Serviço
+                <h1><i class="fa-solid fa-scissors"></i> Profissionais</h1>
+                <button class="btn btn-primary" onclick="openBarberModal()">
+                    <i class="fa-solid fa-plus"></i> Novo Profissional
                 </button>
             </div>
-            <div id="services-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
-                <!-- Services -->
-            </div>
-        </div>
-
-        <div id="schedule" class="section fade-in">
-            <h1>Configurar Horários</h1>
-            <div class="card" style="margin-top: 1rem;">
-                <form id="schedule-form" onsubmit="saveSchedule(event)">
-                    <p style="margin-bottom: 1rem;">Definir horário padrão de atendimento.</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label>Inicio</label>
-                            <input type="time" name="start_time" required>
-                        </div>
-                        <div>
-                            <label>Fim</label>
-                            <input type="time" name="end_time" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Salvar Horário</button>
-                </form>
+            <div id="barbers-admin-list" class="barber-grid">
+                <!-- Barbers loaded via JS -->
             </div>
         </div>
     </main>
 </div>
 
-<!-- Simple Modal for Add Service -->
-<div id="service-modal"
+<!-- Barber Modal -->
+<div id="barber-modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
-    <div class="card" style="width: 400px; max-width: 90%;">
-        <h2>Novo Serviço</h2>
-        <form id="service-form" onsubmit="createService(event)">
-            <label>Nome do Corte</label>
-            <input type="text" name="name" placeholder="Ex: Corte Masculino" required>
-            <label>Duração (minutos)</label>
-            <input type="number" name="duration" placeholder="Ex: 30" required>
-            <label>Preço</label>
-            <input type="text" name="price" placeholder="Ex: R$ 30,00" required>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="button" class="btn"
-                    onclick="document.getElementById('service-modal').style.display='none'">Cancelar</button>
+    <div class="card modal-content" style="width: 600px; max-width: 95%;">
+        <h2 id="barber-modal-title"><i class="fa-solid fa-user-plus"></i> Novo Profissional</h2>
+        <form id="barber-form" onsubmit="saveBarber(event)">
+            <input type="hidden" id="barber-id">
+
+            <div class="form-row">
+                <div>
+                    <label>Nome *</label>
+                    <input type="text" id="barber-name" placeholder="Nome do profissional" required>
+                </div>
+                <div>
+                    <label>Telefone</label>
+                    <input type="tel" id="barber-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Horario Inicio *</label>
+                    <input type="time" id="barber-start-time" value="09:00" required>
+                </div>
+                <div>
+                    <label>Horario Fim *</label>
+                    <input type="time" id="barber-end-time" value="18:00" required>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-list"></i> Servicos</h3>
+            <div id="services-container">
+                <!-- Services added dynamically -->
+            </div>
+            <button type="button" class="btn" onclick="addServiceField()" style="margin-top: 0.5rem;">
+                <i class="fa-solid fa-plus"></i> Adicionar Servico
+            </button>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button type="button" class="btn" onclick="closeBarberModal()">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Salvar</button>
             </div>
         </form>
@@ -191,36 +327,38 @@
 </div>
 
 <script>
+    // =============== ADMIN JS ===============
+
+    let editingBarberId = null;
+
     document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('dashboard').classList.contains('active')) {
             loadDashboardStats();
         }
     });
 
+    // =============== DASHBOARD ===============
+
     async function loadDashboardStats() {
         try {
             const token = localStorage.getItem('access_token');
             const response = await fetch('/admin/dashboard-stats', {
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    console.error('Unauthorized - Redirecting to login');
                     window.location.href = '/login';
                     return;
                 }
-                console.error('Failed to fetch stats');
                 return;
             }
             const data = await response.json();
 
-            // Update big number
             document.getElementById('count-today').textContent = data.count_today;
+            document.getElementById('barber-count').textContent = data.barber_count || 0;
 
-            // Render Line Chart (Appointments & Revenue)
+            // Charts
             const ctxApp = document.getElementById('appointmentsChart').getContext('2d');
             new Chart(ctxApp, {
                 type: 'line',
@@ -249,31 +387,14 @@
                 },
                 options: {
                     responsive: true,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Qtd Atendimentos' }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                            title: { display: true, text: 'Receita (R$)' }
-                        }
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Qtd' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'R$' } }
                     }
                 }
             });
 
-            // Render Doughnut Chart (Services)
             const ctxSvc = document.getElementById('servicesChart').getContext('2d');
             new Chart(ctxSvc, {
                 type: 'doughnut',
@@ -281,64 +402,332 @@
                     labels: data.service_distribution.labels,
                     datasets: [{
                         data: data.service_distribution.data,
-                        backgroundColor: [
-                            '#3b82f6',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444',
-                            '#8b5cf6'
-                        ]
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                        }
-                    }
-                }
+                options: { responsive: true, plugins: { legend: { position: 'right' } } }
             });
-
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
         }
     }
 
-    // Hook into existing showSection if possible to reload stats when clicking Dashboard
-    const originalShowSection = window.showSection;
-    window.showSection = function (sectionId) {
-        // Find the original function in the global scope if it exists there, 
-        // or just implement the show functionality here if we can't find it easily.
-        // Assuming the original script is loaded before this block.
+    // =============== SECTION MANAGEMENT ===============
 
-        // Re-implementing base showSection logic to be safe + adding custom hook
+    window.showSection = function (sectionId) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
 
         document.getElementById(sectionId).classList.add('active');
-        // Find link that calls this section
         const link = document.querySelector(`a[onclick="showSection('${sectionId}')"]`);
         if (link) link.classList.add('active');
 
         if (sectionId === 'dashboard') {
-            // Destroy old charts to prevent duplicate hover effects if strict ref isn't kept? 
-            // Actually Chart.js might complain if canvas is reused without destroy.
-            // For simplicity, we just reload stats. If chart exists, replace logic might be needed.
-            // A simple refresh approach for this prototype:
-            // Check if chart instance exists usually requires storing it.
-            // For now, let's just clear the canvas wrapper or rely on Chart.js 3+ auto handling if we reused the variable properly (we didn't store it globally).
-            // A better way is to clear the chart before re-creating.
-
-            // To make it robust without global vars:
             const chart1 = Chart.getChart("appointmentsChart");
             if (chart1) chart1.destroy();
-
             const chart2 = Chart.getChart("servicesChart");
             if (chart2) chart2.destroy();
-
             loadDashboardStats();
+        } else if (sectionId === 'barbers') {
+            loadBarbersAdmin();
+        } else if (sectionId === 'appointments') {
+            loadAppointmentsAdmin();
         }
+    }
+
+    // =============== BARBERS MANAGEMENT ===============
+
+    async function loadBarbersAdmin() {
+        const container = document.getElementById('barbers-admin-list');
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const res = await fetch('/admin/barbers', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Failed to load');
+            const barbers = await res.json();
+
+            if (barbers.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+                        <i class="fa-solid fa-user-slash" style="font-size: 3rem; color: var(--text-secondary);"></i>
+                        <p style="margin-top: 1rem; color: var(--text-secondary);">Nenhum profissional cadastrado.</p>
+                        <button class="btn btn-primary" onclick="openBarberModal()" style="margin-top: 1rem;">
+                            <i class="fa-solid fa-plus"></i> Adicionar Profissional
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = barbers.map(b => `
+                <div class="barber-admin-card">
+                    <div class="barber-header">
+                        <div class="barber-avatar-admin">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div class="barber-info">
+                            <h3>${b.name}</h3>
+                            <p>${b.phone || 'Sem telefone'}</p>
+                            <span style="color: ${b.is_active ? 'var(--success)' : 'var(--danger)'};">
+                                <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i> 
+                                ${b.is_active ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="barber-schedule">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>${b.start_time || '09:00'} - ${b.end_time || '18:00'}</span>
+                    </div>
+
+                    <div class="service-list">
+                        <strong><i class="fa-solid fa-list"></i> Servicos (${b.services?.length || 0})</strong>
+                        ${b.services && b.services.length > 0 ? b.services.map(s => `
+                            <div class="service-item">
+                                <div>
+                                    <strong>${s.name}</strong>
+                                    <span style="color: var(--text-secondary);"> - ${s.duration_minutes}min</span>
+                                </div>
+                                <div>
+                                    ${s.discount_price ? `
+                                        <span class="price-original">R$ ${s.price.toFixed(2)}</span>
+                                        <span class="price-discount">R$ ${s.discount_price.toFixed(2)}</span>
+                                    ` : `
+                                        <span style="font-weight: bold;">R$ ${s.price.toFixed(2)}</span>
+                                    `}
+                                </div>
+                            </div>
+                        `).join('') : '<p style="color: var(--text-secondary); margin-top: 0.5rem;">Nenhum servico cadastrado</p>'}
+                    </div>
+
+                    <div class="barber-actions">
+                        <button class="btn" onclick="editBarber(${b.id})" style="flex: 1;">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteBarber(${b.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais.</p>`;
+        }
+    }
+
+    function openBarberModal() {
+        editingBarberId = null;
+        document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Novo Profissional';
+        document.getElementById('barber-id').value = '';
+        document.getElementById('barber-name').value = '';
+        document.getElementById('barber-phone').value = '';
+        document.getElementById('barber-start-time').value = '09:00';
+        document.getElementById('barber-end-time').value = '18:00';
+        document.getElementById('services-container').innerHTML = '';
+        addServiceField(); // Add one empty service field
+        document.getElementById('barber-modal').style.display = 'flex';
+    }
+
+    function closeBarberModal() {
+        document.getElementById('barber-modal').style.display = 'none';
+    }
+
+    async function editBarber(id) {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`/admin/barbers/${id}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return alert('Erro ao carregar barbeiro');
+        const barber = await res.json();
+
+        editingBarberId = id;
+        document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Editar Profissional';
+        document.getElementById('barber-id').value = id;
+        document.getElementById('barber-name').value = barber.name;
+        document.getElementById('barber-phone').value = barber.phone || '';
+        document.getElementById('barber-start-time').value = barber.start_time || '09:00';
+        document.getElementById('barber-end-time').value = barber.end_time || '18:00';
+
+        const container = document.getElementById('services-container');
+        container.innerHTML = '';
+        if (barber.services && barber.services.length > 0) {
+            barber.services.forEach(s => addServiceField(s));
+        }
+
+        document.getElementById('barber-modal').style.display = 'flex';
+    }
+
+    async function saveBarber(e) {
+        e.preventDefault();
+        const token = localStorage.getItem('access_token');
+        const id = document.getElementById('barber-id').value;
+
+        const barberData = {
+            name: document.getElementById('barber-name').value,
+            phone: document.getElementById('barber-phone').value || null,
+            start_time: document.getElementById('barber-start-time').value,
+            end_time: document.getElementById('barber-end-time').value,
+            is_active: true
+        };
+
+        // Collect services
+        const serviceItems = document.querySelectorAll('.service-form-item');
+        const services = [];
+        for (let item of serviceItems) {
+            const name = item.querySelector('.svc-name').value;
+            const duration = parseInt(item.querySelector('.svc-duration').value);
+            const price = parseFloat(item.querySelector('.svc-price').value);
+            const discount = item.querySelector('.svc-discount').value ? parseFloat(item.querySelector('.svc-discount').value) : null;
+            const svcId = item.dataset.serviceId;
+
+            if (!name || !duration || !price) continue;
+
+            if (discount !== null && discount > price) {
+                alert('Desconto nao pode ser maior que o preco!');
+                return;
+            }
+
+            services.push({ id: svcId ? parseInt(svcId) : null, name, duration_minutes: duration, price, discount_price: discount });
+        }
+
+        try {
+            let barberId = id;
+            if (id) {
+                // Update barber
+                await fetch(`/admin/barbers/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(barberData)
+                });
+            } else {
+                // Create barber
+                const res = await fetch('/admin/barbers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(barberData)
+                });
+                const newBarber = await res.json();
+                barberId = newBarber.id;
+            }
+
+            // Save services
+            for (let svc of services) {
+                if (svc.id) {
+                    // Update existing service
+                    await fetch(`/admin/barbers/${barberId}/services/${svc.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ name: svc.name, duration_minutes: svc.duration_minutes, price: svc.price, discount_price: svc.discount_price })
+                    });
+                } else {
+                    // Create new service
+                    await fetch(`/admin/barbers/${barberId}/services`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ name: svc.name, duration_minutes: svc.duration_minutes, price: svc.price, discount_price: svc.discount_price })
+                    });
+                }
+            }
+
+            closeBarberModal();
+            loadBarbersAdmin();
+        } catch (error) {
+            alert('Erro ao salvar: ' + error.message);
+        }
+    }
+
+    async function deleteBarber(id) {
+        if (!confirm('Tem certeza que deseja excluir este profissional e todos os seus servicos?')) return;
+        const token = localStorage.getItem('access_token');
+        await fetch(`/admin/barbers/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        loadBarbersAdmin();
+    }
+
+    function addServiceField(service = null) {
+        const container = document.getElementById('services-container');
+        const div = document.createElement('div');
+        div.className = 'service-form-item';
+        if (service) div.dataset.serviceId = service.id;
+
+        div.innerHTML = `
+            <button type="button" class="remove-service-btn" onclick="this.parentElement.remove()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+            <div class="form-row">
+                <div>
+                    <label>Nome do Servico</label>
+                    <input type="text" class="svc-name" placeholder="Ex: Corte Masculino" value="${service?.name || ''}" required>
+                </div>
+                <div>
+                    <label>Duracao (min)</label>
+                    <input type="number" class="svc-duration" placeholder="30" value="${service?.duration_minutes || ''}" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Preco (R$)</label>
+                    <input type="number" step="0.01" class="svc-price" placeholder="35.00" value="${service?.price || ''}" required>
+                </div>
+                <div>
+                    <label>Preco com Desconto (opcional)</label>
+                    <input type="number" step="0.01" class="svc-discount" placeholder="30.00" value="${service?.discount_price || ''}">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    // =============== APPOINTMENTS ===============
+
+    async function loadAppointmentsAdmin() {
+        const container = document.getElementById('appointment-list');
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const res = await fetch('/admin/appointments', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const apps = await res.json();
+
+            if (apps.length === 0) {
+                container.innerHTML = '<li style="text-align: center; color: var(--text-secondary);">Nenhum agendamento encontrado.</li>';
+                return;
+            }
+
+            container.innerHTML = apps.map(a => `
+                <li class="card" style="margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${new Date(a.start_time).toLocaleString('pt-BR')}</strong>
+                            <br>${a.customer_name} - ${a.customer_phone}
+                            ${a.barber ? `<br><span style="color: var(--accent);"><i class="fa-solid fa-user"></i> ${a.barber.name}</span>` : ''}
+                            ${a.barber_service ? `<br><span style="color: var(--text-secondary);">${a.barber_service.name}</span>` : ''}
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = '<li style="color: var(--danger);">Erro ao carregar agendamentos.</li>';
+        }
+    }
+
+    // =============== HELPERS ===============
+
+    function formatPhoneInput(input) {
+        let value = input.value.replace(/\D/g, '');
+        if (value.length > 11) value = value.slice(0, 11);
+        if (value.length > 0) {
+            if (value.length <= 2) value = `(${value}`;
+            else if (value.length <= 6) value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+            else if (value.length <= 10) value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+            else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+        }
+        input.value = value;
     }
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Float
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -10,22 +10,42 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
 
+class Barber(Base):
+    __tablename__ = "barbers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    phone = Column(String)
+    avatar_url = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    # Working hours for this barber
+    start_time = Column(String, default="09:00")  # e.g., "09:00"
+    end_time = Column(String, default="18:00")    # e.g., "18:00"
+    
+    services = relationship("BarberService", back_populates="barber", cascade="all, delete-orphan")
+    appointments = relationship("Appointment", back_populates="barber")
+
+class BarberService(Base):
+    """Services offered by a specific barber"""
+    __tablename__ = "barber_services"
+
+    id = Column(Integer, primary_key=True, index=True)
+    barber_id = Column(Integer, ForeignKey("barbers.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, index=True, nullable=False)
+    duration_minutes = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)  # Original price
+    discount_price = Column(Float, nullable=True)  # Discounted price (optional)
+    
+    barber = relationship("Barber", back_populates="services")
+
+# Keep Service for backwards compatibility / global services if needed
 class Service(Base):
     __tablename__ = "services"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     duration_minutes = Column(Integer)
-    price = Column(String)  # Storing as string for flexibility e.g. "R$ 30,00"
-
-class Schedule(Base):
-    __tablename__ = "schedules"
-
-    id = Column(Integer, primary_key=True, index=True)
-    day_of_week = Column(String) # e.g., "Monday", "2023-12-12" or simplified to Day Name
-    start_time = Column(String) # "09:00"
-    end_time = Column(String)   # "18:00"
-    is_active = Column(Boolean, default=True)
+    price = Column(String)  # Legacy: string format
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -33,8 +53,13 @@ class Appointment(Base):
     id = Column(Integer, primary_key=True, index=True)
     customer_name = Column(String, index=True)
     customer_phone = Column(String)
-    service_id = Column(Integer, ForeignKey("services.id"))
-    start_time = Column(DateTime) # Full datetime
+    barber_id = Column(Integer, ForeignKey("barbers.id"), nullable=True)
+    barber_service_id = Column(Integer, ForeignKey("barber_services.id"), nullable=True)
+    # Legacy field for old appointments
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=True)
+    start_time = Column(DateTime)
     end_time = Column(DateTime)
     
-    service = relationship("Service")
+    barber = relationship("Barber", back_populates="appointments")
+    barber_service = relationship("BarberService")
+    service = relationship("Service")  # Legacy

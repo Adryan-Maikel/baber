@@ -9,35 +9,85 @@ router = APIRouter(
     tags=["user"]
 )
 
-@router.get("/availability")
-def get_availability(date_str: str, service_id: int, db: Session = Depends(get_db)):
-    # date_str format YYYY-MM-DD
-    # Simple logic: Fixed slots or minute-by-minute check?
-    # Let's do simple 30 min slots for MVP or based on service duration?
-    # Better: List available start times.
-    
-    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    # Find schedule for this day
-    # Assuming "Monday", "Tuesday" etc stored in day_of_week for simplicity or specific dates
-    day_name = target_date.strftime("%A") 
-    
-    schedule = db.query(models.Schedule).filter(models.Schedule.day_of_week == day_name).first()
-    if not schedule or not schedule.is_active:
-        return {"slots": []}
-    
-    service = db.query(models.Service).filter(models.Service.id == service_id).first()
-    if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
+# =============== PUBLIC ENDPOINTS (No Auth Required) ===============
 
-    # Parse working hours
-    start_hour, start_min = map(int, schedule.start_time.split(':'))
-    end_hour, end_min = map(int, schedule.end_time.split(':'))
+@router.get("/barbers", response_model=List[schemas.BarberSimple])
+def get_barbers(db: Session = Depends(get_db)):
+    """Get all active barbers (public endpoint)"""
+    barbers = db.query(models.Barber).filter(models.Barber.is_active == True).all()
+    return barbers
+
+@router.get("/barbers/{barber_id}", response_model=schemas.Barber)
+def get_barber(barber_id: int, db: Session = Depends(get_db)):
+    """Get a specific barber with their services"""
+    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
+    if not barber:
+        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+    return barber
+
+@router.get("/barbers/{barber_id}/services", response_model=List[schemas.BarberService])
+def get_barber_services(barber_id: int, db: Session = Depends(get_db)):
+    """Get all services offered by a specific barber"""
+    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
+    if not barber:
+        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+    return barber.services
+
+# Legacy: global services (backwards compat)
+@router.get("/services", response_model=List[schemas.Service])
+def get_public_services(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get all available global services (legacy endpoint)"""
+    services = db.query(models.Service).offset(skip).limit(limit).all()
+    return services
+
+# =============== AVAILABILITY ===============
+
+@router.get("/availability")
+def get_availability(
+    date_str: str, 
+    barber_id: int,
+    barber_service_id: Optional[int] = None,
+    service_id: Optional[int] = None,  # Legacy
+    db: Session = Depends(get_db)
+):
+    """Get available time slots for a barber on a specific date"""
+    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    
+    # Get barber and their working hours
+    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
+    if not barber:
+        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+    if not barber.is_active:
+        return {"slots": [], "message": "Barbeiro não está disponível"}
+    
+    # Get service duration
+    duration_minutes = 30  # Default
+    if barber_service_id:
+        barber_service = db.query(models.BarberService).filter(
+            models.BarberService.id == barber_service_id,
+            models.BarberService.barber_id == barber_id
+        ).first()
+        if barber_service:
+            duration_minutes = barber_service.duration_minutes
+    elif service_id:
+        service = db.query(models.Service).filter(models.Service.id == service_id).first()
+        if service:
+            duration_minutes = service.duration_minutes
+
+    # Parse barber's working hours
+    try:
+        start_hour, start_min = map(int, barber.start_time.split(':'))
+        end_hour, end_min = map(int, barber.end_time.split(':'))
+    except (ValueError, AttributeError):
+        start_hour, start_min = 9, 0
+        end_hour, end_min = 18, 0
     
     work_start = datetime.combine(target_date, datetime.min.time()).replace(hour=start_hour, minute=start_min)
     work_end = datetime.combine(target_date, datetime.min.time()).replace(hour=end_hour, minute=end_min)
     
-    # Get existing appointments
+    # Get existing appointments for this barber
     appointments = db.query(models.Appointment).filter(
+        models.Appointment.barber_id == barber_id,
         models.Appointment.start_time >= work_start,
         models.Appointment.start_time < work_end
     ).all()
@@ -45,13 +95,12 @@ def get_availability(date_str: str, service_id: int, db: Session = Depends(get_d
     # Generate slots
     slots = []
     current_time = work_start
-    while current_time + timedelta(minutes=service.duration_minutes) <= work_end:
-        slot_end = current_time + timedelta(minutes=service.duration_minutes)
+    while current_time + timedelta(minutes=duration_minutes) <= work_end:
+        slot_end = current_time + timedelta(minutes=duration_minutes)
         
         # Check collision
         is_free = True
         for apt in appointments:
-            # Overlap logic: (StartA <= EndB) and (EndA >= StartB)
             if (current_time < apt.end_time) and (slot_end > apt.start_time):
                 is_free = False
                 break
@@ -59,26 +108,46 @@ def get_availability(date_str: str, service_id: int, db: Session = Depends(get_d
         if is_free:
             slots.append(current_time.strftime("%H:%M"))
         
-        # Step size? Let's say check every 30 mins or every service duration?
-        # For flexibility, let's step 30 mins.
         current_time += timedelta(minutes=30)
         
     return {"slots": slots}
 
+# =============== BOOKING ===============
+
 @router.post("/book", response_model=schemas.Appointment)
 def book_appointment(appointment: schemas.AppointmentCreate, db: Session = Depends(get_db)):
-    service = db.query(models.Service).filter(models.Service.id == appointment.service_id).first()
-    if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
+    """Book an appointment with a barber"""
+    
+    # Validate barber
+    barber = db.query(models.Barber).filter(models.Barber.id == appointment.barber_id).first()
+    if not barber:
+        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+    if not barber.is_active:
+        raise HTTPException(status_code=400, detail="Barbeiro não está disponível")
+    
+    # Get duration from barber_service or service
+    duration_minutes = 30  # Default
+    if appointment.barber_service_id:
+        barber_service = db.query(models.BarberService).filter(
+            models.BarberService.id == appointment.barber_service_id,
+            models.BarberService.barber_id == appointment.barber_id
+        ).first()
+        if not barber_service:
+            raise HTTPException(status_code=404, detail="Serviço não encontrado para este barbeiro")
+        duration_minutes = barber_service.duration_minutes
+    elif appointment.service_id:
+        service = db.query(models.Service).filter(models.Service.id == appointment.service_id).first()
+        if not service:
+            raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        duration_minutes = service.duration_minutes
+    else:
+        raise HTTPException(status_code=400, detail="É necessário informar um serviço")
         
     # Calculate end time
-    end_time = appointment.start_time + timedelta(minutes=service.duration_minutes)
-    
-    # Verify availability again (race condition check omitted for MVP)
-    # ...
+    end_time = appointment.start_time + timedelta(minutes=duration_minutes)
     
     db_appointment = models.Appointment(
-        **appointment.dict(),
+        **appointment.model_dump(),
         end_time=end_time
     )
     db.add(db_appointment)

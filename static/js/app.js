@@ -79,10 +79,79 @@ async function fetchAPI(endpoint, options = {}) {
     return res.json();
 }
 
-// Global state
+// =========== User Profile Management ===========
+
+function getUserProfile() {
+    const profile = localStorage.getItem('user_profile');
+    return profile ? JSON.parse(profile) : { name: '', phone: '' };
+}
+
+function saveUserProfile(e) {
+    if (e) e.preventDefault();
+    const name = document.getElementById('profile-name').value;
+    const phone = document.getElementById('profile-phone').value;
+
+    localStorage.setItem('user_profile', JSON.stringify({ name, phone }));
+    document.getElementById('profile-modal').style.display = 'none';
+
+    // Show success feedback
+    alert('Perfil salvo com sucesso!');
+}
+
+function loadUserProfileToForm() {
+    const profile = getUserProfile();
+    const nameInput = document.getElementById('profile-name');
+    const phoneInput = document.getElementById('profile-phone');
+
+    if (nameInput) nameInput.value = profile.name || '';
+    if (phoneInput) phoneInput.value = profile.phone || '';
+}
+
+function openProfileModal() {
+    loadUserProfileToForm();
+    document.getElementById('profile-modal').style.display = 'flex';
+}
+
+// Prefill booking form with profile data
+function prefillBookingForm() {
+    const profile = getUserProfile();
+    const nameInput = document.getElementById('customer-name');
+    const phoneInput = document.getElementById('customer-phone');
+
+    if (nameInput && !nameInput.value) nameInput.value = profile.name || '';
+    if (phoneInput && !phoneInput.value) phoneInput.value = profile.phone || '';
+}
+
+// =========== Phone Formatting ===========
+
+function formatPhoneInput(input) {
+    let value = input.value.replace(/\D/g, '');
+
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 0) {
+        if (value.length <= 2) {
+            value = `(${value}`;
+        } else if (value.length <= 6) {
+            value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+        } else if (value.length <= 10) {
+            value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+        } else {
+            value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+        }
+    }
+
+    input.value = value;
+}
+
+// =========== Booking State ===========
+
+let selectedBarber = null;
 let selectedService = null;
 let selectedDate = null;
 let selectedSlot = null;
+
+// =========== Initialization ===========
 
 document.addEventListener("DOMContentLoaded", () => {
     // Initialize theme
@@ -91,12 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Check authentication for admin pages
     checkAuth();
 
-    // Determine page
+    // Determine page and load appropriate data
     if (document.getElementById("services-list")) {
         loadServicesAdmin();
     }
-    if (document.getElementById("user-services-list")) {
-        loadServicesUser();
+    if (document.getElementById("barbers-list")) {
+        loadBarbers();
     }
     if (document.getElementById("appointment-list")) {
         loadAppointmentsAdmin();
@@ -111,16 +180,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Admin Functions
-function showSection(id) {
-    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+// =========== Admin Functions ===========
 
-    // Update active menu
-    document.querySelectorAll('.sidebar-menu a').forEach(el => el.classList.remove('active'));
-    // Simple logic to find link
-    // In real app, add IDs to links
-}
+// showSection is defined in admin.html with full implementation
 
 function openServiceModal() {
     document.getElementById('service-modal').style.display = 'flex';
@@ -171,13 +233,9 @@ async function deleteService(id) {
 async function saveSchedule(e) {
     e.preventDefault();
     const form = e.target;
-    // Hardcoding day for MVP or loop all days?
-    // Let's sets generic active schedule for "Monday" as a test or similar.
-    // Ideally UI allows selecting day.
 
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    // Create for all days for MVP simplicity
     for (const day of days) {
         await fetchAPI('/admin/schedules', {
             method: 'POST',
@@ -199,7 +257,6 @@ async function loadAppointmentsAdmin() {
     if (!container) return;
 
     const apps = await fetchAPI('/admin/appointments');
-    // Filter/Count today
     const today = new Date().toISOString().split('T')[0];
     const todayApps = apps.filter(a => a.start_time.startsWith(today));
     if (countEl) countEl.innerText = todayApps.length;
@@ -207,30 +264,97 @@ async function loadAppointmentsAdmin() {
     container.innerHTML = apps.map(a => `
         <li class="card" style="margin-bottom: 0.5rem;">
             <strong>${new Date(a.start_time).toLocaleString()}</strong> - ${a.customer_name} (${a.customer_phone})
+            ${a.barber ? `<br><span style="color: var(--accent);">Profissional: ${a.barber.name}</span>` : ''}
         </li>
     `).join('');
 }
 
-// User Functions
-async function loadServicesUser() {
-    const container = document.getElementById("user-services-list");
+// =========== User Functions ===========
+
+async function loadBarbers() {
+    const container = document.getElementById("barbers-list");
     if (!container) return;
 
-    const services = await fetchAPI('/admin/services');
-    container.innerHTML = services.map(s => `
-        <div class="card" style="cursor: pointer; transition: transform 0.2s;" onclick="selectService(${s.id}, '${s.name}', '${s.duration_minutes}', '${s.price}')">
-            <div style="display: flex; justify-content: space-between;">
-                <h3>${s.name}</h3>
-                <span style="color: var(--accent); font-weight: bold;">${s.price}</span>
+    try {
+        const barbers = await fetchAPI('/barbers');
+
+        if (barbers.length === 0) {
+            container.innerHTML = `
+                <div class="card" style="text-align: center; padding: 2rem;">
+                    <i class="fa-solid fa-user-slash" style="font-size: 2rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Nenhum profissional disponível no momento.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = barbers.map(b => `
+            <div class="card barber-card" style="cursor: pointer; transition: transform 0.2s;" onclick="selectBarber(${b.id}, '${b.name}')">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="barber-avatar">
+                        ${b.avatar_url
+                ? `<img src="${b.avatar_url}" alt="${b.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">`
+                : `<i class="fa-solid fa-user-tie" style="font-size: 2rem; color: var(--accent);"></i>`
+            }
+                    </div>
+                    <div>
+                        <h3>${b.name}</h3>
+                        <p style="color: var(--text-secondary);"><i class="fa-solid fa-circle" style="color: var(--success); font-size: 0.5rem;"></i> Disponível</p>
+                    </div>
+                </div>
             </div>
-            <p style="color: var(--text-secondary); margin-top: 0.5rem;"><i class="fa-regular fa-clock"></i> ${s.duration_minutes} min</p>
-        </div>
-    `).join('');
+        `).join('');
+    } catch (e) {
+        container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais.</p>`;
+    }
 }
 
-function selectService(id, name, duration, price) {
-    selectedService = { id, name, duration, price };
+function selectBarber(id, name) {
+    selectedBarber = { id, name };
     goToStep(2);
+    loadServicesUser();
+}
+
+async function loadServicesUser() {
+    const container = document.getElementById("user-services-list");
+    if (!container || !selectedBarber) return;
+
+    try {
+        // Load services for the selected barber
+        const services = await fetchAPI(`/barbers/${selectedBarber.id}/services`);
+
+        if (services.length === 0) {
+            container.innerHTML = `
+                <div class="card" style="text-align: center; padding: 2rem;">
+                    <p style="color: var(--text-secondary);">Este profissional ainda não possui serviços cadastrados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = services.map(s => {
+            const hasDiscount = s.discount_price && s.discount_price < s.price;
+            const displayPrice = hasDiscount
+                ? `<span style="text-decoration: line-through; color: var(--text-secondary); font-size: 0.875rem;">R$ ${s.price.toFixed(2)}</span> <span style="color: var(--success); font-weight: bold;">R$ ${s.discount_price.toFixed(2)}</span>`
+                : `<span style="color: var(--accent); font-weight: bold;">R$ ${s.price.toFixed(2)}</span>`;
+
+            return `
+            <div class="card" style="cursor: pointer; transition: transform 0.2s;" onclick="selectService(${s.id}, '${s.name.replace(/'/g, "\\'")}', ${s.duration_minutes}, ${s.discount_price || s.price}, true)">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>${s.name}</h3>
+                    <div>${displayPrice}</div>
+                </div>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;"><i class="fa-regular fa-clock"></i> ${s.duration_minutes} min</p>
+            </div>
+        `}).join('');
+    } catch (e) {
+        container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar serviços.</p>`;
+    }
+}
+
+function selectService(id, name, duration, price, isBarberService = false) {
+    selectedService = { id, name, duration, price, isBarberService };
+    goToStep(3);
     loadSlots();
 }
 
@@ -238,10 +362,20 @@ function goToStep(step) {
     document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
     document.getElementById(`step-${step}`).style.display = 'block';
 
-    if (step === 3) {
-        document.getElementById("confirm-service-name").innerText = `${selectedService.name} (${selectedService.price})`;
-        document.getElementById("confirm-date-time").innerText = `${selectedDate} às ${selectedSlot}`;
+    if (step === 4) {
+        // Prefill with saved profile
+        prefillBookingForm();
+
+        // Update confirmation display
+        document.getElementById("confirm-barber-name").innerText = selectedBarber ? `✂️ ${selectedBarber.name}` : '';
+        document.getElementById("confirm-service-name").innerText = `${selectedService.name} (R$ ${typeof selectedService.price === 'number' ? selectedService.price.toFixed(2) : selectedService.price})`;
+        document.getElementById("confirm-date-time").innerText = `📅 ${formatDateBR(selectedDate)} às ${selectedSlot}`;
     }
+}
+
+function formatDateBR(dateStr) {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
 }
 
 async function loadSlots() {
@@ -253,10 +387,17 @@ async function loadSlots() {
     container.innerHTML = '<p>Carregando...</p>';
 
     try {
-        const data = await fetchAPI(`/availability?date_str=${date}&service_id=${selectedService.id}`);
+        let endpoint = `/availability?date_str=${date}&barber_id=${selectedBarber.id}`;
+        if (selectedService.isBarberService) {
+            endpoint += `&barber_service_id=${selectedService.id}`;
+        } else {
+            endpoint += `&service_id=${selectedService.id}`;
+        }
+
+        const data = await fetchAPI(endpoint);
 
         if (data.slots.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível.</p>';
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
             return;
         }
 
@@ -266,13 +407,13 @@ async function loadSlots() {
             </button>
         `).join('');
     } catch (e) {
-        container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar horários. Verifique se a barbearia está aberta.</p>';
+        container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar horários. Verifique se a barbearia está aberta neste dia.</p>';
     }
 }
 
 function selectSlot(time) {
     selectedSlot = time;
-    goToStep(3);
+    goToStep(4);
 }
 
 async function confirmBooking(e) {
@@ -281,20 +422,32 @@ async function confirmBooking(e) {
     const phone = document.getElementById("customer-phone").value;
 
     // Construct datetime
-    // selectedDate is YYYY-MM-DD, selectedSlot is HH:MM
     const start_time = `${selectedDate}T${selectedSlot}:00`;
 
-    await fetchAPI('/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            customer_name: name,
-            customer_phone: phone,
-            service_id: selectedService.id,
-            start_time: start_time
-        })
-    });
+    const bookingData = {
+        customer_name: name,
+        customer_phone: phone,
+        barber_id: selectedBarber.id,
+        start_time: start_time
+    };
 
-    document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
-    document.getElementById('step-success').style.display = 'block';
+    // Add service ID based on type
+    if (selectedService.isBarberService) {
+        bookingData.barber_service_id = selectedService.id;
+    } else {
+        bookingData.service_id = selectedService.id;
+    }
+
+    try {
+        await fetchAPI('/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData)
+        });
+
+        document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
+        document.getElementById('step-success').style.display = 'block';
+    } catch (e) {
+        // Error already shown by fetchAPI
+    }
 }

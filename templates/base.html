@@ -15,10 +15,15 @@
 </head>
 
 <body data-theme="dark">
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <i class="fa-solid fa-moon" id="theme-icon"></i>
-    </button>
+    <!-- Top Buttons (Profile + Theme Toggle) -->
+    <div class="top-buttons">
+        <button class="profile-btn" onclick="openProfileModal()" aria-label="Perfil">
+            <i class="fa-solid fa-user"></i>
+        </button>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+    </div>
 
     {% block content %}{% endblock %}
 

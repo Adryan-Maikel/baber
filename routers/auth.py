@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
 import bcrypt
+import os
+import warnings
 import models, schemas
 from database import get_db
 
@@ -14,9 +16,11 @@ router = APIRouter(
 )
 
 # Security configurations
-SECRET_KEY = "your-secret-key-change-in-production-12345678"
+SECRET_KEY = os.getenv("SECRET_KEY", "INSECURE-DEFAULT-KEY-CHANGE-IN-PRODUCTION")
+if "INSECURE" in SECRET_KEY:
+    warnings.warn("⚠️  Usando SECRET_KEY padrão! Configure a variável de ambiente SECRET_KEY para produção.", UserWarning)
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours default
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 

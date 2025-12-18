@@ -5,16 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers import admin, user, auth
 import models
+import os
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Barbershop API")
 
-# CORS
+# CORS - Configure via environment variable for production
+# Example: ALLOWED_ORIGINS=https://mybarbershop.com,https://admin.mybarbershop.com
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

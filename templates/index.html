@@ -9,19 +9,29 @@
         <p style="color: var(--text-secondary);">Agende seu horário com facilidade</p>
     </header>
 
-    <!-- Step 1: Select Service -->
+    <!-- Step 1: Select Barber -->
     <div id="step-1" class="step fade-in">
-        <h2>1. Escolha o serviço</h2>
+        <h2>1. Escolha o profissional</h2>
+        <div id="barbers-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
+            <!-- Loaded via JS -->
+        </div>
+    </div>
+
+    <!-- Step 2: Select Service -->
+    <div id="step-2" class="step fade-in" style="display: none;">
+        <button class="btn" onclick="goToStep(1)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
+            Voltar</button>
+        <h2>2. Escolha o serviço</h2>
         <div id="user-services-list" style="display: grid; gap: 1rem; margin-top: 1rem;">
             <!-- Loaded via JS -->
         </div>
     </div>
 
-    <!-- Step 2: Date & Time -->
-    <div id="step-2" class="step fade-in" style="display: none;">
-        <button class="btn" onclick="goToStep(1)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
+    <!-- Step 3: Date & Time -->
+    <div id="step-3" class="step fade-in" style="display: none;">
+        <button class="btn" onclick="goToStep(2)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
             Voltar</button>
-        <h2>2. Escolha o horário</h2>
+        <h2>3. Escolha o horário</h2>
         <label>Data</label>
         <input type="date" id="booking-date" onchange="loadSlots()">
 
@@ -31,20 +41,22 @@
         </div>
     </div>
 
-    <!-- Step 3: Confirm -->
-    <div id="step-3" class="step fade-in" style="display: none;">
-        <button class="btn" onclick="goToStep(2)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
+    <!-- Step 4: Confirm -->
+    <div id="step-4" class="step fade-in" style="display: none;">
+        <button class="btn" onclick="goToStep(3)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
             Voltar</button>
-        <h2>3. Seus Dados</h2>
+        <h2>4. Seus Dados</h2>
         <div class="card">
+            <h3 id="confirm-barber-name" style="color: var(--accent);"></h3>
             <h3 id="confirm-service-name">Service</h3>
-            <p id="confirm-date-time" style="color: var(--accent); margin-bottom: 1rem;">Date Time</p>
+            <p id="confirm-date-time" style="color: var(--text-secondary); margin-bottom: 1rem;">Date Time</p>
 
             <form onsubmit="confirmBooking(event)">
                 <label>Seu Nome</label>
                 <input type="text" id="customer-name" required>
                 <label>Telefone</label>
-                <input type="tel" id="customer-phone" required>
+                <input type="tel" id="customer-phone" placeholder="(11) 99999-1234" required
+                    oninput="formatPhoneInput(this)">
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Confirmar Agendamento</button>
             </form>
         </div>
@@ -58,5 +70,26 @@
         <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
     </div>
 
+</div>
+
+<!-- Profile Modal -->
+<div id="profile-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
+    <div class="card" style="width: 400px; max-width: 90%;">
+        <h2><i class="fa-solid fa-user"></i> Seu Perfil</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Salve seus dados para agendamentos mais rápidos.
+        </p>
+        <form id="profile-form" onsubmit="saveUserProfile(event)">
+            <label>Nome</label>
+            <input type="text" id="profile-name" placeholder="Seu nome completo">
+            <label>Telefone</label>
+            <input type="tel" id="profile-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="button" class="btn"
+                    onclick="document.getElementById('profile-modal').style.display='none'">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
