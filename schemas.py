@@ -24,6 +24,8 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str = "admin"
+    role: str = "admin"
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -71,10 +73,13 @@ class BarberBase(BaseModel):
     end_interval: Optional[str] = None
 
 class BarberCreate(BarberBase):
-    pass
+    username: Optional[str] = None
+    password: Optional[str] = None
 
 class BarberUpdate(BaseModel):
     name: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     is_active: Optional[bool] = None
@@ -193,6 +198,7 @@ class Appointment(AppointmentBase):
     id: int
     end_time: datetime
     status: str = "scheduled"
+    feedback_notes: Optional[str] = None
     barber: Optional[BarberSimple] = None
     barber_service: Optional[BarberService] = None
     service: Optional[Service] = None  # Legacy
@@ -208,6 +214,12 @@ class AppointmentMediaBase(BaseModel):
 
 class AppointmentMediaCreate(AppointmentMediaBase):
     appointment_id: int
+
+class FeedbackCreate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    media_url: Optional[str] = None
+    media_type: str = "image"
 
 class AppointmentMedia(AppointmentMediaBase):
     id: int

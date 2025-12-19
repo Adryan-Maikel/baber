@@ -101,13 +101,18 @@ def get_password_hash(password: str) -> str:
 
 
 def authenticate_user(db: Session, username: str, password: str):
-    """Authenticate a user by username and password"""
+    """Authenticate a user (Admin or Barber) by username and password"""
+    # 1. Try Admin/User
     user = db.query(models.User).filter(models.User.username == username).first()
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
+    if user and verify_password(password, user.hashed_password):
+        return user, "admin"
+    
+    # 2. Try Barber
+    barber = db.query(models.Barber).filter(models.Barber.username == username).first()
+    if barber and barber.hashed_password and verify_password(password, barber.hashed_password):
+        return barber, "barber"
+        
+    return None, None
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -123,7 +128,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Get the current authenticated user from token"""
+    """Get the current authenticated user (Admin or Barber) from token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -132,21 +137,35 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        role: str = payload.get("role", "admin")  # Default to admin for legacy tokens
         if username is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
     
-    user = db.query(models.User).filter(models.User.username == username).first()
+    if role == "barber":
+        user = db.query(models.Barber).filter(models.Barber.username == username).first()
+    else:
+        user = db.query(models.User).filter(models.User.username == username).first()
+        
     if user is None:
         raise credentials_exception
+        
+    # Attach role to user object temporary for permission checks
+    user.role = role
     return user
 
 
-def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
+def get_current_admin_user(current_user = Depends(get_current_user)):
     """Ensure the current user is an admin"""
-    if not current_user.is_admin:
+    if getattr(current_user, "role", "admin") != "admin":
+        raise HTTPException(status_code=403, detail="Apenas administradores podem acessar este recurso")
+    if hasattr(current_user, "is_admin") and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    return current_user
+
+def get_current_panel_user(current_user = Depends(get_current_user)):
+    """Ensure the current user is authorized for panel (Admin or Barber)"""
     return current_user
 
 
@@ -170,7 +189,7 @@ async def login(
             headers={"Retry-After": str(wait_time)}
         )
     
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user, role = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         # Record failed attempt
         delay = record_failed_attempt(db, identifier)
@@ -188,9 +207,10 @@ async def login(
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.username, "role": role, "id": user.id}, 
+        expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "role": role}
 
 
 @router.post("/register", response_model=schemas.User)

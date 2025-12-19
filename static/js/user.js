@@ -266,6 +266,153 @@ let selectedService = null;
 let selectedDate = null;
 let selectedSlot = null;
 
+// =========== Stories State ===========
+let storiesData = {}; // barberId -> { stories: [], viewed: boolean }
+let currentStoryBarberId = null;
+let currentStoryIndex = 0;
+let storyTimer = null;
+let storyStartTime = 0;
+let STORY_DURATION = 5000; // 5 seconds for images
+
+// =========== Stories Functions ===========
+
+async function fetchStories() {
+    try {
+        const res = await fetch('/stories');
+        if (res.ok) {
+            const data = await res.json();
+            // Process stories
+            data.forEach(group => {
+                storiesData[group.barber_id] = {
+                    ...group,
+                    viewed: false // simplified viewed state (in-memory)
+                };
+            });
+        }
+    } catch (e) { console.error("Error fetching stories", e); }
+}
+
+function openStoryViewer(barberId) {
+    if (!storiesData[barberId]) return;
+
+    currentStoryBarberId = barberId;
+    currentStoryIndex = 0;
+
+    const group = storiesData[barberId];
+
+    document.getElementById('story-barber-name').textContent = group.barber_name;
+    document.getElementById('story-barber-avatar').src = group.barber_avatar || '/static/img/default-avatar.png';
+    const modal = document.getElementById('story-viewer-modal');
+    modal.style.display = 'flex';
+
+    showStory(currentStoryIndex);
+}
+
+function closeStoryViewer() {
+    document.getElementById('story-viewer-modal').style.display = 'none';
+    clearTimeout(storyTimer);
+    const video = document.querySelector('#story-content video');
+    if (video) video.pause();
+    currentStoryBarberId = null;
+}
+
+function showStory(index) {
+    if (!currentStoryBarberId || !storiesData[currentStoryBarberId]) return;
+
+    const stories = storiesData[currentStoryBarberId].stories;
+    if (index >= stories.length) {
+        closeStoryViewer();
+        return;
+    }
+    if (index < 0) {
+        // Option: go to previous barber? For now just stay at 0
+        currentStoryIndex = 0;
+        return;
+    }
+
+    currentStoryIndex = index;
+    const story = stories[index];
+    const container = document.getElementById('story-media-container');
+    const timeLabel = document.getElementById('story-time');
+
+    // Update progress bars
+    renderProgressBars(stories.length, index);
+
+    // Format relative time (simple)
+    const date = new Date(story.created_at);
+    timeLabel.textContent = date.toLocaleDateString();
+
+    container.innerHTML = '';
+    clearTimeout(storyTimer);
+
+    if (story.media_type === 'video') {
+        const video = document.createElement('video');
+        video.src = story.media_url;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.controls = false;
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '100%';
+
+        video.onended = () => nextStory();
+        video.oncanplay = () => {
+            // Progress bar handling for video would require update loop, using css animation for now
+            startProgress(video.duration * 1000);
+        };
+        container.appendChild(video);
+    } else {
+        const img = document.createElement('img');
+        img.src = story.media_url;
+        container.appendChild(img);
+        startProgress(STORY_DURATION);
+        storyTimer = setTimeout(nextStory, STORY_DURATION);
+    }
+}
+
+function nextStory() {
+    showStory(currentStoryIndex + 1);
+}
+
+function prevStory() {
+    showStory(currentStoryIndex - 1);
+}
+
+function startProgress(duration) {
+    const bars = document.querySelectorAll('.story-progress-fill');
+    if (bars[currentStoryIndex]) {
+        // Reset current
+        bars[currentStoryIndex].style.transition = 'none';
+        bars[currentStoryIndex].style.width = '0%';
+
+        // Force reflow
+        void bars[currentStoryIndex].offsetWidth;
+
+        // Start animation
+        bars[currentStoryIndex].style.transition = `width ${duration}ms linear`;
+        bars[currentStoryIndex].style.width = '100%';
+    }
+}
+
+function renderProgressBars(count, activeIndex) {
+    const container = document.getElementById('story-progress-bars');
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'story-progress-bar';
+        const fill = document.createElement('div');
+        fill.className = 'story-progress-fill';
+
+        if (i < activeIndex) {
+            fill.style.width = '100%';
+        } else if (i > activeIndex) {
+            fill.style.width = '0%';
+        }
+
+        bar.appendChild(fill);
+        container.appendChild(bar);
+    }
+}
+
 // =========== Booking Functions ===========
 
 async function loadBarbers() {
@@ -279,18 +426,29 @@ async function loadBarbers() {
             return;
         }
 
-        container.innerHTML = barbers.map(b => `
+        // Fetch stories first
+        await fetchStories();
+
+        container.innerHTML = barbers.map(b => {
+            const hasStories = storiesData[b.id] && storiesData[b.id].stories.length > 0;
+            const ringClass = hasStories ? 'story-ring' : '';
+            const avatarHtml = `
+                <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer(${b.id})"` : ''}>
+                    <img src="${b.avatar_url || '/static/img/default-avatar.png'}" 
+                         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">
+                </div>
+             `;
+
+            return `
             <div class="card barber-card" onclick="selectBarber(${b.id}, '${b.name}')" 
                  style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="barber-avatar">
-                    <i class="fa-solid fa-user" style="font-size: 1.5rem; color: var(--accent);"></i>
-                </div>
+                 ${avatarHtml}
                 <div>
                     <h3>${b.name}</h3>
                     <p style="color: var(--text-secondary);">${b.services?.length || 0} serviços disponíveis</p>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } catch (e) {
         container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar profissionais.</p>';
     }

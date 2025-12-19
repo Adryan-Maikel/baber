@@ -46,6 +46,6 @@ def read_root(request: Request):
 def read_login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/admin")
+@app.get("/panel")
 def read_admin(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})

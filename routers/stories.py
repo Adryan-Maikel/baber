@@ -17,8 +17,7 @@ STORIES_RETENTION_DAYS = 7
 
 @router.get("")
 def get_all_stories(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
+    db: Session = Depends(get_db)
 ):
     """Get all stories (media from last 7 days) grouped by barber"""
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)
@@ -63,8 +62,7 @@ def get_all_stories(
 @router.get("/barber/{barber_id}")
 def get_barber_stories(
     barber_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
+    db: Session = Depends(get_db)
 ):
     """Get stories for a specific barber"""
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)
@@ -105,8 +103,7 @@ def get_barber_stories(
 @router.get("/recent")
 def get_recent_stories(
     limit: int = Query(default=10, le=50),
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
+    db: Session = Depends(get_db)
 ):
     """Get most recent stories across all barbers"""
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)

@@ -177,6 +177,18 @@ def book_appointment(
         
     # Calculate end time
     end_time = appointment.start_time + timedelta(minutes=duration_minutes)
+
+    # Check for conflicts (Overlapping appointments)
+    # Logic: (StartA < EndB) and (EndA > StartB)
+    existing_appointment = db.query(models.Appointment).filter(
+        models.Appointment.barber_id == appointment.barber_id,
+        models.Appointment.status == "scheduled", # Only check active appointments
+        models.Appointment.start_time < end_time,
+        models.Appointment.end_time > appointment.start_time
+    ).first()
+
+    if existing_appointment:
+        raise HTTPException(status_code=409, detail="Horário já reservado por outro cliente")
     
     db_appointment = models.Appointment(
         **appointment.model_dump(),

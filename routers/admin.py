@@ -5,11 +5,11 @@ from typing import List, Dict, Any, Optional
 from datetime import date, timedelta, datetime
 import models, schemas
 from database import get_db
-from routers.auth import get_current_admin_user
+from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash
 
 router = APIRouter(
-    prefix="/admin",
-    tags=["admin"]
+    prefix="/panel",
+    tags=["panel"]
 )
 
 # =============== BARBER CRUD ===============
@@ -22,7 +22,9 @@ def list_barbers(db: Session = Depends(get_db), current_user: models.User = Depe
 @router.post("/barbers", response_model=schemas.Barber)
 def create_barber(barber: schemas.BarberCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
     """Create a new barber"""
-    db_barber = models.Barber(**barber.model_dump())
+    db_barber = models.Barber(**barber.model_dump(exclude={'password'}))
+    if barber.password:
+        db_barber.hashed_password = get_password_hash(barber.password)
     db.add(db_barber)
     db.commit()
     db.refresh(db_barber)
@@ -44,6 +46,10 @@ def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Sessi
         raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
     
     update_data = barber_update.model_dump(exclude_unset=True)
+    if 'password' in update_data and update_data['password']:
+        update_data['hashed_password'] = get_password_hash(update_data['password'])
+        del update_data['password']
+        
     for key, value in update_data.items():
         setattr(db_barber, key, value)
     
@@ -155,10 +161,15 @@ def read_appointments(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db), 
-    current_user: models.User = Depends(get_current_admin_user)
+    current_user = Depends(get_current_panel_user)
 ):
     """Get appointments with optional date and barber filters"""
     query = db.query(models.Appointment)
+    
+    # If user is a barber, force filter
+    if getattr(current_user, "role", "admin") == "barber":
+        barber_id = current_user.id
+
     
     # Filter by date (default: today)
     if date_filter:
@@ -188,9 +199,13 @@ def get_dashboard_stats(
     start_date: Optional[str] = None,  # YYYY-MM-DD
     end_date: Optional[str] = None,    # YYYY-MM-DD
     db: Session = Depends(get_db), 
-    current_user: models.User = Depends(get_current_admin_user)
+    current_user = Depends(get_current_panel_user)
 ):
     """Get dashboard stats with optional filters"""
+    # If user is a barber, force filter
+    if getattr(current_user, "role", "admin") == "barber":
+        barber_id = current_user.id
+
     today = date.today()
     
     # Parse dates or use defaults (last 7 days)
@@ -343,3 +358,37 @@ def get_appointment_media(
         })
     
     return media_list
+
+
+@router.post("/appointments/{appointment_id}/feedback")
+def submit_feedback(
+    appointment_id: int,
+    feedback: schemas.FeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_panel_user)
+):
+    """Submit feedback for an appointment (notes, no-show status)"""
+    # Check permission: Admin or the assigned Barber
+    appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+    
+    if getattr(current_user, "role", "admin") == "barber":
+        if appointment.barber_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Você não tem permissão para alterar este agendamento")
+            
+    if feedback.status:
+        appointment.status = feedback.status
+    if feedback.notes:
+        appointment.feedback_notes = feedback.notes
+        
+    if feedback.media_url:
+        media = models.AppointmentMedia(
+            appointment_id=appointment.id,
+            media_url=feedback.media_url,
+            media_type=feedback.media_type
+        )
+        db.add(media)
+        
+    db.commit()
+    return {"ok": True, "appointment_id": appointment.id}

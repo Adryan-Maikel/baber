@@ -197,6 +197,32 @@
             style="width: 100%; margin-top: 1rem;">Fechar</button>
     </div>
 </div>
+</div>
+</div>
+
+<!-- Story Viewer Modal -->
+<div id="story-viewer-modal">
+    <div class="story-progress-container" id="story-progress-bars"></div>
+    <div class="story-header">
+        <div class="barber-avatar" style="width: 32px; height: 32px;">
+            <img id="story-barber-avatar" src=""
+                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        </div>
+        <span id="story-barber-name" style="font-weight: bold;"></span>
+        <span id="story-time" style="opacity: 0.7; font-size: 0.8rem;"></span>
+    </div>
+    <button class="story-close" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
+
+    <div id="story-content">
+        <button class="story-nav" onclick="prevStory()"></button>
+        <div id="story-media-container"
+            style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+            <!-- Media injected here -->
+        </div>
+        <button class="story-nav" onclick="nextStory()"></button>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}

@@ -32,6 +32,7 @@
     font-size: 1.25rem;
     background: linear-gradient(135deg, var(--accent), var(--accent-hover));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

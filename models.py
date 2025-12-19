@@ -29,6 +29,8 @@ class Barber(Base):
     name = Column(String, index=True, nullable=False)
     phone = Column(String)
     avatar_url = Column(String, nullable=True)
+    username = Column(String, unique=True, index=True, nullable=True)
+    hashed_password = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     # Working hours for this barber
     start_time = Column(String, default="09:00")  # e.g., "09:00"
@@ -88,6 +90,7 @@ class Appointment(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     status = Column(String, default="scheduled")  # scheduled, completed, no_show
+    feedback_notes = Column(String, nullable=True)
     
     customer = relationship("Customer", back_populates="appointments")
     barber = relationship("Barber", back_populates="appointments")
