@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -172,6 +172,7 @@ def get_current_panel_user(current_user = Depends(get_current_user)):
 @router.post("/login", response_model=schemas.Token)
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(get_db)
 ):
@@ -210,6 +211,16 @@ async def login(
         data={"sub": user.username, "role": role, "id": user.id}, 
         expires_delta=access_token_expires
     )
+
+    # Set cookie for server-side auth
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+    )
+
     return {"access_token": access_token, "token_type": "bearer", "role": role}
 
 
@@ -257,3 +268,9 @@ async def init_admin(db: Session = Depends(get_db)):
     db.commit()
     db.refresh(admin_user)
     return {"message": "Admin user created successfully", "username": "admin", "password": "admin123"}
+
+@router.post("/logout")
+async def logout(response: Response):
+    """Logout endpoint to clear auth cookies"""
+    response.delete_cookie("access_token")
+    return {"message": "Logged out successfully"}

@@ -241,23 +241,124 @@ async function openHistoryModal() {
     try {
         const res = await fetch(`/customer/history?token=${token}`);
         if (res.ok) {
-            const history = await res.json();
-            if (history.length === 0) {
+            currentHistory = await res.json();
+            if (currentHistory.length === 0) {
                 historyList.innerHTML = '<p style="color: var(--text-secondary);">Nenhum agendamento encontrado.</p>';
             } else {
-                historyList.innerHTML = history.map(h => `
-                    <div class="card" style="margin-bottom: 0.5rem; padding: 1rem;">
+                historyList.innerHTML = currentHistory.map(h => {
+                    const isFuture = new Date(h.start_time) > new Date();
+                    const canCancel = isFuture && h.status === 'scheduled';
+                    const statusMap = {
+                        'scheduled': { label: 'Agendado', color: 'var(--success)' },
+                        'completed': { label: 'Concluído', color: 'var(--accent)' },
+                        'no_show': { label: 'Não Compareceu', color: 'var(--danger)' },
+                        'cancelled': { label: 'Cancelado', color: 'var(--text-secondary)' }
+                    };
+                    const st = statusMap[h.status] || { label: h.status, color: 'var(--text-secondary)' };
+
+                    return `
+                <div class="card" style="margin-bottom: 0.5rem; padding: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
                         <strong>${new Date(h.start_time).toLocaleDateString('pt-BR')}</strong>
-                        <span style="color: var(--accent);">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                        <p style="color: var(--text-secondary);">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
+                        <span style="color: var(--accent); margin-left: 0.5rem;">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <p style="color: var(--text-secondary); margin-top: 0.25rem;">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
+                        <p style="font-size: 0.8rem; color: ${st.color}; margin-top: 0.25rem;">
+                            Status: ${st.label}
+                        </p>
                     </div>
-                `).join('');
+                    ${canCancel ? `
+                        <div style="display: flex; gap: 0.5rem;">
+                             <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="rescheduleAppointment(${h.id})">
+                                <i class="fa-solid fa-calendar-days"></i> Alterar
+                            </button>
+                            <button class="btn" style="background:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="cancelMyAppointment(${h.id})">
+                                Cancelar
+                            </button>
+                        </div>` : ''}
+                    </div>
+                `}).join('');
             }
         }
     } catch (e) {
         historyList.innerHTML = '<p style="color: var(--danger);">Erro ao carregar histórico.</p>';
     }
 }
+
+// Global Modal Helpers
+// Modal helpers moved to global.js
+
+let currentHistory = [];
+
+async function cancelMyAppointment(id) {
+    const confirmed = await showConfirmModal('Deseja realmente cancelar este agendamento?', 'Cancelar Agendamento');
+    if (!confirmed) return;
+
+    const token = getCustomerToken();
+    try {
+        const res = await fetch(`/customer/appointments/${id}/cancel?token=${token}`, {
+            method: 'POST'
+        });
+
+        if (res.ok) {
+            await showAlertModal('Agendamento cancelado com sucesso!');
+            openHistoryModal();
+        } else {
+            const err = await res.json();
+            let msg = err.detail || 'Falha ao cancelar';
+            if (typeof msg === 'object') {
+                msg = JSON.stringify(msg);
+            }
+            await showAlertModal('Erro: ' + msg);
+        }
+    } catch (e) {
+        await showAlertModal('Erro de conexão');
+    }
+}
+
+let rescheduleAppointmentId = null;
+
+async function rescheduleAppointment(id) {
+    const appt = currentHistory.find(h => h.id === id);
+    if (!appt) return;
+
+    // Just close modal and prepare booking flow
+    document.getElementById('history-modal').style.display = 'none';
+
+    rescheduleAppointmentId = id; // Set pending reschedule
+
+    // Pre-fill booking state
+    selectedBarber = { id: appt.barber_id, name: appt.barber_name };
+
+    const isBarberService = !!appt.barber_service_id;
+    const sId = isBarberService ? appt.barber_service_id : appt.service_id;
+
+    selectedService = {
+        id: sId,
+        name: appt.service_name,
+        duration: appt.duration_minutes,
+        price: appt.price,
+        isBarberService: isBarberService
+    };
+
+    // Pre-fill date
+    const dateStr = appt.start_time.split('T')[0];
+    document.getElementById("booking-date").value = dateStr;
+    selectedDate = dateStr;
+
+    // Go to slots and load them
+    goToStep(3);
+
+    // Trigger load immediately
+    await loadSlots();
+
+    // Scroll to booking section
+    document.getElementById("booking").scrollIntoView({ behavior: 'smooth' });
+
+    // Notify user they are rescheduling
+    await showAlertModal('Escolha o novo horário para o agendamento.', 'Alterando Agendamento');
+}
+
+
 
 // =========== Booking State ===========
 
@@ -432,23 +533,39 @@ async function loadBarbers() {
         container.innerHTML = barbers.map(b => {
             const hasStories = storiesData[b.id] && storiesData[b.id].stories.length > 0;
             const ringClass = hasStories ? 'story-ring' : '';
+
+            // New smaller avatar layout
             const avatarHtml = `
-                <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer(${b.id})"` : ''}>
+                <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer(${b.id})"` : ''} 
+                     style="width: 100px; height: 100px; min-width: 100px;">
                     <img src="${b.avatar_url || '/static/img/default-avatar.png'}" 
                          style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">
                 </div>
              `;
 
+            // Service list preview (first 3)
+            const serviceList = b.services ? b.services.slice(0, 3).map(s => `
+                <span style="font-size: 0.75rem; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary);">
+                    ${s.name}
+                </span>
+            `).join('') : '';
+            const moreServices = b.services && b.services.length > 3 ? `<span style="font-size: 0.75rem; color: var(--text-secondary);">+${b.services.length - 3}</span>` : '';
+
             return `
             <div class="card barber-card" onclick="selectBarber(${b.id}, '${b.name}')" 
-                 style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+                 style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; padding: 1.5rem; min-width: 100px; max-width: 300px;">
                  ${avatarHtml}
                 <div>
-                    <h3>${b.name}</h3>
-                    <p style="color: var(--text-secondary);">${b.services?.length || 0} serviços disponíveis</p>
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${b.name}</h3>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem;">
+                        ${serviceList} ${moreServices}
+                    </div>
                 </div>
             </div>
         `}).join('');
+
+        // CSS Grid adjustment for the new card style (simulated via inline style logic or CSS update)
+        // Ideally we update CSS, but we can rely on existing grid.
     } catch (e) {
         container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar profissionais.</p>';
     }
@@ -519,6 +636,8 @@ function formatDateBR(dateStr) {
     return `${day}/${month}/${year}`;
 }
 
+let slotsPollInterval = null;
+
 async function loadSlots() {
     if (!selectedService) return;
     const date = document.getElementById("booking-date").value;
@@ -527,28 +646,46 @@ async function loadSlots() {
     const container = document.getElementById("slots-container");
     container.innerHTML = '<p>Carregando...</p>';
 
-    try {
-        let endpoint = `/availability?date_str=${date}&barber_id=${selectedBarber.id}`;
-        if (selectedService.isBarberService) {
-            endpoint += `&barber_service_id=${selectedService.id}`;
-        } else {
-            endpoint += `&service_id=${selectedService.id}`;
+    // Clear previous poll
+    if (slotsPollInterval) clearInterval(slotsPollInterval);
+
+    const fetchSlots = async () => {
+        try {
+            let endpoint = `/availability?date_str=${date}&barber_id=${selectedBarber.id}`;
+            if (selectedService.isBarberService) {
+                endpoint += `&barber_service_id=${selectedService.id}`;
+            } else {
+                endpoint += `&service_id=${selectedService.id}`;
+            }
+
+            // Here we use fetch directly to avoid fetchAPI missing issue
+            const res = await fetch(endpoint);
+            if (!res.ok) throw new Error('Failed');
+            const data = await res.json();
+
+            if (data.slots.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
+                return;
+            }
+
+            // If selectedSlot is still in the new list, keep it selected style
+            const currentSelection = selectedSlot;
+
+            container.innerHTML = data.slots.map(slot => `
+                <button class="btn slot-btn ${slot === currentSelection ? 'selected-slot' : ''}" 
+                        style="${slot === currentSelection ? 'background: var(--accent); color: var(--text-primary);' : ''}"
+                        onclick="selectSlot('${slot}')">${slot}</button>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar horários.</p>';
         }
+    };
 
-        const data = await fetchAPI(endpoint);
-
-        if (data.slots.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
-            return;
-        }
-
-        container.innerHTML = data.slots.map(slot => `
-            <button class="btn slot-btn" onclick="selectSlot('${slot}')">${slot}</button>
-        `).join('');
-    } catch (e) {
-        container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar horários.</p>';
-    }
+    await fetchSlots();
+    // Poll every 5 seconds to keep fresh
+    slotsPollInterval = setInterval(fetchSlots, 5000);
 }
+
 
 function selectSlot(time) {
     selectedSlot = time;
@@ -624,11 +761,37 @@ async function confirmBooking(e) {
     }
 
     try {
-        await fetchAPI(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bookingData)
         });
+
+        if (response.status === 409) {
+            alert('Ops! Este horário acabou de ser reservado por outra pessoa. A lista de horários será atualizada.');
+            goToStep(3); // Go back to slots
+            loadSlots(); // Refresh
+            return;
+        }
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Erro ao agendar');
+        }
+
+        // Handle Reschedule: Cancel Old Appointment
+        if (typeof rescheduleAppointmentId !== 'undefined' && rescheduleAppointmentId) {
+            try {
+                // We use the same token as booking if available, or fetch current
+                const token = customerToken || getCustomerToken();
+                await fetch(`/customer/appointments/${rescheduleAppointmentId}/cancel?token=${token}`, { method: 'POST' });
+                // We could show a specific message
+            } catch (e) {
+                console.error("Failed to cancel old appointment during reschedule", e);
+                alert('Novo agendamento criado, mas falha ao cancelar o anterior. Por favor cancele manualmente.');
+            }
+            rescheduleAppointmentId = null;
+        }
 
         document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
         document.getElementById('step-success').style.display = 'block';
@@ -640,7 +803,16 @@ async function confirmBooking(e) {
 
         updateCustomerUI();
     } catch (e) {
-        // Error already shown
+        // Handle specific modal alert if we want consistency, but here sticking to what was there or upgrading
+        // The user.js seems to use alert() in this function predominantly, let's switch to proper modal if possible or stick to alert
+        // The catch block uses alert('Erro: ' + e.message), I will stick to that to minimize diff risk or upgrade it?
+        // Let's stick to alert for now as per this function's style, or better:
+        // Use showAlertModal if available (global.js)
+        if (typeof showAlertModal === 'function') {
+            await showAlertModal('Erro: ' + e.message);
+        } else {
+            alert('Erro: ' + e.message);
+        }
     }
 }
 

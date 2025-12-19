@@ -48,4 +48,8 @@ def read_login(request: Request):
 
 @app.get("/panel")
 def read_admin(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/login")
     return templates.TemplateResponse("admin.html", {"request": request})

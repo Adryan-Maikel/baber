@@ -140,17 +140,61 @@ def get_appointment_history(token: str, db: Session = Depends(get_db)):
     for app in appointments:
         barber_name = app.barber.name if app.barber else None
         service_name = None
+        duration = None
+        price = None
         if app.barber_service:
             service_name = app.barber_service.name
+            duration = app.barber_service.duration_minutes
+            price = app.barber_service.price
         elif app.service:
             service_name = app.service.name
+            duration = app.service.duration_minutes
+            # Legacy price was string, let's try to parse or just leave None if float expected
+            try:
+                price = float(app.service.price)
+            except:
+                price = 0.0
         
         result.append({
             "id": app.id,
             "start_time": app.start_time,
             "end_time": app.end_time,
             "barber_name": barber_name,
-            "service_name": service_name
+            "service_name": service_name,
+            "barber_id": app.barber_id,
+            "barber_service_id": app.barber_service_id,
+            "service_id": app.service_id,
+            "duration_minutes": duration,
+            "price": price,
+            "status": app.status
         })
     
     return result
+
+@router.post("/appointments/{appointment_id}/cancel")
+def cancel_appointment(appointment_id: int, token: str, db: Session = Depends(get_db)):
+    """Cancel a scheduled appointment for the current customer"""
+    customer = get_current_customer(token, db)
+    if not customer:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    
+    appointment = db.query(models.Appointment).filter(
+        models.Appointment.id == appointment_id,
+        models.Appointment.customer_id == customer.id
+    ).first()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+    
+    if appointment.status != "scheduled":
+        raise HTTPException(status_code=400, detail="Apenas agendamentos ativos podem ser cancelados")
+    
+    # Check if appointment is in the past
+    if appointment.start_time < datetime.now():
+         raise HTTPException(status_code=400, detail="Não é possível cancelar agendamentos passados")
+
+    # Soft delete: update status to 'cancelled' so it stays in history
+    appointment.status = "cancelled"
+    db.commit()
+    
+    return {"message": "Agendamento cancelado com sucesso"}

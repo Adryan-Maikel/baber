@@ -258,7 +258,10 @@ def get_dashboard_stats(
         d = start_dt + timedelta(days=i)
         d_str = d.strftime("%d/%m")
         stats["labels"].append(d_str)
-        daily_stats[d_str] = {"count": 0, "revenue": 0.0}
+        stats["appointments_data"].append(0)  # Make sure list is init with 0
+        stats["revenue_data"].append(0.0)
+        # New: Cancelled data
+        daily_stats[d_str] = {"active": 0, "cancelled": 0, "revenue": 0.0}
 
     service_counts = {}
 
@@ -266,34 +269,46 @@ def get_dashboard_stats(
         app_date_str = app.start_time.strftime("%d/%m")
         
         if app.start_time.date() == today:
-            stats["count_today"] += 1
+            # Only count active for "Today's Appointments" count
+            if app.status in ['scheduled', 'completed']:
+                stats["count_today"] += 1
             
         if app_date_str in daily_stats:
-            daily_stats[app_date_str]["count"] += 1
-            
-            # Calculate revenue from barber_service (new) or service (legacy)
-            price = 0.0
-            s_name = None
-            if app.barber_service:
-                price = app.barber_service.discount_price or app.barber_service.price
-                s_name = app.barber_service.name
-            elif app.service and app.service.price:
-                try:
-                    price_str = app.service.price.replace("R$", "").replace(" ", "").replace(",", ".")
-                    price = float(price_str)
-                    s_name = app.service.name
-                except ValueError:
-                    pass
-            
-            daily_stats[app_date_str]["revenue"] += price
-            stats["total_revenue"] += price
-            
-            if s_name:
-                service_counts[s_name] = service_counts.get(s_name, 0) + 1
+            # Check status
+            if app.status in ['cancelled', 'no_show']:
+                daily_stats[app_date_str]["cancelled"] += 1
+            else:
+                daily_stats[app_date_str]["active"] += 1
+                
+                # Calculate revenue (only for active)
+                price = 0.0
+                s_name = None
+                if app.barber_service:
+                    price = app.barber_service.discount_price or app.barber_service.price
+                    s_name = app.barber_service.name
+                elif app.service and app.service.price:
+                    try:
+                        price_str = app.service.price.replace("R$", "").replace(" ", "").replace(",", ".")
+                        price = float(price_str)
+                        s_name = app.service.name
+                    except ValueError:
+                        pass
+                
+                daily_stats[app_date_str]["revenue"] += price
+                stats["total_revenue"] += price
+                
+                if s_name:
+                    service_counts[s_name] = service_counts.get(s_name, 0) + 1
 
+    # Re-build lists from daily_stats
+    stats["appointments_data"] = [] # Reset to fill with active
+    stats["cancelled_data"] = []    # New list
+    stats["revenue_data"] = []      # Reset
+    
     for label in stats["labels"]:
-        data = daily_stats.get(label, {"count": 0, "revenue": 0.0})
-        stats["appointments_data"].append(data["count"])
+        data = daily_stats.get(label, {"active": 0, "cancelled": 0, "revenue": 0.0})
+        stats["appointments_data"].append(data["active"])
+        stats["cancelled_data"].append(data["cancelled"])
         stats["revenue_data"].append(data["revenue"])
         
     sorted_services = sorted(service_counts.items(), key=lambda item: item[1], reverse=True)[:5]

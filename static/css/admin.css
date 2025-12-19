@@ -118,11 +118,21 @@
     gap: 1rem;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    /* Better spacing */
     margin-bottom: 1.5rem;
-    padding: 1rem;
+    padding: 1.25rem;
     background: var(--card-bg);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .filter-bar select,
@@ -130,10 +140,39 @@
     margin-bottom: 0;
     width: auto;
     min-width: 150px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
 }
 
 .filter-bar .btn {
     padding: 0.5rem 1rem;
+    height: 38px;
+    /* Match input height */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.date-range-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.date-range-group input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0.25rem;
+    min-width: 130px;
 }
 
 /* Barber Cards Grid */

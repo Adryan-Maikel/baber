@@ -100,6 +100,7 @@ def get_availability(
     # Get existing appointments for this barber
     appointments = db.query(models.Appointment).filter(
         models.Appointment.barber_id == barber_id,
+        models.Appointment.status == "scheduled", # Only scheduled appointments block slots
         models.Appointment.start_time >= work_start,
         models.Appointment.start_time < work_end
     ).all()

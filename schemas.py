@@ -71,9 +71,9 @@ class BarberBase(BaseModel):
     end_time: str = "18:00"
     start_interval: Optional[str] = None
     end_interval: Optional[str] = None
+    username: Optional[str] = None
 
 class BarberCreate(BarberBase):
-    username: Optional[str] = None
     password: Optional[str] = None
 
 class BarberUpdate(BaseModel):
@@ -172,6 +172,12 @@ class AppointmentHistory(BaseModel):
     end_time: datetime
     barber_name: Optional[str] = None
     service_name: Optional[str] = None
+    barber_id: Optional[int] = None
+    barber_service_id: Optional[int] = None
+    service_id: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    price: Optional[float] = None
+    status: str
     
     class Config:
         from_attributes = True

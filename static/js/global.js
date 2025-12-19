@@ -35,7 +35,10 @@ function isAuthenticated() {
     return !!getAuthToken();
 }
 
-function logout() {
+async function logout() {
+    try {
+        await fetch('/auth/logout', { method: 'POST' });
+    } catch (e) { console.error(e); }
     localStorage.removeItem('access_token');
     window.location.href = '/login';
 }
@@ -94,3 +97,104 @@ function formatPhoneInput(input) {
 document.addEventListener('DOMContentLoaded', function () {
     initTheme();
 });
+
+// Global Modal Helpers
+function showConfirmModal(message, title = 'Confirmação') {
+    return new Promise((resolve) => {
+        // Create modal elements
+        const modalId = 'custom-confirm-modal';
+        let modal = document.getElementById(modalId);
+
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 1000;
+                display: none; align-items: center; justify-content: center;
+            `;
+
+            modal.innerHTML = `
+                <div class="card" style="width: 400px; max-width: 90%; text-align: center; padding: 2rem;">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h3 id="${modalId}-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;"></h3>
+                    <p id="${modalId}-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button id="${modalId}-cancel" class="btn">Cancelar</button>
+                        <button id="${modalId}-confirm" class="btn btn-primary">Confirmar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Update content
+        document.getElementById(`${modalId}-title`).textContent = title;
+        document.getElementById(`${modalId}-message`).textContent = message;
+
+        // Handlers
+        const close = (result) => {
+            modal.style.display = 'none';
+            resolve(result);
+        };
+
+        const confirmBtn = document.getElementById(`${modalId}-confirm`);
+        const cancelBtn = document.getElementById(`${modalId}-cancel`);
+
+        // Cloning to remove old listeners
+        const newConfirm = confirmBtn.cloneNode(true);
+        const newCancel = cancelBtn.cloneNode(true);
+
+        confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+        newConfirm.addEventListener('click', () => close(true));
+        newCancel.addEventListener('click', () => close(false));
+
+        // Show
+        modal.style.display = 'flex';
+    });
+}
+
+function showAlertModal(message, title = 'Aviso') {
+    const modalId = 'custom-alert-modal';
+    let modal = document.getElementById(modalId);
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1001;
+            display: none; align-items: center; justify-content: center;
+        `;
+        modal.innerHTML = `
+            <div class="card" style="width: 350px; max-width: 90%; text-align: center; padding: 2rem;">
+                <i class="fa-solid fa-bell" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+                <h3 id="${modalId}-title" style="margin-bottom: 0.5rem;"></h3>
+                <p id="${modalId}-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+                <div style="display: flex; justify-content: center;">
+                    <button id="${modalId}-ok" class="btn btn-primary" style="width:100px;">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById(`${modalId}-title`).textContent = title;
+    document.getElementById(`${modalId}-message`).textContent = message;
+
+    // Handler
+    return new Promise(resolve => {
+        const btn = document.getElementById(`${modalId}-ok`);
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            resolve();
+        });
+
+        modal.style.display = 'flex';
+    });
+}

@@ -360,11 +360,13 @@
         </div>
 
         <ul class="sidebar-menu">
-            <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-line"></i>
+            <li id="menu-dashboard"><a href="#" class="active" onclick="showSection('dashboard')"><i
+                        class="fa-solid fa-chart-line"></i>
                     Dashboard</a></li>
-            <li><a href="#" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-check"></i>
+            <li id="menu-appointments"><a href="#" onclick="showSection('appointments')"><i
+                        class="fa-solid fa-calendar-check"></i>
                     Agendamentos</a></li>
-            <li><a href="#" onclick="showSection('barbers')"><i class="fa-solid fa-scissors"></i>
+            <li id="menu-barbers"><a href="#" onclick="showSection('barbers')"><i class="fa-solid fa-scissors"></i>
                     Profissionais</a></li>
         </ul>
 
@@ -378,31 +380,32 @@
     <main class="content">
         <!-- Dashboard Section -->
         <div id="dashboard" class="section active fade-in">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <h1>Visao Geral</h1>
-                    <p style="color: var(--text-secondary);">Dados atualizados automaticamente</p>
-                </div>
+            <!-- Header -->
+            <div style="margin-bottom: 1.5rem;">
+                <h1>Visão Geral</h1>
+                <p style="color: var(--text-secondary);">Dados atualizados automaticamente</p>
+            </div>
 
-                <!-- Dashboard Filters -->
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                    <select id="dashboard-barber-filter" onchange="refreshDashboard()"
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+            <!-- Dashboard Filters -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <select id="dashboard-barber-filter" onchange="refreshDashboard()">
                         <option value="">Todos Profissionais</option>
                     </select>
+                </div>
 
-                    <input type="date" id="dashboard-start-date" onchange="refreshDashboard()"
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
-                    <span style="color: var(--text-secondary);">até</span>
-                    <input type="date" id="dashboard-end-date" onchange="refreshDashboard()"
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
-
-                    <div style="display: flex; gap: 0.25rem;">
-                        <button class="btn" onclick="setDashboardPeriod(0)" title="Hoje">Hoje</button>
-                        <button class="btn" onclick="setDashboardPeriod(7)" title="7 dias">7d</button>
-                        <button class="btn" onclick="setDashboardPeriod(30)" title="30 dias">30d</button>
+                <div class="filter-group">
+                    <div class="date-range-group">
+                        <input type="date" id="dashboard-start-date" onchange="refreshDashboard()">
+                        <span style="color: var(--text-secondary); font-size: 0.875rem;">até</span>
+                        <input type="date" id="dashboard-end-date" onchange="refreshDashboard()">
                     </div>
+                </div>
+
+                <div class="filter-group">
+                    <button class="btn" onclick="setDashboardPeriod(0)" title="Hoje">Hoje</button>
+                    <button class="btn" onclick="setDashboardPeriod(7)" title="7 dias">7d</button>
+                    <button class="btn" onclick="setDashboardPeriod(30)" title="30 dias">30d</button>
                 </div>
             </div>
 
@@ -445,21 +448,25 @@
 
         <!-- Appointments Section -->
         <div id="appointments" class="section fade-in">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <!-- Header -->
+            <div style="margin-bottom: 1.5rem;">
                 <h1>Agendamentos</h1>
+            </div>
 
-                <!-- Appointments Filters -->
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="color: var(--text-secondary);">Data:</label>
-                    <input type="date" id="appointments-date-filter" onchange="loadAppointmentsAdmin()"
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+            <!-- Appointments Filters -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label style="color: var(--text-secondary); margin-right: 0.5rem;">Data:</label>
+                    <input type="date" id="appointments-date-filter" onchange="loadAppointmentsAdmin()">
+                </div>
 
-                    <select id="appointments-barber-filter" onchange="loadAppointmentsAdmin()"
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary);">
+                <div class="filter-group">
+                    <select id="appointments-barber-filter" onchange="loadAppointmentsAdmin()">
                         <option value="">Todos Profissionais</option>
                     </select>
+                </div>
 
+                <div class="filter-group">
                     <button class="btn" onclick="setAppointmentsToday()">
                         <i class="fa-solid fa-calendar-day"></i> Hoje
                     </button>
@@ -513,6 +520,16 @@
                         Telefone
                         <input type="tel" id="barber-phone" placeholder="(11) 99999-1234"
                             oninput="formatPhoneInput(this)">
+                    </label>
+
+                    <!-- Auth Fields -->
+                    <label for="barber-username">
+                        Usuário (Login)
+                        <input type="text" id="barber-username" placeholder="Usuário para acesso">
+                    </label>
+                    <label for="barber-password">
+                        Senha
+                        <input type="password" id="barber-password" placeholder="Senha de acesso">
                     </label>
                 </div>
 
@@ -652,13 +669,8 @@
 
         if (role === 'barber') {
             // Hide Sidebar items
-            document.querySelectorAll('.sidebar-menu li').forEach(li => {
-                const text = li.textContent.trim();
-                if (text === 'Profissionais' || text === 'Serviços' || text === 'Configurações') {
-                    li.style.display = 'none';
-                }
-            });
-            // Also hide "Dashboard" if desired, or simplified
+            const menuBarbers = document.getElementById('menu-barbers');
+            if (menuBarbers) menuBarbers.style.display = 'none';
 
             // Hide "Novo Profissional" button in Barbers section if accessible
             const btn = document.querySelector('button[onclick="openBarberModal()"]');
@@ -803,6 +815,15 @@
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             yAxisID: 'y1',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Cancelados',
+                            data: data.cancelled_data,
+                            borderColor: '#9ca3af',
+                            backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                            yAxisID: 'y',
                             tension: 0.4,
                             fill: true
                         }
@@ -960,6 +981,8 @@
         document.getElementById('barber-avatar-url').value = '';
         document.getElementById('barber-name').value = '';
         document.getElementById('barber-phone').value = '';
+        document.getElementById('barber-username').value = '';
+        document.getElementById('barber-password').value = ''; /* Reset password */
         document.getElementById('barber-start-time').value = '09:00';
         document.getElementById('barber-end-time').value = '18:00';
         document.getElementById('barber-start-time-interval').value = '';
@@ -1035,7 +1058,7 @@
         const res = await fetch(`/panel/barbers/${id}`, {
             headers: { 'Authorization': 'Bearer ' + token }
         });
-        if (!res.ok) return alert('Erro ao carregar barbeiro');
+        if (!res.ok) return showAlertModal('Erro ao carregar barbeiro');
         const barber = await res.json();
 
         editingBarberId = id;
@@ -1046,6 +1069,8 @@
         document.getElementById('barber-avatar-url').value = barber.avatar_url || '';
         document.getElementById('barber-name').value = barber.name;
         document.getElementById('barber-phone').value = barber.phone || '';
+        document.getElementById('barber-username').value = barber.username || '';
+        document.getElementById('barber-password').value = ''; /* Don't show hash, empty means no change */
         document.getElementById('barber-start-time').value = barber.start_time || '09:00';
         document.getElementById('barber-end-time').value = barber.end_time || '18:00';
         document.getElementById('barber-start-time-interval').value = barber.start_interval || '';
@@ -1080,7 +1105,9 @@
             end_time: document.getElementById('barber-end-time').value,
             start_interval: document.getElementById('barber-start-time-interval').value || null,
             end_interval: document.getElementById('barber-end-time-interval').value || null,
-            is_active: true // default
+            is_active: true, // default
+            username: document.getElementById('barber-username').value || null,
+            password: document.getElementById('barber-password').value || null
         };
 
         // If user wants to remove avatar, set it to null
@@ -1101,7 +1128,7 @@
             if (!name || !duration || !price) continue;
 
             if (discount !== null && discount > price) {
-                alert('Desconto nao pode ser maior que o preco!');
+                await showAlertModal('Desconto nao pode ser maior que o preco!');
                 return;
             }
 
@@ -1161,12 +1188,14 @@
             closeBarberModal();
             loadBarbersAdmin();
         } catch (error) {
-            alert('Erro ao salvar: ' + error.message);
+            await showAlertModal('Erro ao salvar: ' + error.message);
         }
     }
 
     async function deleteBarber(id) {
-        if (!confirm('Tem certeza que deseja excluir este profissional e todos os seus servicos?')) return;
+        const confirmed = await showConfirmModal('Tem certeza que deseja excluir este profissional e todos os seus servicos?', 'Excluir Profissional');
+        if (!confirmed) return;
+
         const token = localStorage.getItem('access_token');
         await fetch(`/panel/barbers/${id}`, {
             method: 'DELETE',
@@ -1182,7 +1211,7 @@
         if (service) div.dataset.serviceId = service.id;
 
         div.innerHTML = `
-            <button type="button" class="remove-service-btn" onclick="this.parentElement.remove()">
+            <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
                 <i class="fa-solid fa-times"></i>
             </button>
             <div class="form-row">
@@ -1207,6 +1236,13 @@
             </div>
         `;
         container.appendChild(div);
+    }
+
+    async function removeServiceItem(btn) {
+        const confirmed = await showConfirmModal('Deseja remover este serviço?', 'Remover Serviço');
+        if (confirmed) {
+            btn.parentElement.remove();
+        }
     }
 
     // =============== APPOINTMENTS ===============
@@ -1323,7 +1359,8 @@
     }
 
     async function markNoShow(id) {
-        if (!confirm('Marcar como Não Compareceu?')) return;
+        const confirmed = await showConfirmModal('Marcar como Não Compareceu?', 'Confirmar Falta');
+        if (!confirmed) return;
         try {
             const token = localStorage.getItem('access_token');
             const res = await fetch(`/panel/appointments/${id}/no-show`, { // Ensure route exists or handle via feedback
