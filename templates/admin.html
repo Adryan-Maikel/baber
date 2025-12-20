@@ -368,13 +368,18 @@
                     Agendamentos</a></li>
             <li id="menu-barbers"><a href="#" onclick="showSection('barbers')"><i class="fa-solid fa-scissors"></i>
                     Profissionais</a></li>
+            <li id="menu-settings"><a href="#" onclick="showSection('settings')"><i class="fa-solid fa-cog"></i>
+                    Configurações</a></li>
         </ul>
 
-        <div style="margin-top: auto; padding: 1rem; border-top: 1px solid var(--border);">
-            <button class="btn" onclick="logout()" style="width: 100%; justify-content: center; color: var(--danger);">
-                <i class="fa-solid fa-right-from-bracket"></i> Sair
+        <div style="padding: 1rem; border-top: 1px solid var(--border); margin-top: auto;">
+            <button onclick="logout()"
+                style="width: 100%; padding: 0.75rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s;">
+                <i class="fa-solid fa-sign-out-alt"></i> Sair
             </button>
         </div>
+
+
     </aside>
 
     <main class="content">
@@ -490,6 +495,128 @@
                 <!-- Barbers loaded via JS -->
             </div>
         </div>
+        <!-- Settings Section -->
+        <div id="settings" class="section fade-in">
+            <div style="margin-bottom: 2rem;">
+                <h1>Configurações</h1>
+                <p style="color: var(--text-secondary);">Personalize o painel administrativo</p>
+            </div>
+
+            <div class="card" style="max-width: 800px;">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-palette"></i> Aparência
+                </h3>
+
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Tema do Painel</label>
+                        <div class="theme-selector">
+                            <div class="theme-option" onclick="setTheme('light')" id="theme-light">
+                                <div class="theme-preview light">
+                                    <div class="tp-header"></div>
+                                    <div class="tp-sidebar"></div>
+                                    <div class="tp-content"></div>
+                                </div>
+                                <span>Claro</span>
+                            </div>
+                            <div class="theme-option" onclick="setTheme('dark')" id="theme-dark">
+                                <div class="theme-preview dark">
+                                    <div class="tp-header"></div>
+                                    <div class="tp-sidebar"></div>
+                                    <div class="tp-content"></div>
+                                </div>
+                                <span>Escuro</span>
+                            </div>
+                            <div class="theme-option" onclick="setTheme('custom')" id="theme-custom">
+                                <div class="theme-preview custom"
+                                    style="background: var(--bg-color); border-color: var(--accent);">
+                                    <div class="tp-header" style="background: var(--bg-secondary);"></div>
+                                    <div class="tp-sidebar" style="background: var(--card-bg);"></div>
+                                </div>
+                                <span>Customizado</span>
+                            </div>
+                        </div>
+
+                        <!-- Custom Theme Controls -->
+                        <div id="custom-theme-controls"
+                            style="display: none; margin-top: 1rem; background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem;">
+                            <div class="filter-bar"
+                                style="margin-bottom: 0; box-shadow: none; border: none; padding: 0;">
+                                <div class="filter-group">
+                                    <label>Cor Principal</label>
+                                    <input type="color" id="color-accent" value="#3b82f6"
+                                        oninput="applyCustomColor('--accent', this.value)">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Fundo (BG)</label>
+                                    <input type="color" id="color-bg" value="#111827"
+                                        oninput="applyCustomColor('--bg-color', this.value)">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Cartões</label>
+                                    <input type="color" id="color-card" value="#1f2937"
+                                        oninput="applyCustomColor('--card-bg', this.value)">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Sidebar</label>
+                                    <input type="color" id="color-sidebar" value="#1f2937"
+                                        oninput="applyCustomColor('--sidebar-bg', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="max-width: 800px; margin-top: 1.5rem;">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-user-gear"></i> Sua Conta
+                </h3>
+                <div
+                    style="background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="barber-avatar" style="width: 60px; height: 60px;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <strong id="settings-user-name">Carregando...</strong>
+                            <p id="settings-user-role" style="color: var(--text-secondary); font-size: 0.9rem;">...</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="editProfile()">
+                        <i class="fa-solid fa-pen"></i> Editar Perfil
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Profile Modal -->
+        <div id="admin-profile-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="admin-profile-title"><i class="fa-solid fa-user-shield"></i> Editar Admin</h2>
+                    <button class="close-modal" onclick="closeAdminProfileModal()">&times;</button>
+                </div>
+                <form onsubmit="saveAdminProfile(event)">
+                    <div style="margin-bottom: 1rem;">
+                        <label>Usuário</label>
+                        <input type="text" id="admin-username" required
+                            style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label>Nova Senha (opcional)</label>
+                        <input type="password" id="admin-password" placeholder="Deixe em branco para manter"
+                            style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                    </div>
+                    <div style="text-align: right;">
+                        <button type="button" class="btn" onclick="closeAdminProfileModal()"
+                            style="margin-right: 0.5rem;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -873,6 +1000,155 @@
             loadBarbersAdmin();
         } else if (sectionId === 'appointments') {
             loadAppointmentsAdmin();
+        } else if (sectionId === 'settings') {
+            loadSettings();
+        }
+    }
+
+    // =============== SETTINGS & THEME ===============
+
+    function loadSettings() {
+        // Load user info
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('settings-user-name').textContent = payload.sub;
+                document.getElementById('settings-user-role').textContent = payload.role === 'barber' ? 'Profissional' : 'Administrador';
+            } catch (e) { }
+        }
+
+        // Highlight current theme
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        updateThemeUI(currentTheme);
+
+        // Load custom colors if any
+        if (currentTheme === 'custom') {
+            loadCustomColors();
+        }
+    }
+
+    function setTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        updateThemeUI(theme);
+
+        const customControls = document.getElementById('custom-theme-controls');
+        if (theme === 'custom') {
+            customControls.style.display = 'block';
+            loadCustomColors(); // Ensure inputs match current vars
+        } else {
+            customControls.style.display = 'none';
+            // Remove custom overrides
+            document.body.style.removeProperty('--accent');
+            document.body.style.removeProperty('--bg-color');
+            document.body.style.removeProperty('--card-bg');
+            document.body.style.removeProperty('--sidebar-bg');
+        }
+    }
+
+    function updateThemeUI(theme) {
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        const activeBtn = document.getElementById(`theme-${theme}`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        const customControls = document.getElementById('custom-theme-controls');
+        if (customControls) {
+            customControls.style.display = theme === 'custom' ? 'block' : 'none';
+        }
+    }
+
+    function applyCustomColor(varName, value) {
+        document.body.style.setProperty(varName, value);
+
+        // Save to localStorage
+        let customColors = JSON.parse(localStorage.getItem('customColors') || '{}');
+        customColors[varName] = value;
+        localStorage.setItem('customColors', JSON.stringify(customColors));
+    }
+
+    function loadCustomColors() {
+        let customColors = JSON.parse(localStorage.getItem('customColors') || '{}');
+
+        // Defaults if empty
+        if (!customColors['--accent']) customColors['--accent'] = '#3b82f6';
+        if (!customColors['--bg-color']) customColors['--bg-color'] = '#111827';
+        if (!customColors['--card-bg']) customColors['--card-bg'] = '#1f2937';
+        if (!customColors['--sidebar-bg']) customColors['--sidebar-bg'] = '#1f2937';
+
+        for (const [key, value] of Object.entries(customColors)) {
+            document.body.style.setProperty(key, value);
+
+            // Update inputs
+            const inputId = key.replace('--', 'color-'); // --accent -> color-accent
+            const input = document.getElementById(inputId);
+            if (input) input.value = value;
+        }
+    }
+
+    // Initialize Theme on Load
+    (function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+        if (savedTheme === 'custom') {
+            loadCustomColors();
+        }
+    })();
+
+    // =============== PROFILE EDITING ===============
+
+    async function editProfile() {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const role = payload.role;
+        const id = payload.id;
+
+        if (role === 'barber') {
+            // Re-use existing Barber Modal
+            // We need to fetch our own data first since editBarber expects an ID and fetches
+            await editBarber(id);
+        } else {
+            // Admin Profile
+            document.getElementById('admin-profile-modal').style.display = 'flex';
+            document.getElementById('admin-username').value = payload.sub;
+            document.getElementById('admin-password').value = '';
+        }
+    }
+
+    function closeAdminProfileModal() {
+        document.getElementById('admin-profile-modal').style.display = 'none';
+    }
+
+    async function saveAdminProfile(e) {
+        e.preventDefault();
+        const username = document.getElementById('admin-username').value;
+        const password = document.getElementById('admin-password').value;
+        const token = localStorage.getItem('access_token');
+
+        const body = { username };
+        if (password) body.password = password;
+
+        try {
+            const res = await fetch('/panel/admin/me', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Erro ao atualizar perfil');
+            }
+
+            await showAlertModal('Perfil atualizado com sucesso! Por favor, faça login novamente.');
+            logout();
+        } catch (error) {
+            await showAlertModal('Erro: ' + error.message);
         }
     }
 

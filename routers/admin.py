@@ -31,16 +31,25 @@ def create_barber(barber: schemas.BarberCreate, db: Session = Depends(get_db), c
     return db_barber
 
 @router.get("/barbers/{barber_id}", response_model=schemas.Barber)
-def get_barber(barber_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+def get_barber(barber_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_panel_user)):
     """Get a specific barber with services"""
+    # Check permissions
+    if getattr(current_user, "role", "admin") == "barber":
+        if current_user.id != barber_id:
+             raise HTTPException(status_code=403, detail="Acesso negado")
+             
     barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not barber:
         raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
     return barber
 
 @router.put("/barbers/{barber_id}", response_model=schemas.Barber)
-def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_panel_user)):
     """Update a barber's info"""
+    # Check permissions: Admin OR the barber themselves
+    if getattr(current_user, "role", "admin") == "barber":
+        if current_user.id != barber_id:
+             raise HTTPException(status_code=403, detail="Você só pode editar seu próprio perfil")
     db_barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not db_barber:
         raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
@@ -56,6 +65,31 @@ def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Sessi
     db.commit()
     db.refresh(db_barber)
     return db_barber
+
+@router.put("/admin/me")
+def update_admin_me(
+    user_update: schemas.UserCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_admin_user)
+):
+    """Update current admin credentials"""
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user_update.username:
+        if user_update.username != user.username:
+            existing = db.query(models.User).filter(models.User.username == user_update.username).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Nome de usuário já existe")
+        user.username = user_update.username
+        
+    if user_update.password:
+        user.hashed_password = get_password_hash(user_update.password)
+        
+    db.commit()
+    db.refresh(user)
+    return {"message": "Admin updated successfully"}
 
 @router.delete("/barbers/{barber_id}")
 def delete_barber(barber_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
