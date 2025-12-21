@@ -1,25 +1,20 @@
-from fastapi import APIRouter, Depends, Query
+﻿from flask import Blueprint, request, jsonify, g
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, List
 import models
-from database import get_db
-from routers.auth import get_current_admin_user
+from routers.auth import get_db
 
-router = APIRouter(
-    prefix="/stories",
-    tags=["stories"]
-)
+stories_bp = Blueprint('stories', __name__, url_prefix='/stories')
 
 # Stories are visible for 7 days
 STORIES_RETENTION_DAYS = 7
 
 
-@router.get("")
-def get_all_stories(
-    db: Session = Depends(get_db)
-):
+@stories_bp.route("", methods=["GET"])
+def get_all_stories():
     """Get all stories (media from last 7 days) grouped by barber"""
+    db = get_db()
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)
     
     # Get all media from the last 7 days with appointment and barber info
@@ -56,20 +51,18 @@ def get_all_stories(
             "service_name": appointment.barber_service.name if appointment.barber_service else None
         })
     
-    return list(barber_stories.values())
+    return jsonify(list(barber_stories.values()))
 
 
-@router.get("/barber/{barber_id}")
-def get_barber_stories(
-    barber_id: int,
-    db: Session = Depends(get_db)
-):
+@stories_bp.route("/barber/<int:barber_id>", methods=["GET"])
+def get_barber_stories(barber_id):
     """Get stories for a specific barber"""
+    db = get_db()
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)
     
     barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not barber:
-        return {"error": "Barbeiro não encontrado"}
+        return jsonify({"error": "Barbeiro não encontrado"}), 404
     
     media_list = db.query(models.AppointmentMedia).join(
         models.Appointment
@@ -92,20 +85,21 @@ def get_barber_stories(
             "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None
         })
     
-    return {
+    return jsonify({
         "barber_id": barber.id,
         "barber_name": barber.name,
         "barber_avatar": barber.avatar_url,
         "stories": stories
-    }
+    })
 
 
-@router.get("/recent")
-def get_recent_stories(
-    limit: int = Query(default=10, le=50),
-    db: Session = Depends(get_db)
-):
+@stories_bp.route("/recent", methods=["GET"])
+def get_recent_stories():
     """Get most recent stories across all barbers"""
+    db = get_db()
+    limit = request.args.get('limit', default=10, type=int)
+    if limit > 50: limit = 50
+    
     cutoff_date = datetime.utcnow() - timedelta(days=STORIES_RETENTION_DAYS)
     
     media_list = db.query(models.AppointmentMedia).join(
@@ -132,4 +126,5 @@ def get_recent_stories(
             "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None
         })
     
-    return stories
+    return jsonify(stories)
+

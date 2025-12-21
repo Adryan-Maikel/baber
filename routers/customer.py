@@ -1,44 +1,62 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from flask import Blueprint, request, jsonify, g
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import models, schemas
-from database import get_db
-from routers.auth import get_password_hash, verify_password, create_access_token
+from routers.auth import get_password_hash, verify_password, create_access_token, get_db, SECRET_KEY, ALGORITHM
+from jose import jwt, JWTError
 
-router = APIRouter(
-    prefix="/customer",
-    tags=["customer"]
-)
+customer_bp = Blueprint('customer', __name__, url_prefix='/customer')
+
+# Helper to JSONify Pydantic models
+def jsonify_pydantic(obj, schema=None):
+    if schema:
+        if isinstance(obj, list):
+            return jsonify([schema.model_validate(item).model_dump() for item in obj])
+        return jsonify(schema.model_validate(obj).model_dump())
+    if isinstance(obj, list):
+        return jsonify([item.model_dump() for item in obj])
+    return jsonify(obj.model_dump())
 
 # =============== PHONE CHECK ===============
 
-@router.get("/check-phone")
-def check_phone_exists(phone: str, db: Session = Depends(get_db)):
+@customer_bp.route("/check-phone", methods=["GET"])
+def check_phone_exists():
     """Check if a phone number is already registered"""
+    db = get_db()
+    phone = request.args.get('phone')
+    if not phone:
+        return jsonify({"exists": False})
+
     try:
         normalized_phone = schemas.validate_brazilian_phone(phone)
     except ValueError:
-        return {"exists": False}
+        return jsonify({"exists": False})
     
     exists = db.query(models.Customer).filter(models.Customer.phone == normalized_phone).first() is not None
-    return {"exists": exists}
+    return jsonify({"exists": exists})
 
 # =============== CUSTOMER AUTHENTICATION ===============
 
-@router.post("/register", response_model=schemas.CustomerToken)
-def register_customer(customer: schemas.CustomerCreate, db: Session = Depends(get_db)):
+@customer_bp.route("/register", methods=["POST"])
+def register_customer():
     """Register a new customer account"""
+    db = get_db()
+    try:
+        customer = schemas.CustomerCreate(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
     # Check if phone already exists
     existing = db.query(models.Customer).filter(models.Customer.phone == customer.phone).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Telefone já cadastrado")
+        return jsonify({"detail": "Telefone jÃ¡ cadastrado"}), 400
     
     # Check email if provided
     if customer.email:
         existing_email = db.query(models.Customer).filter(models.Customer.email == customer.email).first()
         if existing_email:
-            raise HTTPException(status_code=400, detail="Email já cadastrado")
+            return jsonify({"detail": "Email jÃ¡ cadastrado"}), 400
     
     # Create customer
     hashed_password = get_password_hash(customer.password)
@@ -55,40 +73,43 @@ def register_customer(customer: schemas.CustomerCreate, db: Session = Depends(ge
     # Generate token
     access_token = create_access_token(data={"sub": f"customer:{db_customer.id}"})
     
-    return {
+    return jsonify({
         "access_token": access_token,
         "token_type": "bearer",
-        "customer": db_customer
-    }
+        "customer": db_customer.model_dump()
+    })
 
-@router.post("/login", response_model=schemas.CustomerToken)
-def login_customer(credentials: schemas.CustomerLogin, db: Session = Depends(get_db)):
+@customer_bp.route("/login", methods=["POST"])
+def login_customer():
     """Login customer with phone and password"""
+    db = get_db()
+    try:
+        credentials = schemas.CustomerLogin(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
     # Normalize phone
     try:
         normalized_phone = schemas.validate_brazilian_phone(credentials.phone)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Telefone inválido")
+        return jsonify({"detail": "Telefone invÃ¡lido"}), 400
     
     customer = db.query(models.Customer).filter(models.Customer.phone == normalized_phone).first()
     if not customer or not verify_password(credentials.password, customer.hashed_password):
-        raise HTTPException(status_code=401, detail="Telefone ou senha incorretos")
+        return jsonify({"detail": "Telefone ou senha incorretos"}), 401
     
     access_token = create_access_token(data={"sub": f"customer:{customer.id}"})
     
-    return {
+    return jsonify({
         "access_token": access_token,
         "token_type": "bearer",
-        "customer": customer
-    }
+        "customer": customer.model_dump()
+    })
 
 # =============== CUSTOMER PROFILE ===============
 
 def get_current_customer(token: str, db: Session):
     """Utility to get current customer from token"""
-    from jose import JWTError, jwt
-    from routers.auth import SECRET_KEY, ALGORITHM
-    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         sub = payload.get("sub")
@@ -99,39 +120,75 @@ def get_current_customer(token: str, db: Session):
     except (JWTError, ValueError):
         return None
 
-@router.get("/profile", response_model=schemas.Customer)
-def get_profile(token: str, db: Session = Depends(get_db)):
-    """Get current customer profile"""
-    customer = get_current_customer(token, db)
-    if not customer:
-        raise HTTPException(status_code=401, detail="Não autenticado")
-    return customer
+def get_auth_customer():
+    """Helper to get customer from Request Authorization header"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        token = request.args.get("token") # fallback
+    else:
+        token = auth_header.split(" ")[1] if " " in auth_header else auth_header
+    
+    if not token:
+        return None
+    
+    return get_current_customer(token, get_db())
 
-@router.put("/profile", response_model=schemas.Customer)
-def update_profile(token: str, update: schemas.CustomerUpdate, db: Session = Depends(get_db)):
-    """Update customer profile"""
-    customer = get_current_customer(token, db)
+
+@customer_bp.route("/profile", methods=["GET"])
+def get_profile():
+    """Get current customer profile"""
+    token = request.args.get('token')
+    if not token:
+        # Try header
+        customer = get_auth_customer()
+    else:
+        customer = get_current_customer(token, get_db())
+        
     if not customer:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        return jsonify({"detail": "não autenticado"}), 401
+    return jsonify_pydantic(customer, schemas.Customer)
+
+@customer_bp.route("/profile", methods=["PUT"])
+def update_profile():
+    """Update customer profile"""
+    token = request.args.get('token')
+    if not token:
+         customer = get_auth_customer()
+    else:
+         customer = get_current_customer(token, get_db())
+
+    if not customer:
+        return jsonify({"detail": "não autenticado"}), 401
+    
+    try:
+        update = schemas.CustomerUpdate(**request.json)
+    except:
+        return jsonify({"detail": "Invalid data"}), 400
     
     if update.name:
         customer.name = update.name
     if update.email:
         customer.email = update.email
     
-    db.commit()
-    db.refresh(customer)
-    return customer
+    get_db().commit()
+    get_db().refresh(customer)
+    return jsonify_pydantic(customer, schemas.Customer)
 
 # =============== APPOINTMENT HISTORY ===============
 
-@router.get("/history", response_model=List[schemas.AppointmentHistory])
-def get_appointment_history(token: str, db: Session = Depends(get_db)):
+@customer_bp.route("/history", methods=["GET"])
+def get_appointment_history():
     """Get customer's appointment history"""
-    customer = get_current_customer(token, db)
+    token = request.args.get('token')
+    if not token:
+         customer = get_auth_customer()
+    else:
+         customer = get_current_customer(token, get_db())
+
     if not customer:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        return jsonify({"detail": "não autenticado"}), 401
     
+    db = get_db()
     appointments = db.query(models.Appointment).filter(
         models.Appointment.customer_id == customer.id
     ).order_by(models.Appointment.start_time.desc()).all()
@@ -157,8 +214,8 @@ def get_appointment_history(token: str, db: Session = Depends(get_db)):
         
         result.append({
             "id": app.id,
-            "start_time": app.start_time,
-            "end_time": app.end_time,
+            "start_time": app.start_time.isoformat(),
+            "end_time": app.end_time.isoformat(),
             "barber_name": barber_name,
             "service_name": service_name,
             "barber_id": app.barber_id,
@@ -169,32 +226,39 @@ def get_appointment_history(token: str, db: Session = Depends(get_db)):
             "status": app.status
         })
     
-    return result
+    return jsonify(result)
 
-@router.post("/appointments/{appointment_id}/cancel")
-def cancel_appointment(appointment_id: int, token: str, db: Session = Depends(get_db)):
+@customer_bp.route("/appointments/<int:appointment_id>/cancel", methods=["POST"])
+def cancel_appointment(appointment_id):
     """Cancel a scheduled appointment for the current customer"""
-    customer = get_current_customer(token, db)
+    token = request.args.get('token')
+    if not token:
+         customer = get_auth_customer()
+    else:
+         customer = get_current_customer(token, get_db())
+
     if not customer:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        return jsonify({"detail": "não autenticado"}), 401
     
+    db = get_db()
     appointment = db.query(models.Appointment).filter(
         models.Appointment.id == appointment_id,
         models.Appointment.customer_id == customer.id
     ).first()
     
     if not appointment:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
     
     if appointment.status != "scheduled":
-        raise HTTPException(status_code=400, detail="Apenas agendamentos ativos podem ser cancelados")
+        return jsonify({"detail": "Apenas agendamentos ativos podem ser cancelados"}), 400
     
     # Check if appointment is in the past
     if appointment.start_time < datetime.now():
-         raise HTTPException(status_code=400, detail="Não é possível cancelar agendamentos passados")
+         return jsonify({"detail": "não Ã© possÃ­vel cancelar agendamentos passados"}), 400
 
     # Soft delete: update status to 'cancelled' so it stays in history
     appointment.status = "cancelled"
     db.commit()
     
-    return {"message": "Agendamento cancelado com sucesso"}
+    return jsonify({"message": "Agendamento cancelado com sucesso"})
+

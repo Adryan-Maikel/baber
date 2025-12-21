@@ -145,20 +145,112 @@
 }
 
 /* Stories Styles */
+/* Stories Styles / Status Circle */
+@property --fill-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
 .story-ring {
     position: relative;
+    /* Remove padding-based background since we use pseudos now */
     padding: 3px;
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
     border-radius: 50%;
     cursor: pointer;
+    z-index: 1;
+    /* Ensure container is above pseudos if needed, though pseudos -1 works */
+    display: block;
+}
+
+/* Base Ring Visuals (Mobile / Default) */
+.story-ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    z-index: -1;
 }
 
 .story-ring img {
-    border: 2px solid var(--card-bg);
+    border: 3px solid var(--card-bg);
+    /* Gap */
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    position: relative;
+    /* Ensure image is above background pseudos */
+    z-index: 2;
 }
 
-.story-ring.seen {
-    background: #ccc;
+/* PC Specific Effect */
+@media (min-width: 768px) {
+    .story-ring::before {
+        opacity: 0.5;
+        transition: all 0.3s ease;
+    }
+
+    .story-ring:hover::before {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+
+    /* Remove complex ::after animation */
+    .story-ring::after {
+        display: none;
+    }
+}
+
+.story-ring.seen::before,
+.story-ring.seen::after {
+    background: var(--text-secondary);
+    opacity: 0.5;
+    transition: none;
+    /* Disable effect for seen? Or keep it simple */
+}
+
+/* Improved Card Animation - Bottom Up Growing */
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.barber-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    /* Apply popIn animation */
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* Stagger animations for cards if possible (requires nth-child which works for grid items) */
+.barber-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.barber-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.barber-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.barber-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.barber-card:nth-child(5) {
+    animation-delay: 0.5s;
 }
 
 /* Story Viewer Modal */

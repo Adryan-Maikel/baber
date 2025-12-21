@@ -1,59 +1,97 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from flask import Blueprint, request, jsonify, g
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta, datetime
 import models, schemas
-from database import get_db
-from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash
+from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash, get_db
 
-router = APIRouter(
-    prefix="/panel",
-    tags=["panel"]
-)
+admin_bp = Blueprint('admin', __name__, url_prefix='/panel')
+
+# Helper to JSONify Pydantic models
+def jsonify_pydantic(obj, schema=None):
+    if schema:
+        if isinstance(obj, list):
+            return jsonify([schema.model_validate(item).model_dump() for item in obj])
+        return jsonify(schema.model_validate(obj).model_dump())
+    if isinstance(obj, list):
+        return jsonify([item.model_dump() for item in obj])
+    return jsonify(obj.model_dump())
 
 # =============== BARBER CRUD ===============
 
-@router.get("/barbers", response_model=List[schemas.Barber])
-def list_barbers(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers", methods=["GET"])
+def list_barbers():
     """List all barbers with their services"""
-    return db.query(models.Barber).all()
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    db = get_db()
+    barbers = db.query(models.Barber).all()
+    return jsonify_pydantic(barbers, schemas.Barber)
 
-@router.post("/barbers", response_model=schemas.Barber)
-def create_barber(barber: schemas.BarberCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers", methods=["POST"])
+def create_barber():
     """Create a new barber"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
+    try:
+        barber = schemas.BarberCreate(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
     db_barber = models.Barber(**barber.model_dump(exclude={'password'}))
     if barber.password:
         db_barber.hashed_password = get_password_hash(barber.password)
     db.add(db_barber)
     db.commit()
     db.refresh(db_barber)
-    return db_barber
+    return jsonify_pydantic(db_barber, schemas.Barber)
 
-@router.get("/barbers/{barber_id}", response_model=schemas.Barber)
-def get_barber(barber_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_panel_user)):
+@admin_bp.route("/barbers/<int:barber_id>", methods=["GET"])
+def get_barber(barber_id):
     """Get a specific barber with services"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+
     # Check permissions
     if getattr(current_user, "role", "admin") == "barber":
         if current_user.id != barber_id:
-             raise HTTPException(status_code=403, detail="Acesso negado")
+             return jsonify({"detail": "Acesso negado"}), 403
              
+    db = get_db()
     barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not barber:
-        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
-    return barber
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
+    return jsonify_pydantic(barber, schemas.Barber)
 
-@router.put("/barbers/{barber_id}", response_model=schemas.Barber)
-def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_panel_user)):
+@admin_bp.route("/barbers/<int:barber_id>", methods=["PUT"])
+def update_barber(barber_id):
     """Update a barber's info"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+
     # Check permissions: Admin OR the barber themselves
     if getattr(current_user, "role", "admin") == "barber":
         if current_user.id != barber_id:
-             raise HTTPException(status_code=403, detail="Você só pode editar seu próprio perfil")
+             return jsonify({"detail": "VocÃª sÃ³ pode editar seu prÃ³prio perfil"}), 403
+    
+    db = get_db()
     db_barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not db_barber:
-        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
     
+    try:
+        barber_update = schemas.BarberUpdate(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
     update_data = barber_update.model_dump(exclude_unset=True)
     if 'password' in update_data and update_data['password']:
         update_data['hashed_password'] = get_password_hash(update_data['password'])
@@ -64,24 +102,30 @@ def update_barber(barber_id: int, barber_update: schemas.BarberUpdate, db: Sessi
     
     db.commit()
     db.refresh(db_barber)
-    return db_barber
+    return jsonify_pydantic(db_barber, schemas.Barber)
 
-@router.put("/admin/me")
-def update_admin_me(
-    user_update: schemas.UserCreate, 
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(get_current_admin_user)
-):
+@admin_bp.route("/admin/me", methods=["PUT"])
+def update_admin_me():
     """Update current admin credentials"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    try:
+        user_update = schemas.UserCreate(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
+    db = get_db()
     user = db.query(models.User).filter(models.User.id == current_user.id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        return jsonify({"detail": "User not found"}), 404
         
     if user_update.username:
         if user_update.username != user.username:
             existing = db.query(models.User).filter(models.User.username == user_update.username).first()
             if existing:
-                raise HTTPException(status_code=400, detail="Nome de usuário já existe")
+                return jsonify({"detail": "Nome de usuÃ¡rio jÃ¡ existe"}), 400
         user.username = user_update.username
         
     if user_update.password:
@@ -89,122 +133,183 @@ def update_admin_me(
         
     db.commit()
     db.refresh(user)
-    return {"message": "Admin updated successfully"}
+    return jsonify({"message": "Admin updated successfully"})
 
-@router.delete("/barbers/{barber_id}")
-def delete_barber(barber_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers/<int:barber_id>", methods=["DELETE"])
+def delete_barber(barber_id):
     """Delete a barber and all their services"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     db_barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not db_barber:
-        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
     db.delete(db_barber)
     db.commit()
-    return {"ok": True}
+    return jsonify({"ok": True})
 
 # =============== BARBER SERVICES CRUD ===============
 
-@router.get("/barbers/{barber_id}/services", response_model=List[schemas.BarberService])
-def list_barber_services(barber_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers/<int:barber_id>/services", methods=["GET"])
+def list_barber_services(barber_id):
     """Get all services for a barber"""
-    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
-    if not barber:
-        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
-    return barber.services
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
 
-@router.post("/barbers/{barber_id}/services", response_model=schemas.BarberService)
-def create_barber_service(barber_id: int, service: schemas.BarberServiceCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
-    """Add a service to a barber"""
+    db = get_db()
     barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not barber:
-        raise HTTPException(status_code=404, detail="Barbeiro não encontrado")
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
+    return jsonify_pydantic(barber.services, schemas.BarberService)
+
+@admin_bp.route("/barbers/<int:barber_id>/services", methods=["POST"])
+def create_barber_service(barber_id):
+    """Add a service to a barber"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
+    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
+    if not barber:
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
     
+    try:
+        service = schemas.BarberServiceCreate(**request.json)
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+
     db_service = models.BarberService(barber_id=barber_id, **service.model_dump())
     db.add(db_service)
     db.commit()
     db.refresh(db_service)
-    return db_service
+    return jsonify_pydantic(db_service, schemas.BarberService)
 
-@router.put("/barbers/{barber_id}/services/{service_id}", response_model=schemas.BarberService)
-def update_barber_service(barber_id: int, service_id: int, service_update: schemas.BarberServiceUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers/<int:barber_id>/services/<int:service_id>", methods=["PUT"])
+def update_barber_service(barber_id, service_id):
     """Update a barber's service"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     db_service = db.query(models.BarberService).filter(
         models.BarberService.id == service_id,
         models.BarberService.barber_id == barber_id
     ).first()
     if not db_service:
-        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        return jsonify({"detail": "ServiÃ§o não encontrado"}), 404
     
+    try:
+        service_update = schemas.BarberServiceUpdate(**request.json)
+    except Exception as e:
+         return jsonify({"detail": str(e)}), 400
+
     update_data = service_update.model_dump(exclude_unset=True)
     
     # Validate discount if both price and discount are being updated
     new_price = update_data.get('price', db_service.price)
     new_discount = update_data.get('discount_price', db_service.discount_price)
     if new_discount is not None and new_discount > new_price:
-        raise HTTPException(status_code=400, detail="Desconto não pode ser maior que o preço")
+        return jsonify({"detail": "Desconto não pode ser maior que o preÃ§o"}), 400
     
     for key, value in update_data.items():
         setattr(db_service, key, value)
     
     db.commit()
     db.refresh(db_service)
-    return db_service
+    return jsonify_pydantic(db_service, schemas.BarberService)
 
-@router.delete("/barbers/{barber_id}/services/{service_id}")
-def delete_barber_service(barber_id: int, service_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/barbers/<int:barber_id>/services/<int:service_id>", methods=["DELETE"])
+def delete_barber_service(barber_id, service_id):
     """Delete a service from a barber"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     db_service = db.query(models.BarberService).filter(
         models.BarberService.id == service_id,
         models.BarberService.barber_id == barber_id
     ).first()
     if not db_service:
-        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        return jsonify({"detail": "ServiÃ§o não encontrado"}), 404
     db.delete(db_service)
     db.commit()
-    return {"ok": True}
+    return jsonify({"ok": True})
 
 # =============== LEGACY GLOBAL SERVICES (for backwards compat) ===============
 
-@router.post("/services", response_model=schemas.Service)
-def create_service(service: schemas.ServiceCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/services", methods=["POST"])
+def create_service():
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    try:
+        service = schemas.ServiceCreate(**request.json)
+    except:
+        return jsonify({"detail": "Invalid data"}), 400
+
+    db = get_db()
     db_service = models.Service(**service.model_dump())
     db.add(db_service)
     db.commit()
     db.refresh(db_service)
-    return db_service
+    return jsonify_pydantic(db_service, schemas.Service)
 
-@router.get("/services", response_model=List[schemas.Service])
-def read_services(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/services", methods=["GET"])
+def read_services():
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    skip = request.args.get('skip', default=0, type=int)
+    limit = request.args.get('limit', default=100, type=int)
+
+    db = get_db()
     services = db.query(models.Service).offset(skip).limit(limit).all()
-    return services
+    return jsonify_pydantic(services, schemas.Service)
 
-@router.delete("/services/{service_id}")
-def delete_service(service_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_admin_user)):
+@admin_bp.route("/services/<int:service_id>", methods=["DELETE"])
+def delete_service(service_id):
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     db_service = db.query(models.Service).filter(models.Service.id == service_id).first()
     if not db_service:
-        raise HTTPException(status_code=404, detail="Service not found")
+        return jsonify({"detail": "Service not found"}), 404
     db.delete(db_service)
     db.commit()
-    return {"ok": True}
+    return jsonify({"ok": True})
 
 # =============== APPOINTMENTS ===============
 
-@router.get("/appointments", response_model=List[schemas.Appointment])
-def read_appointments(
-    date_filter: Optional[str] = None,  # YYYY-MM-DD
-    barber_id: Optional[int] = None,
-    skip: int = 0, 
-    limit: int = 100, 
-    db: Session = Depends(get_db), 
-    current_user = Depends(get_current_panel_user)
-):
+@admin_bp.route("/appointments", methods=["GET"])
+def read_appointments():
     """Get appointments with optional date and barber filters"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+
+    db = get_db()
+    
+    date_filter = request.args.get('date_filter')
+    barber_id = request.args.get('barber_id', type=int)
+    skip = request.args.get('skip', default=0, type=int)
+    limit = request.args.get('limit', default=100, type=int)
+    
     query = db.query(models.Appointment)
     
     # If user is a barber, force filter
     if getattr(current_user, "role", "admin") == "barber":
         barber_id = current_user.id
 
-    
     # Filter by date (default: today)
     if date_filter:
         try:
@@ -223,19 +328,24 @@ def read_appointments(
         query = query.filter(models.Appointment.barber_id == barber_id)
     
     # Order by start_time ascending (earliest first)
-    return query.order_by(models.Appointment.start_time.asc()).offset(skip).limit(limit).all()
+    appointments = query.order_by(models.Appointment.start_time.asc()).offset(skip).limit(limit).all()
+    return jsonify_pydantic(appointments, schemas.Appointment)
 
 # =============== DASHBOARD STATS ===============
 
-@router.get("/dashboard-stats")
-def get_dashboard_stats(
-    barber_id: Optional[int] = None,
-    start_date: Optional[str] = None,  # YYYY-MM-DD
-    end_date: Optional[str] = None,    # YYYY-MM-DD
-    db: Session = Depends(get_db), 
-    current_user = Depends(get_current_panel_user)
-):
+@admin_bp.route("/dashboard-stats", methods=["GET"])
+def get_dashboard_stats():
     """Get dashboard stats with optional filters"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+
+    db = get_db()
+    
+    barber_id = request.args.get('barber_id', type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
     # If user is a barber, force filter
     if getattr(current_user, "role", "admin") == "barber":
         barber_id = current_user.id
@@ -350,52 +460,55 @@ def get_dashboard_stats(
         stats["service_distribution"]["labels"].append(name)
         stats["service_distribution"]["data"].append(count)
         
-    return stats
+    return jsonify(stats)
 
 # =============== APPOINTMENT STATUS ===============
 
-@router.put("/appointments/{appointment_id}/complete")
-def complete_appointment(
-    appointment_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
-):
+@admin_bp.route("/appointments/<int:appointment_id>/complete", methods=["PUT"])
+def complete_appointment(appointment_id):
     """Mark appointment as completed"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appointment:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
     
     appointment.status = "completed"
     db.commit()
-    return {"ok": True, "status": "completed"}
+    return jsonify({"ok": True, "status": "completed"})
 
 
-@router.put("/appointments/{appointment_id}/no-show")
-def mark_no_show(
-    appointment_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
-):
+@admin_bp.route("/appointments/<int:appointment_id>/no-show", methods=["PUT"])
+def mark_no_show(appointment_id):
     """Mark appointment as no-show (customer didn't come)"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appointment:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
     
     appointment.status = "no_show"
     db.commit()
-    return {"ok": True, "status": "no_show"}
+    return jsonify({"ok": True, "status": "no_show"})
 
 
-@router.get("/appointments/{appointment_id}/media")
-def get_appointment_media(
-    appointment_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_admin_user)
-):
+@admin_bp.route("/appointments/<int:appointment_id>/media", methods=["GET"])
+def get_appointment_media(appointment_id):
     """Get all media for an appointment"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+
+    db = get_db()
     appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appointment:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
     
     media_list = []
     for media in appointment.media:
@@ -406,26 +519,31 @@ def get_appointment_media(
             "created_at": media.created_at.isoformat()
         })
     
-    return media_list
+    return jsonify(media_list)
 
 
-@router.post("/appointments/{appointment_id}/feedback")
-def submit_feedback(
-    appointment_id: int,
-    feedback: schemas.FeedbackCreate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_panel_user)
-):
+@admin_bp.route("/appointments/<int:appointment_id>/feedback", methods=["POST"])
+def submit_feedback(appointment_id):
     """Submit feedback for an appointment (notes, no-show status)"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+
+    db = get_db()
     # Check permission: Admin or the assigned Barber
     appointment = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appointment:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
     
     if getattr(current_user, "role", "admin") == "barber":
         if appointment.barber_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Você não tem permissão para alterar este agendamento")
-            
+            return jsonify({"detail": "VocÃª não tem permissÃ£o para alterar este agendamento"}), 403
+    
+    try:
+        feedback = schemas.FeedbackCreate(**request.json)
+    except:
+        return jsonify({"detail": "Invalid data"}), 400
+
     if feedback.status:
         appointment.status = feedback.status
     if feedback.notes:
@@ -440,4 +558,5 @@ def submit_feedback(
         db.add(media)
         
     db.commit()
-    return {"ok": True, "appointment_id": appointment.id}
+    return jsonify({"ok": True, "appointment_id": appointment.id})
+

@@ -20,9 +20,20 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
+# Dependency for manual usage if needed, or to be used in Flask's g
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+def close_db_session(exception=None):
+    from flask import g
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+def init_db(app):
+    app.teardown_appcontext(close_db_session)
