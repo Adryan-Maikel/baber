@@ -8,18 +8,88 @@
     margin: 0 auto;
 }
 
-/* Barber Card */
-.barber-card {
+/* =========================================
+   MODERN INTERACTIVE ANIMATIONS
+   (Lift on Hover, Press on Click)
+   ========================================= */
+
+.barber-card,
+.service-card,
+.slot-btn,
+.btn,
+.btn-primary {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card-bg);
     cursor: pointer;
-    transition: all 0.3s ease;
+    /* Smooth Float Transition */
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    /* Subtle base shadow */
+    transform: translateY(0);
 }
 
-.barber-card:hover {
+/* Hover - Levitate */
+.barber-card:hover,
+.service-card:hover,
+.slot-btn:hover,
+.btn:hover,
+.btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 20px -5px var(--shadow);
+    /* Significant lift */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* Deep float shadow */
     border-color: var(--accent);
 }
 
+/* Active - Press Down */
+.barber-card:active,
+.service-card:active,
+.slot-btn:active,
+.btn:active,
+.btn-primary:active {
+    transform: translateY(0px) scale(0.98);
+    /* Return to surface + subtle squash */
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    /* Shadow disappears */
+    transition: all 0.5s ease-out;
+    /* Snap down vertically */
+}
+
+/* Specific Colors/Tweaks */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    /* Glowy shadow for primary */
+}
+
+.btn-primary:hover {
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+    /* Stronger glow */
+}
+
+.btn-primary:active {
+    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
+}
+
+/* Selection State */
+.service-card.selected,
+.slot-btn.selected-slot {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    box-shadow: 0 0 0 2px var(--accent-light);
+    /* Focus ring effect */
+}
+
+/* Barber Avatar */
 .barber-avatar {
     width: 60px;
     height: 60px;
@@ -30,39 +100,130 @@
     border-radius: 50%;
 }
 
+/* Removing old Barber Card block as it's redefined above */
+/* .barber-card styles handled in generic block */
+
 /* User menu dropdown */
+/* Main Header Layout */
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 1.5rem 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.header-brand {
+    text-align: center;
+    flex: 1;
+    /* Takes remaining space to center itself */
+}
+
+/* User request: Premium Buttons (Profile & Back) */
+.icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    /* Glassmorphism base */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effects for buttons */
+.icon-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+    /* Glow color based on default accent */
+    border-color: transparent;
+}
+
+.icon-btn:active {
+    transform: translateY(0);
+}
+
+/* Specific positioning wrappers if needed, but flex handles well. */
 .user-menu-container {
     position: relative;
+    z-index: 50;
+}
+
+/* Revised Dropdown Menu */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 55px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    min-width: 220px;
+    box-shadow: 0 10px 25px -5px var(--shadow);
+    z-index: 100;
+    overflow: hidden;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1.25rem;
     background: none;
     border: none;
     color: var(--text-primary);
     cursor: pointer;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     transition: background 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
 }
 
 .dropdown-item:hover {
     background: var(--bg-secondary);
+    color: var(--accent);
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
+    color: var(--accent);
+    /* Icons always accent colored */
 }
 
 /* Service cards */
 .service-card {
     cursor: pointer;
     transition: all 0.3s ease;
-}
-
-.service-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--accent);
 }
 
 .service-card.selected {
@@ -73,17 +234,12 @@
 /* Time slots */
 .slot-btn {
     background-color: var(--card-bg);
-    border: 1px solid var(--accent);
+    /* border: 1px solid var(--accent); */
     color: var(--text-primary);
     padding: 0.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.2s;
-}
-
-.slot-btn:hover {
-    background: var(--accent);
-    color: var(--text-primary);
 }
 
 /* Step indicator */
@@ -104,14 +260,57 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    /* Strong blur on background */
+    -webkit-backdrop-filter: blur(8px);
     align-items: center;
     justify-content: center;
     z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .modal-overlay.active {
     display: flex;
+    opacity: 1;
+}
+
+/* Modal Card Animation */
+.modal-overlay .card {
+    transform: scale(0.95) translateY(20px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 90%;
+    /* Ensure modal cards have glass effect on top of blur overlay */
+    background: var(--card-bg);
+    /* Opaque or slightly transparent if global var allows */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-overlay.active .card {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Specific Auth Modal Styles */
+#auth-login-form,
+#auth-register-form {
+    text-align: center;
+    padding: 1rem 0.5rem;
+}
+
+#auth-login-form h2,
+#auth-register-form h2 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    color: var(--accent);
+}
+
+#auth-login-form form,
+#auth-register-form form {
+    text-align: left;
+    margin-bottom: 1.5rem;
 }
 
 /* Price display */
@@ -195,7 +394,6 @@
 
     .story-ring:hover::before {
         opacity: 1;
-        transform: scale(1.02);
     }
 
     /* Remove complex ::after animation */
@@ -207,7 +405,7 @@
 .story-ring.seen::before,
 .story-ring.seen::after {
     background: var(--text-secondary);
-    opacity: 0.5;
+    opacity: 0.2;
     transition: none;
     /* Disable effect for seen? Or keep it simple */
 }
@@ -274,6 +472,9 @@
     position: relative;
     width: 100%;
     height: 100%;
+    /* Increase visible area on desktop */
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 #story-content img,
@@ -281,25 +482,112 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    /* Ensure full image is seen */
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    /* Shadow to separate from black bg */
+}
+
+/* Feedback Overlay - Message Notification Style */
+.story-feedback-overlay {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(25, 25, 25, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 1rem 1.5rem;
+    border-radius: 1.5rem;
+    color: #fff;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2005;
+    animation: slideUpFade 0.5s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.feedback-user {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.feedback-text {
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+}
+
+.feedback-stars {
+    color: #fbbf24;
+    /* Amber-400 */
+    font-size: 0.9rem;
+}
+
+/* Star Rating Input in History */
+.star-rating-input {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.star-rating-input i {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.star-rating-input i:hover,
+.star-rating-input i.active {
+    color: #fbbf24;
+    transform: scale(1.1);
 }
 
 .story-progress-container {
     position: absolute;
-    top: 10px;
-    left: 0;
-    width: 100%;
-    padding: 0 10px;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    /* Safe margin on mobile */
+    max-width: 600px;
+    /* Limit width on desktop */
+    padding: 0;
     display: flex;
-    gap: 5px;
+    gap: 4px;
     z-index: 2001;
 }
 
 .story-progress-bar {
     flex: 1;
-    height: 2px;
+    height: 4px;
+    /* Thicker */
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
+    border-radius: 4px;
+    /* Rounded */
     overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .story-progress-fill {
@@ -307,6 +595,7 @@
     background: #fff;
     width: 0%;
     transition: width 0.1s linear;
+    border-radius: 4px;
 }
 
 .story-controls {
@@ -331,7 +620,7 @@
 
 .story-header {
     position: absolute;
-    top: 20px;
+    top: 35px;
     left: 15px;
     display: flex;
     align-items: center;
@@ -342,7 +631,7 @@
 
 .story-close {
     position: absolute;
-    top: 20px;
+    top: 35px;
     right: 15px;
     color: #fff;
     font-size: 1.5rem;
@@ -350,4 +639,79 @@
     z-index: 2002;
     background: none;
     border: none;
+    transition: all 0.2s ease;
+}
+
+.story-close:hover {
+    color: var(--danger, red);
+    transform: scale(1.3);
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+.modal-close-icon {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 50%;
+}
+
+.modal-close-icon:hover {
+    color: var(--danger, red);
+    transform: scale(1.2);
+    /* background and rotation removed */
+}
+
+/* Privacy Toggle Animation */
+.privacy-toggle-wrapper {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.privacy-checkbox {
+    display: none;
+    /* Hidden input */
+}
+
+.privacy-emote {
+    font-size: 1.5rem;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
+    display: inline-block;
+}
+
+/* Checked State (Public) */
+.privacy-checkbox:checked+.privacy-label .privacy-emote {
+    transform: scale(1.2);
+    color: var(--success);
+}
+
+/* Unchecked State (Private) */
+.privacy-checkbox:not(:checked)+.privacy-label .privacy-emote {
+    transform: scale(0.9);
+    color: var(--text-secondary);
+}
+
+.privacy-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.privacy-text {
+    transition: color 0.3s ease;
+}
+
+.privacy-checkbox:checked+.privacy-label .privacy-text {
+    color: var(--success);
 }

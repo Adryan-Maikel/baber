@@ -160,13 +160,6 @@ body {
     border-radius: 50%;
 }
 
-/* Barber Card Hover Effect */
-.barber-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px -5px var(--shadow);
-    border-color: var(--accent);
-}
-
 /* Utilities */
 .container {
     padding: 1rem;

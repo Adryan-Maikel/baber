@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import models, schemas
-from routers.auth import get_password_hash, verify_password, create_access_token, get_db, SECRET_KEY, ALGORITHM
+from routers.auth import get_password_hash, verify_password, create_access_token, get_db, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from jose import jwt, JWTError
+from datetime import datetime, timedelta
 
 customer_bp = Blueprint('customer', __name__, url_prefix='/customer')
 
@@ -50,13 +51,13 @@ def register_customer():
     # Check if phone already exists
     existing = db.query(models.Customer).filter(models.Customer.phone == customer.phone).first()
     if existing:
-        return jsonify({"detail": "Telefone jÃ¡ cadastrado"}), 400
+        return jsonify({"detail": "Telefone já cadastrado"}), 400
     
     # Check email if provided
     if customer.email:
         existing_email = db.query(models.Customer).filter(models.Customer.email == customer.email).first()
         if existing_email:
-            return jsonify({"detail": "Email jÃ¡ cadastrado"}), 400
+            return jsonify({"detail": "Email já cadastrado"}), 400
     
     # Create customer
     hashed_password = get_password_hash(customer.password)
@@ -71,12 +72,16 @@ def register_customer():
     db.refresh(db_customer)
     
     # Generate token
-    access_token = create_access_token(data={"sub": f"customer:{db_customer.id}"})
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": f"customer:{db_customer.id}"},
+        expires_delta=access_token_expires
+    )
     
     return jsonify({
         "access_token": access_token,
         "token_type": "bearer",
-        "customer": db_customer.model_dump()
+        "customer": schemas.Customer.model_validate(db_customer).model_dump()
     })
 
 @customer_bp.route("/login", methods=["POST"])
@@ -92,18 +97,22 @@ def login_customer():
     try:
         normalized_phone = schemas.validate_brazilian_phone(credentials.phone)
     except ValueError:
-        return jsonify({"detail": "Telefone invÃ¡lido"}), 400
+        return jsonify({"detail": "Telefone inválido"}), 400
     
     customer = db.query(models.Customer).filter(models.Customer.phone == normalized_phone).first()
     if not customer or not verify_password(credentials.password, customer.hashed_password):
         return jsonify({"detail": "Telefone ou senha incorretos"}), 401
     
-    access_token = create_access_token(data={"sub": f"customer:{customer.id}"})
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": f"customer:{customer.id}"},
+        expires_delta=access_token_expires
+    )
     
     return jsonify({
         "access_token": access_token,
         "token_type": "bearer",
-        "customer": customer.model_dump()
+        "customer": schemas.Customer.model_validate(customer).model_dump()
     })
 
 # =============== CUSTOMER PROFILE ===============
@@ -212,6 +221,17 @@ def get_appointment_history():
             except:
                 price = 0.0
         
+        # Get latest media if any
+        media_url = None
+        media_type = None
+        story_is_public = True
+        if app.media:
+            # Assume last uploaded is the main one or just pick first
+            latest_media = app.media[-1] 
+            media_url = latest_media.media_url
+            media_type = latest_media.media_type
+            story_is_public = latest_media.is_public
+
         result.append({
             "id": app.id,
             "start_time": app.start_time.isoformat(),
@@ -223,7 +243,13 @@ def get_appointment_history():
             "service_id": app.service_id,
             "duration_minutes": duration,
             "price": price,
-            "status": app.status
+            "status": app.status,
+            "rating": app.rating,
+            "feedback_notes": app.feedback_notes,
+            "media_url": media_url,
+            "media_type": media_type,
+            "barber_avatar": app.barber.avatar_url if app.barber else None,
+            "story_is_public": story_is_public
         })
     
     return jsonify(result)
@@ -261,4 +287,52 @@ def cancel_appointment(appointment_id):
     db.commit()
     
     return jsonify({"message": "Agendamento cancelado com sucesso"})
+
+
+@customer_bp.route("/feedback", methods=["POST"])
+def submit_appointment_feedback():
+    """Submit rating and feedback for a past appointment"""
+    token = request.args.get('token')
+    if not token:
+         customer = get_auth_customer()
+    else:
+         customer = get_current_customer(token, get_db())
+
+    if not customer:
+        return jsonify({"detail": "não autenticado"}), 401
+    
+    try:
+        feedback_data = schemas.FeedbackCreate(**request.json)
+        appointment_id = request.json.get("appointment_id")
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 400
+    
+    if not appointment_id:
+         return jsonify({"detail": "ID do agendamento obrigatÃ³rio"}), 400
+
+    db = get_db()
+    
+    # Must be customer's appointment
+    appointment = db.query(models.Appointment).filter(
+        models.Appointment.id == appointment_id,
+        models.Appointment.customer_id == customer.id
+    ).first()
+    
+    if not appointment:
+        return jsonify({"detail": "Agendamento não encontrado"}), 404
+    
+    if feedback_data.rating is not None:
+        appointment.rating = feedback_data.rating
+        
+    if feedback_data.notes is not None:
+        appointment.feedback_notes = feedback_data.notes
+        
+    # Update privacy for associated media (stories)
+    if feedback_data.is_public is not None and appointment.media:
+        for m in appointment.media:
+            m.is_public = feedback_data.is_public
+        
+    db.commit()
+    
+    return jsonify({"message": "Avaliação enviada com sucesso"})
 

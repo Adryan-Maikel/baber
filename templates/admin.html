@@ -343,6 +343,47 @@
         cursor: pointer;
         font-size: 0.75rem;
     }
+
+    /* Admin Toggle Styles */
+    .admin-toggle-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        user-select: none;
+        background: var(--bg-secondary);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .admin-toggle-checkbox {
+        display: none;
+    }
+
+    .admin-toggle-icon {
+        font-size: 1.25rem;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .admin-toggle-checkbox:checked+.admin-toggle-label .admin-toggle-icon {
+        transform: scale(1.2);
+        color: var(--danger);
+    }
+
+    .admin-toggle-checkbox:not(:checked)+.admin-toggle-label .admin-toggle-icon {
+        transform: scale(1);
+        color: var(--success);
+    }
+
+    .admin-toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
 </style>
 {% endblock %}
 
@@ -738,18 +779,23 @@
             <input type="hidden" id="feedback-appointment-id">
 
             <div class="form-row" style="grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-                <label
-                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--bg-secondary); border-radius: 0.5rem; cursor: pointer;">
-                    <input type="checkbox" id="feedback-no-show" style="width: 20px; height: 20px;">
-                    <span style="color: var(--danger); font-weight: bold;">Cliente não compareceu</span>
-                </label>
+                <div class="admin-toggle-wrapper" onclick="document.getElementById('feedback-no-show').click()">
+                    <input type="checkbox" id="feedback-no-show" class="admin-toggle-checkbox"
+                        onchange="updateNoShowToggle()">
+                    <div class="admin-toggle-label">
+                        <i id="no-show-icon" class="admin-toggle-icon fa-solid fa-user-check"></i>
+                        <span id="no-show-text" style="font-weight: bold; color: var(--success);">Cliente
+                            Presente</span>
+                    </div>
+                </div>
             </div>
 
             <label style="display: block; margin-bottom: 1rem;">
                 Foto/Vídeo do Resultado
                 <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
-                    <label class="btn btn-primary" style="flex: 1; justify-content: center; cursor: pointer;">
-                        <i class="fa-solid fa-camera"></i> Tirar / Escolher Foto
+                    <label class="btn btn-primary"
+                        style="flex: 1; justify-content: center; cursor: pointer; gap: 0.5rem;">
+                        <i class="fa-solid fa-camera"></i> <i class="fa-solid fa-play"></i> Tirar / Escolher Mídia
                         <input type="file" id="feedback-media" accept="image/*,video/*" capture="environment"
                             style="display: none;" onchange="previewFeedbackMedia(this)">
                     </label>
@@ -1523,6 +1569,8 @@
 
     // =============== APPOINTMENTS ===============
 
+    let adminAppointmentsCache = []; // Cache for modal access
+
     async function loadAppointmentsAdmin() {
         const container = document.getElementById('appointment-list');
         const token = localStorage.getItem('access_token');
@@ -1539,6 +1587,7 @@
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const apps = await res.json();
+            adminAppointmentsCache = apps; // Store in cache
 
             if (apps.length === 0) {
                 container.innerHTML = `
@@ -1568,36 +1617,26 @@
                 const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
                 const whatsappUrl = hasValidPhone ? `https://wa.me/55${phoneDigits}` : null;
 
+                // Check if has media
+                const hasMedia = a.media && a.media.length > 0;
+                const noteIcon = (a.feedback_notes || a.rating) ? '<i class="fa-solid fa-comment-dots" style="margin-left:5px; color:var(--accent);"></i>' : '';
+
                 let actionBtn = '';
                 if (a.status === 'scheduled') {
-                    if (isPast) {
-                        actionBtn = `
-                        <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
-                            <i class="fa-solid fa-star"></i> Feedback
-                        </button>`;
-                    } else {
-                        // Future appointments only show "Complete" (simple) or maybe nothing
-                        // User request: "depois de ter passado a hora... habilitasse feedback"
-                        // But we also need a way to just complete regular ones?
-                        // For now let's just show Feedback for past, and maybe "Concluir" for active?
-                        // I'll leave the "Concluir" button for non-past appointments too just in case, or just nothing.
-                        // Let's stick to the request: Feedback available after time passed.
-                        actionBtn = `
-                        <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
-                             Feedback (Ant.)
-                        </button>`;
-                        // Actually, common sense says you can complete it whenever.
-                        // But I'll stick to the "isPast" check for the emphasized Feedback button context.
-                        // For now let's allow Feedback on ALL scheduled appointments for flexibility testing.
-                        actionBtn = `
+                    actionBtn = `
                         <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
                             <i class="fa-solid fa-check"></i> Feedback / Baixa
                         </button>`;
-                    }
                 } else if (a.status === 'completed') {
-                    actionBtn = `<span style="color: var(--success); font-size: 0.8rem;"><i class="fa-solid fa-check-double"></i> Finalizado</span>`;
+                    actionBtn = `
+                        <button class="btn" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--success); color: var(--success);">
+                            <i class="fa-solid fa-check-double"></i> Ver / Editar ${noteIcon}
+                        </button>`;
                 } else {
-                    actionBtn = `<span style="color: var(--danger); font-size: 0.8rem;"><i class="fa-solid fa-user-xmark"></i> Faltou</span>`;
+                    actionBtn = `
+                        <button class="btn" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
+                            <i class="fa-solid fa-user-xmark"></i> Ver / Editar ${noteIcon}
+                        </button>`;
                 }
 
                 return `
@@ -1608,7 +1647,7 @@
                             <div style="font-size: 0.75rem; color: var(--text-secondary);">${startTime.toLocaleDateString('pt-BR')}</div>
                         </div>
                         <div>
-                            <div style="font-weight: bold;">${a.customer_name}</div>
+                            <div style="font-weight: bold;">${a.customer_name} ${hasMedia ? '<i class="fa-solid fa-photo-film" style="color:var(--accent); font-size:0.8rem; margin-left:5px;"></i>' : ''}</div>
                             <div style="font-size: 0.875rem; color: var(--text-secondary);">
                                 <i class="fa-solid fa-scissors"></i> ${a.service?.name || a.barber_service?.name || 'Serviço'}
                                 <span style="margin: 0 0.5rem;">•</span>
@@ -1658,13 +1697,82 @@
     }
 
     // Feedback Functions
+    function updateNoShowToggle() {
+        const checkbox = document.getElementById('feedback-no-show');
+        const icon = document.getElementById('no-show-icon');
+        const text = document.getElementById('no-show-text');
+
+        if (checkbox.checked) {
+            // No Show (Red)
+            icon.className = 'admin-toggle-icon fa-solid fa-user-xmark';
+            text.textContent = 'Cliente Faltou';
+            text.style.color = 'var(--danger)';
+        } else {
+            // Present (Green)
+            icon.className = 'admin-toggle-icon fa-solid fa-user-check';
+            text.textContent = 'Cliente Presente';
+            text.style.color = 'var(--success)';
+        }
+    }
+
     function openFeedbackModal(appointmentId) {
-        document.getElementById('feedback-appointment-id').value = appointmentId;
-        document.getElementById('feedback-no-show').checked = false;
-        document.getElementById('feedback-notes').value = '';
+        document.getElementById('feedback-appointment-id').value = appointmentId; // Keeping ID for submit
+
+        // Find data in cache
+        const appt = adminAppointmentsCache.find(a => a.id === appointmentId);
+
+        // 1. Setup Status
+        const checkbox = document.getElementById('feedback-no-show');
+        if (appt) {
+            checkbox.checked = (appt.status === 'no_show');
+        } else {
+            checkbox.checked = false;
+        }
+        updateNoShowToggle();
+
+        // 2. Setup Notes (Admin/User notes) - pre-fill
+        document.getElementById('feedback-notes').value = (appt && appt.feedback_notes) ? appt.feedback_notes : '';
         document.getElementById('feedback-media').value = '';
-        document.getElementById('feedback-media-preview').style.display = 'none';
-        document.getElementById('feedback-media-preview').innerHTML = '';
+
+        // 3. User Rating Display
+        const ratingContainer = document.getElementById('customer-rating-display');
+        if (ratingContainer) ratingContainer.remove(); // Clear old
+
+        if (appt && appt.rating) {
+            const starsGroup = document.createElement('div');
+            starsGroup.id = 'customer-rating-display';
+            starsGroup.style.marginBottom = '1rem';
+            starsGroup.style.background = 'rgba(255, 255, 255, 0.05)';
+            starsGroup.style.padding = '0.75rem';
+            starsGroup.style.borderRadius = '0.5rem';
+            starsGroup.innerHTML = `
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Avaliação do Cliente:</div>
+                <div style="color: #FFD700; font-size: 1.1rem;">
+                    ${Array(5).fill(0).map((_, i) => i < appt.rating ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>').join('')}
+                    <span style="color: var(--text-primary); margin-left: 0.5rem; font-weight: bold;">${appt.rating}.0</span>
+                </div>
+            `;
+            // Insert before form actions or at top
+            const form = document.getElementById('feedback-form');
+            form.insertBefore(starsGroup, form.firstChild);
+        }
+
+        // 4. Existing Media Display
+        const preview = document.getElementById('feedback-media-preview');
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+
+        if (appt && appt.media && appt.media.length > 0) {
+            // Show latest media
+            const latest = appt.media[appt.media.length - 1]; // Assuming order or just pick last
+            preview.style.display = 'flex';
+
+            if (latest.media_type === 'video') {
+                preview.innerHTML = `<video src="${latest.media_url}" controls style="max-width:100%; max-height:100%;"></video>`;
+            } else {
+                preview.innerHTML = `<img src="${latest.media_url}" style="max-width:100%; max-height:100%; object-fit: contain;">`;
+            }
+        }
 
         document.getElementById('feedback-modal').classList.add('show');
     }

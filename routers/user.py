@@ -69,14 +69,17 @@ def get_availability():
     if not date_str or not barber_id:
         return jsonify({"detail": "date_str and barber_id required"}), 400
 
-    target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"detail": "Invalid date format"}), 400
     
     # Get barber and their working hours
     barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
     if not barber:
         return jsonify({"detail": "Barbeiro não encontrado"}), 404
     if not barber.is_active:
-        return jsonify({"slots": [], "message": "Barbeiro não estÃ¡ disponÃ­vel"})
+        return jsonify({"slots": [], "message": "Barbeiro não está disponível"})
     
     # Get service duration
     duration_minutes = 30  # Default
@@ -115,15 +118,15 @@ def get_availability():
     work_start = datetime.combine(target_date, datetime.min.time()).replace(hour=start_hour, minute=start_min)
     work_end = datetime.combine(target_date, datetime.min.time()).replace(hour=end_hour, minute=end_min)
     
-    # Get existing appointments for this barber
+    # Get existing appointments for this barber (Only Scheduled block slots)
     appointments = db.query(models.Appointment).filter(
         models.Appointment.barber_id == barber_id,
-        models.Appointment.status == "scheduled", # Only scheduled appointments block slots
+        models.Appointment.status == "scheduled", 
         models.Appointment.start_time >= work_start,
         models.Appointment.start_time < work_end
     ).all()
     
-    # Generate slots
+    # Generate slots - Explicitly allowing past slots by NOT filtering with datetime.now()
     slots = []
     current_time = work_start
     while current_time + timedelta(minutes=duration_minutes) <= work_end:
@@ -137,12 +140,18 @@ def get_availability():
                 current_time += timedelta(minutes=30)
                 continue
 
-        # Check collision
+        # Check collision with appointments
         is_free = True
         for apt in appointments:
             if (current_time < apt.end_time) and (slot_end > apt.start_time):
                 is_free = False
                 break
+        
+        # Filter out past times for today
+        if target_date == datetime.now().date():
+            if current_time < datetime.now():
+                current_time += timedelta(minutes=30)
+                continue
         
         if is_free:
             slots.append(current_time.strftime("%H:%M"))

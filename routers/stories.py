@@ -21,7 +21,8 @@ def get_all_stories():
     media_list = db.query(models.AppointmentMedia).join(
         models.Appointment
     ).filter(
-        models.AppointmentMedia.created_at >= cutoff_date
+        models.AppointmentMedia.created_at >= cutoff_date,
+        models.AppointmentMedia.is_public == True
     ).order_by(
         models.AppointmentMedia.created_at.desc()
     ).all()
@@ -48,7 +49,9 @@ def get_all_stories():
             "media_type": media.media_type,
             "created_at": media.created_at.isoformat(),
             "customer_name": appointment.customer_name,
-            "service_name": appointment.barber_service.name if appointment.barber_service else None
+            "service_name": appointment.barber_service.name if appointment.barber_service else None,
+            "rating": appointment.rating,
+            "feedback": appointment.feedback_notes
         })
     
     return jsonify(list(barber_stories.values()))
@@ -68,7 +71,8 @@ def get_barber_stories(barber_id):
         models.Appointment
     ).filter(
         models.Appointment.barber_id == barber_id,
-        models.AppointmentMedia.created_at >= cutoff_date
+        models.AppointmentMedia.created_at >= cutoff_date,
+        models.AppointmentMedia.is_public == True
     ).order_by(
         models.AppointmentMedia.created_at.desc()
     ).all()
@@ -82,7 +86,9 @@ def get_barber_stories(barber_id):
             "media_type": media.media_type,
             "created_at": media.created_at.isoformat(),
             "customer_name": appointment.customer_name if appointment else None,
-            "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None
+            "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None,
+            "rating": appointment.rating,
+            "feedback": appointment.feedback_notes
         })
     
     return jsonify({
@@ -105,10 +111,11 @@ def get_recent_stories():
     media_list = db.query(models.AppointmentMedia).join(
         models.Appointment
     ).filter(
-        models.AppointmentMedia.created_at >= cutoff_date
+        models.AppointmentMedia.created_at >= cutoff_date,
+        models.AppointmentMedia.is_public == True
     ).order_by(
         models.AppointmentMedia.created_at.desc()
-    ).limit(limit).all()
+    ).all()
     
     stories = []
     for media in media_list:
@@ -123,7 +130,9 @@ def get_recent_stories():
             "barber_name": barber.name if barber else None,
             "barber_avatar": barber.avatar_url if barber else None,
             "customer_name": appointment.customer_name if appointment else None,
-            "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None
+            "service_name": appointment.barber_service.name if appointment and appointment.barber_service else None,
+            "rating": appointment.rating,
+            "feedback": appointment.feedback_notes
         })
     
     return jsonify(stories)

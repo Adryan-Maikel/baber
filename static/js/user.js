@@ -29,7 +29,9 @@ function logoutCustomer() {
 function toggleUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
     if (dropdown) {
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        const style = window.getComputedStyle(dropdown);
+        const isHidden = style.display === 'none';
+        dropdown.style.display = isHidden ? 'block' : 'none';
     }
 }
 
@@ -238,49 +240,309 @@ async function openHistoryModal() {
     document.getElementById('history-modal').style.display = 'flex';
     closeUserMenu();
 
+    // Reset filter
+    const dateInput = document.getElementById('history-date-filter');
+    if (dateInput) dateInput.value = '';
+
     try {
         const res = await fetch(`/customer/history?token=${token}`);
         if (res.ok) {
             currentHistory = await res.json();
-            if (currentHistory.length === 0) {
-                historyList.innerHTML = '<p style="color: var(--text-secondary);">Nenhum agendamento encontrado.</p>';
-            } else {
-                historyList.innerHTML = currentHistory.map(h => {
-                    const isFuture = new Date(h.start_time) > new Date();
-                    const canCancel = isFuture && h.status === 'scheduled';
-                    const statusMap = {
-                        'scheduled': { label: 'Agendado', color: 'var(--success)' },
-                        'completed': { label: 'Concluído', color: 'var(--accent)' },
-                        'no_show': { label: 'Não Compareceu', color: 'var(--danger)' },
-                        'cancelled': { label: 'Cancelado', color: 'var(--text-secondary)' }
-                    };
-                    const st = statusMap[h.status] || { label: h.status, color: 'var(--text-secondary)' };
-
-                    return `
-                <div class="card" style="margin-bottom: 0.5rem; padding: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <strong>${new Date(h.start_time).toLocaleDateString('pt-BR')}</strong>
-                        <span style="color: var(--accent); margin-left: 0.5rem;">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                        <p style="color: var(--text-secondary); margin-top: 0.25rem;">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
-                        <p style="font-size: 0.8rem; color: ${st.color}; margin-top: 0.25rem;">
-                            Status: ${st.label}
-                        </p>
-                    </div>
-                    ${canCancel ? `
-                        <div style="display: flex; gap: 0.5rem;">
-                             <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="rescheduleAppointment(${h.id})">
-                                <i class="fa-solid fa-calendar-days"></i> Alterar
-                            </button>
-                            <button class="btn" style="background:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="cancelMyAppointment(${h.id})">
-                                Cancelar
-                            </button>
-                        </div>` : ''}
-                    </div>
-                `}).join('');
-            }
+            renderHistory(currentHistory);
         }
     } catch (e) {
         historyList.innerHTML = '<p style="color: var(--danger);">Erro ao carregar histórico.</p>';
+    }
+}
+
+function renderHistory(list) {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+
+    if (!list || list.length === 0) {
+        historyList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">Nenhum agendamento encontrado para esta data.</p>';
+        return;
+    }
+
+    historyList.innerHTML = list.map(h => {
+        const isFuture = new Date(h.start_time) > new Date();
+        const canCancel = isFuture && h.status === 'scheduled';
+        const statusMap = {
+            'scheduled': { label: 'Agendado', color: 'var(--success)' },
+            'completed': { label: 'Concluído', color: 'var(--accent)' },
+            'no_show': { label: 'Não Compareceu', color: 'var(--danger)' },
+            'cancelled': { label: 'Cancelado', color: 'var(--text-secondary)' }
+        };
+        const st = statusMap[h.status] || { label: h.status, color: 'var(--text-secondary)' };
+
+        // Show existing rating
+        let existingRatingHtml = '';
+        if (h.rating) {
+            existingRatingHtml += '<div style="margin-top:0.25rem; color: #fbbf24;">';
+            for (let i = 1; i <= 5; i++) {
+                existingRatingHtml += i <= h.rating ? '<i class="fa-solid fa-star" style="font-size:0.8rem"></i>' : '<i class="fa-regular fa-star" style="font-size:0.8rem"></i>';
+            }
+            if (h.feedback_notes) {
+                existingRatingHtml += `<span style="color:var(--text-secondary); margin-left:0.5rem; font-size:0.8rem;">"${h.feedback_notes}"</span>`;
+            }
+            existingRatingHtml += '</div>';
+        }
+
+        // Check for story logic - make card clickable if media exists
+        const storyOnClick = h.media_url ? `openSingleStoryViewer('${h.media_url}', '${h.media_type}', '${h.barber_name}', '${h.start_time}', '${h.barber_avatar || ''}')` : '';
+
+        return `
+    <div class="card" style="margin-bottom: 0.5rem; padding: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
+        <div style="flex: 1; min-width: 200px;">
+            <div style="display:flex; justify-content:space-between;">
+                 <strong>${new Date(h.start_time).toLocaleDateString('pt-BR')}</strong>
+            </div>
+            <span style="color: var(--accent);">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            <p style="color: var(--text-secondary); margin-top: 0.25rem;">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
+            <p style="font-size: 0.8rem; color: ${st.color}; margin-top: 0.25rem;">
+                Status: ${st.label}
+            </p>
+            ${existingRatingHtml}
+        </div>
+        ${canCancel ? `
+            <div style="display: flex; gap: 0.5rem;">
+                 <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="rescheduleAppointment(${h.id})">
+                    <i class="fa-solid fa-calendar-days"></i> Alterar
+                </button>
+                <button class="btn" style="background:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="cancelMyAppointment(${h.id})">
+                    Cancelar
+                </button>
+            </div>` : ''}
+        
+        ${h.status === 'completed' ? `
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" 
+                        onclick="openFeedbackModal(${h.id}, ${h.rating || 0}, '${(h.feedback_notes || '').replace(/'/g, "\\'")}', ${h.story_is_public !== undefined ? h.story_is_public : true}, '${h.media_url || ''}', '${h.media_type || ''}', '${h.barber_name || ''}', '${h.start_time || ''}', '${h.barber_avatar || ''}')">
+                   <i class="fa-regular fa-star"></i> ${h.rating ? 'Editar Avaliação' : 'Avaliar / Ver Storie'}
+                </button>
+            </div>
+        ` : ''}
+        </div>
+    `}).join('');
+}
+
+function filterHistory() {
+    const dateInput = document.getElementById('history-date-filter');
+    if (!dateInput || !dateInput.value) {
+        renderHistory(currentHistory);
+        return;
+    }
+    const selectedDate = dateInput.value; // YYYY-MM-DD format
+    // Filter history
+    const filtered = currentHistory.filter(h => h.start_time.startsWith(selectedDate));
+    renderHistory(filtered);
+}
+
+// Feedback Functions
+let currentFeedbackApptId = null;
+let currentRating = 0;
+
+function openFeedbackModal(apptId, existingRating, existingNotes, isPublic = true, mediaUrl = null, mediaType = null, barberName = '', startTime = '', barberAvatar = '') {
+    currentFeedbackApptId = apptId;
+    currentRating = existingRating || 0;
+
+    let modal = document.getElementById('feedback-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'feedback-modal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="card" style="max-width: 400px; width: 90%; text-align: center;">
+                <h3 id="feedback-modal-title" style="margin-bottom: 1rem; color: var(--accent);">Avaliar Atendimento</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Como foi sua experiência?</p>
+                
+                <div class="star-rating-input">
+                    <i class="fa-regular fa-star" onclick="setRating(1)" id="star-1"></i>
+                    <i class="fa-regular fa-star" onclick="setRating(2)" id="star-2"></i>
+                    <i class="fa-regular fa-star" onclick="setRating(3)" id="star-3"></i>
+                    <i class="fa-regular fa-star" onclick="setRating(4)" id="star-4"></i>
+                    <i class="fa-regular fa-star" onclick="setRating(5)" id="star-5"></i>
+                </div>
+                
+                <textarea id="feedback-notes" placeholder="Deixe um comentário (opcional)..." rows="3" style="width: 100%; margin-bottom: 1rem;"></textarea>
+                
+                <div id="feedback-media-section"></div>
+                
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                     <button class="btn" onclick="closeFeedbackModal()" style="border: 1px solid var(--border);">Cancelar</button>
+                     <button class="btn btn-primary" onclick="submitFeedback()">Enviar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Update Media Section
+    const mediaContainer = document.getElementById('feedback-media-section');
+    if (mediaUrl) {
+        let mediaHtml = '';
+        if (mediaType === 'video') {
+            mediaHtml = `
+                <div style="position: relative; width: 100%; padding-top: 100%; margin-bottom: 1rem; background: #000; border-radius: 8px; overflow: hidden;">
+                    <video src="${mediaUrl}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" controls></video>
+                </div>`;
+        } else {
+            mediaHtml = `
+                <div style="position: relative; width: 100%; padding-top: 100%; margin-bottom: 1rem; background: #000; border-radius: 8px; overflow: hidden;">
+                    <img src="${mediaUrl}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" onclick="openSingleStoryViewer('${mediaUrl}', '${mediaType}', '${barberName}', '${startTime}', '${barberAvatar}')">
+                </div>`;
+        }
+
+        mediaContainer.innerHTML = `
+            <fieldset style="border: 1px solid var(--border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <legend style="padding: 0 0.5rem; color: var(--accent); font-size: 0.9rem;">Fotos do Corte</legend>
+                ${mediaHtml}
+                <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center;">
+                    <button class="btn btn-primary" style="padding: 0.5rem 1rem; width: fit-content; height: fit-content;" 
+                            onclick="openSingleStoryViewer('${mediaUrl}', '${mediaType}', '${barberName}', '${startTime}', '${barberAvatar}')" title="Tela Cheia">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <div class="privacy-toggle-wrapper" onclick="document.getElementById('feedback-public').click()" style="margin-bottom: 0;">
+                         <input type="checkbox" id="feedback-public" class="privacy-checkbox" onchange="updatePrivacyEmote()">
+                         <div class="privacy-label">
+                             <i id="privacy-emote-display" class="privacy-emote fa-solid fa-earth-americas"></i>
+                             <span id="privacy-text-display" class="privacy-text" style="display:none;"></span>
+                         </div>
+                    </div>
+                </div>
+            </fieldset>
+        `;
+        // We need to re-bind the checkbox state logic after injecting HTML
+        setTimeout(() => {
+            const checkbox = document.getElementById('feedback-public');
+            if (checkbox) {
+                checkbox.checked = isPublic;
+                updatePrivacyEmote();
+            }
+        }, 0);
+    } else {
+        mediaContainer.innerHTML = '';
+    }
+
+    const title = document.getElementById('feedback-modal-title');
+    if (title) title.innerText = existingRating ? 'Editar Avaliação' : 'Avaliar Atendimento';
+
+    // Reset fields
+    setTimeout(() => {
+        setRating(currentRating);
+        document.getElementById('feedback-notes').value = existingNotes || '';
+        modal.classList.add('active'); // Use CSS class for transition
+        modal.style.display = 'flex';
+    }, 10);
+}
+
+function updatePrivacyEmote() {
+    const checkbox = document.getElementById('feedback-public');
+    const emoteSpan = document.getElementById('privacy-emote-display');
+    const textSpan = document.getElementById('privacy-text-display');
+
+    if (checkbox.checked) {
+        emoteSpan.className = 'privacy-emote fa-solid fa-earth-americas'; // Earth for public
+        emoteSpan.textContent = ''; // Clear emoji text
+        textSpan.textContent = 'Visível nos stories';
+        textSpan.style.color = 'var(--success)';
+    } else {
+        emoteSpan.className = 'privacy-emote fa-solid fa-lock'; // Lock for private
+        emoteSpan.textContent = ''; // Clear emoji text
+        textSpan.textContent = 'Oculto dos stories';
+        textSpan.style.color = 'var(--text-secondary)';
+    }
+}
+
+// New helper to view single story from history
+function openSingleStoryViewer(url, type, barberName, dateStr, barberAvatar) {
+    if (!url) return;
+
+    // Mock a story group structure for the showStory function logic, or just display directly
+    // Let's reuse existing modal structure
+    const modal = document.getElementById('story-viewer-modal');
+    modal.style.display = 'flex';
+
+    document.getElementById('story-barber-name').textContent = barberName || 'Barbeiro';
+    document.getElementById('story-barber-avatar').src = barberAvatar || '/static/img/default-avatar.png';
+    document.getElementById('story-time').textContent = new Date(dateStr).toLocaleDateString();
+
+    const container = document.getElementById('story-media-container');
+    container.innerHTML = '';
+
+    // Hide progress bars since it's single view
+    document.getElementById('story-progress-bars').innerHTML = '';
+
+    if (type === 'video') {
+        const video = document.createElement('video');
+        video.src = url;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.controls = true; // Allow controls for history view
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '100%';
+        container.appendChild(video);
+    } else {
+        const img = document.createElement('img');
+        img.src = url;
+        container.appendChild(img);
+    }
+}
+
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+}
+
+function setRating(rating) {
+    currentRating = rating;
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById(`star-${i}`);
+        if (i <= rating) {
+            star.className = 'fa-solid fa-star active';
+        } else {
+            star.className = 'fa-regular fa-star';
+        }
+    }
+}
+
+async function submitFeedback() {
+    if (!currentFeedbackApptId) return;
+    if (currentRating === 0) {
+        alert("Por favor, selecione uma nota.");
+        return;
+    }
+
+    const notes = document.getElementById('feedback-notes').value;
+    const isPublic = document.getElementById('feedback-public').checked;
+    const token = getCustomerToken();
+
+    try {
+        const res = await fetch(`/customer/feedback?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                appointment_id: currentFeedbackApptId,
+                rating: currentRating,
+                notes: notes,
+                is_public: isPublic
+            })
+        });
+
+        if (res.ok) {
+            closeFeedbackModal();
+            // Refresh history
+            openHistoryModal();
+            // Optional: show thank you
+            await showAlertModal('Obrigado pela sua avaliação!');
+        } else {
+            alert('Erro ao enviar avaliação.');
+        }
+    } catch (e) {
+        alert('Erro de conexão.');
     }
 }
 
@@ -374,6 +636,8 @@ let currentStoryIndex = 0;
 let storyTimer = null;
 let storyStartTime = 0;
 let STORY_DURATION = 5000; // 5 seconds for images
+let isStoryPaused = false;
+let storyRemainingTime = 0;
 
 // =========== Stories Functions ===========
 
@@ -398,6 +662,8 @@ function openStoryViewer(barberId) {
 
     currentStoryBarberId = barberId;
     currentStoryIndex = 0;
+    isStoryPaused = false;
+    updatePauseButtonIcon();
 
     const group = storiesData[barberId];
 
@@ -415,6 +681,58 @@ function closeStoryViewer() {
     const video = document.querySelector('#story-content video');
     if (video) video.pause();
     currentStoryBarberId = null;
+    isStoryPaused = false;
+}
+
+function toggleStoryPause() {
+    const btn = document.getElementById('story-pause-btn');
+    const video = document.querySelector('#story-content video');
+    const progressBar = document.querySelectorAll('.story-progress-fill')[currentStoryIndex];
+
+    if (isStoryPaused) {
+        // RESUME
+        isStoryPaused = false;
+        if (video) {
+            video.play();
+        } else {
+            // Resume image timer
+            storyStartTime = Date.now();
+            storyTimer = setTimeout(nextStory, storyRemainingTime);
+
+            // Resume animation
+            if (progressBar) {
+                progressBar.style.transition = `width ${storyRemainingTime}ms linear`;
+                progressBar.style.width = '100%';
+            }
+        }
+    } else {
+        // PAUSE
+        isStoryPaused = true;
+        if (video) {
+            video.pause();
+        } else {
+            // Pause image timer
+            clearTimeout(storyTimer);
+            const elapsed = Date.now() - storyStartTime;
+            storyRemainingTime = Math.max(0, storyRemainingTime - elapsed);
+
+            // Pause animation
+            if (progressBar) {
+                const computedStyle = window.getComputedStyle(progressBar);
+                const width = computedStyle.getPropertyValue('width');
+                progressBar.style.transition = 'none';
+                progressBar.style.width = width;
+            }
+        }
+    }
+    updatePauseButtonIcon();
+}
+
+function updatePauseButtonIcon() {
+    const btnIcon = document.querySelector('#story-pause-btn i');
+    if (btnIcon) {
+        btnIcon.className = isStoryPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+    }
 }
 
 function showStory(index) {
@@ -432,6 +750,10 @@ function showStory(index) {
     }
 
     currentStoryIndex = index;
+    // Reset pause state on new story
+    isStoryPaused = false;
+    updatePauseButtonIcon();
+
     const story = stories[index];
     const container = document.getElementById('story-media-container');
     const timeLabel = document.getElementById('story-time');
@@ -444,6 +766,32 @@ function showStory(index) {
     timeLabel.textContent = date.toLocaleDateString();
 
     container.innerHTML = '';
+
+    // Add Feedback Overlay if data exists
+    if (story.customer_name && (story.feedback || story.rating)) {
+        const overlay = document.createElement('div');
+        overlay.className = 'story-feedback-overlay';
+
+        let starsHtml = '';
+        if (story.rating) {
+            starsHtml = '<div>';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= story.rating) starsHtml += '<i class="fa-solid fa-star feedback-stars"></i>';
+                else starsHtml += '<i class="fa-regular fa-star feedback-stars"></i>';
+            }
+            starsHtml += '</div>';
+        }
+
+        overlay.innerHTML = `
+            <div class="feedback-user">
+                <span>${story.customer_name}</span>
+                ${starsHtml}
+            </div>
+            ${story.feedback ? `<p class="feedback-text">"${story.feedback}"</p>` : ''}
+        `;
+        container.appendChild(overlay);
+    }
+
     clearTimeout(storyTimer);
 
     if (story.media_type === 'video') {
@@ -456,15 +804,23 @@ function showStory(index) {
         video.style.maxHeight = '100%';
 
         video.onended = () => nextStory();
-        video.oncanplay = () => {
-            // Progress bar handling for video would require update loop, using css animation for now
+        // Handle video metadata for precise progress
+        video.onloadedmetadata = () => {
             startProgress(video.duration * 1000);
         };
+        // Fallback if metadata already loaded or oncanplay
+        if (video.readyState >= 1) {
+            startProgress(video.duration * 1000);
+        }
+
         container.appendChild(video);
     } else {
         const img = document.createElement('img');
         img.src = story.media_url;
         container.appendChild(img);
+
+        storyRemainingTime = STORY_DURATION;
+        storyStartTime = Date.now();
         startProgress(STORY_DURATION);
         storyTimer = setTimeout(nextStory, STORY_DURATION);
     }
@@ -619,9 +975,26 @@ function selectService(id, name, duration, price, isBarberService = false) {
     loadSlots();
 }
 
+
+let currentStep = 1;
+
 function goToStep(step) {
+    currentStep = step; // Track current step
     document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
-    document.getElementById(`step-${step}`).style.display = 'block';
+
+    // Add fade-in animation reset (optional, but good for UX)
+    const nextStep = document.getElementById(`step-${step}`);
+    nextStep.style.display = 'block';
+
+    // Global Back Button Logic
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) {
+        if (step > 1) {
+            backBtn.style.display = 'flex'; // Use flex to center icon
+        } else {
+            backBtn.style.display = 'none';
+        }
+    }
 
     if (step === 4) {
         updateCustomerUI();
@@ -631,59 +1004,138 @@ function goToStep(step) {
     }
 }
 
+function goBack() {
+    // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection
+    if (currentStep === 4) {
+        selectedSlot = null;
+        // Reload slots to refresh UI (remove selected state)
+        loadSlots();
+    }
+
+    if (currentStep > 1) {
+        goToStep(currentStep - 1);
+    }
+}
+
 function formatDateBR(dateStr) {
     const [year, month, day] = dateStr.split('-');
     return `${day}/${month}/${year}`;
 }
 
 let slotsPollInterval = null;
+let lastLoadedSlotsJSON = '';
+let lastSelectedSlot = null;
+
+// Helper to get formatted date string (YYYY-MM-DD)
+function getFormattedDate(date) {
+    return date.toISOString().split('T')[0];
+}
 
 async function loadSlots() {
     if (!selectedService) return;
-    const date = document.getElementById("booking-date").value;
-    selectedDate = date;
+    let dateInput = document.getElementById("booking-date");
+    let dateStr = dateInput.value;
+
+    // Initial validation (if empty, set to today)
+    if (!dateStr) {
+        const today = getFormattedDate(new Date());
+        dateInput.value = today;
+        dateStr = today;
+    }
+    selectedDate = dateStr;
 
     const container = document.getElementById("slots-container");
-    container.innerHTML = '<p>Carregando...</p>';
+    // Show loading only if container is empty (first load)
+    if (!container.innerHTML.trim() || container.innerHTML.includes('Carregando')) {
+        container.innerHTML = '<p>Carregando...</p>';
+    }
 
     // Clear previous poll
     if (slotsPollInterval) clearInterval(slotsPollInterval);
 
     const fetchSlots = async () => {
         try {
-            let endpoint = `/availability?date_str=${date}&barber_id=${selectedBarber.id}`;
+            let endpoint = `/availability?date_str=${dateStr}&barber_id=${selectedBarber.id}`;
             if (selectedService.isBarberService) {
                 endpoint += `&barber_service_id=${selectedService.id}`;
             } else {
                 endpoint += `&service_id=${selectedService.id}`;
             }
 
-            // Here we use fetch directly to avoid fetchAPI missing issue
             const res = await fetch(endpoint);
             if (!res.ok) throw new Error('Failed');
             const data = await res.json();
 
-            if (data.slots.length === 0) {
-                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
-                return;
+            // Logic to disable "Today" if empty and we are looking at today for the first time?
+            // User requested: "quando não tiver horarios disponiveis, desabilite do calendario o dia atual também."
+            // We can check if dateStr is today, and slots are empty.
+            // But if we disable it, we must switch to tomorrow.
+
+            const todayStr = getFormattedDate(new Date());
+            if (dateStr === todayStr && data.slots.length === 0) {
+                // Check if we haven't already disabled it (to avoid loop)
+                const tomorrowElement = new Date();
+                tomorrowElement.setDate(tomorrowElement.getDate() + 1);
+                const tomorrowStr = getFormattedDate(tomorrowElement);
+
+                // Update min to tomorrow
+                dateInput.min = tomorrowStr;
+
+                // If the user currently selected today, switch to tomorrow and reload
+                if (dateInput.value === todayStr) {
+                    dateInput.value = tomorrowStr;
+                    // Recursive call to load slots for tomorrow immediately
+                    // But we must update dateStr variable for THIS execution or just return unique recall
+                    selectedDate = tomorrowStr;
+                    loadSlots();
+                    return false; // Signal to abort this execution's polling
+                }
+            } else if (dateStr === todayStr && data.slots.length > 0) {
+                // Ensure min is today if slots exist
+                dateInput.min = todayStr;
             }
 
-            // If selectedSlot is still in the new list, keep it selected style
-            const currentSelection = selectedSlot;
+            // Optimization: Data-based comparison to avoid DOM thrashing
+            // Comparing HTML strings against browser DOM is unreliable (browser changes quotes/specs).
+            const currentSlotsJSON = JSON.stringify(data.slots);
 
-            container.innerHTML = data.slots.map(slot => `
-                <button class="btn slot-btn ${slot === currentSelection ? 'selected-slot' : ''}" 
-                        style="${slot === currentSelection ? 'background: var(--accent); color: var(--text-primary);' : ''}"
-                        onclick="selectSlot('${slot}')">${slot}</button>
-            `).join('');
+            // Check if we can skip render
+            // We need to verify if slots changed OR if selection state changed
+            if (lastLoadedSlotsJSON === currentSlotsJSON && lastSelectedSlot === selectedSlot) {
+                return true; // No visual change needed
+            }
+
+            let newHTML = '';
+            if (data.slots.length === 0) {
+                newHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
+            } else {
+                newHTML = data.slots.map(slot => `
+                    <button class="btn slot-btn ${slot === selectedSlot ? 'selected-slot' : ''}" 
+                            style="${slot === selectedSlot ? 'background: var(--accent); color: var(--text-primary);' : ''}"
+                            onclick="selectSlot('${slot}')">${slot}</button>
+                `).join('');
+            }
+
+            container.innerHTML = newHTML;
+
+            // Update cache
+            lastLoadedSlotsJSON = currentSlotsJSON;
+            lastSelectedSlot = selectedSlot;
+
+            return true; // Execution successful (didn't redirect)
+
         } catch (e) {
             container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar horários.</p>';
+            return false;
         }
     };
 
-    await fetchSlots();
-    // Poll every 5 seconds to keep fresh
-    slotsPollInterval = setInterval(fetchSlots, 5000);
+    const success = await fetchSlots();
+    // Only start polling if this execution was successful and didn't redirect
+    if (success) {
+        // Poll every 5 seconds to keep fresh
+        slotsPollInterval = setInterval(fetchSlots, 5000);
+    }
 }
 
 

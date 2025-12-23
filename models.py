@@ -91,6 +91,7 @@ class Appointment(Base):
     end_time = Column(DateTime)
     status = Column(String, default="scheduled")  # scheduled, completed, no_show
     feedback_notes = Column(String, nullable=True)
+    rating = Column(Integer, nullable=True)
     
     customer = relationship("Customer", back_populates="appointments")
     barber = relationship("Barber", back_populates="appointments")
@@ -106,6 +107,7 @@ class AppointmentMedia(Base):
     appointment_id = Column(Integer, ForeignKey("appointments.id", ondelete="CASCADE"), nullable=False)
     media_url = Column(String, nullable=False)
     media_type = Column(String, default="image")  # image or video
+    is_public = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     appointment = relationship("Appointment", back_populates="media")

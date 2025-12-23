@@ -1,0 +1,50 @@
+/* Privacy Toggle Animation */
+.privacy-toggle-wrapper {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.privacy-checkbox {
+    display: none;
+    /* Hidden input */
+}
+
+.privacy-emote {
+    font-size: 1.5rem;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    display: inline-block;
+}
+
+/* Checked State (Public) */
+.privacy-checkbox:checked+.privacy-label .privacy-emote {
+    transform: scale(1.2);
+    filter: none;
+}
+
+/* Unchecked State (Private) */
+.privacy-checkbox:not(:checked)+.privacy-label .privacy-emote {
+    transform: scale(0.9);
+    filter: grayscale(100%) opacity(0.7);
+}
+
+.privacy-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.privacy-text {
+    transition: color 0.3s ease;
+}
+
+.privacy-checkbox:checked+.privacy-label .privacy-text {
+    color: var(--success);
+}

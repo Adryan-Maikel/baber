@@ -5,7 +5,7 @@ import os
 import uuid
 import shutil
 import models
-from routers.auth import get_db, get_current_admin_user
+from routers.auth import get_db, get_current_admin_user, get_current_panel_user
 
 upload_bp = Blueprint('upload', __name__, url_prefix='/upload')
 
@@ -39,9 +39,14 @@ def generate_unique_filename(original_filename: str) -> str:
 @upload_bp.route("/barber/<int:barber_id>/avatar", methods=["POST"])
 def upload_barber_avatar(barber_id):
     """Upload avatar for a barber"""
-    current_user = get_current_admin_user()
+    current_user = get_current_panel_user()
     if not current_user:
-        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        return jsonify({"detail": "Not authenticated"}), 401
+
+    # Check permission
+    if getattr(current_user, "role", "admin") == "barber":
+        if current_user.id != barber_id:
+             return jsonify({"detail": "Permission denied"}), 403
 
     ensure_upload_dirs()
     
@@ -82,9 +87,9 @@ def upload_barber_avatar(barber_id):
 @upload_bp.route("/appointment/<int:appointment_id>/media", methods=["POST"])
 def upload_appointment_media(appointment_id):
     """Upload photo or video for an appointment (haircut result)"""
-    current_user = get_current_admin_user()
+    current_user = get_current_panel_user()
     if not current_user:
-        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        return jsonify({"detail": "Not authenticated"}), 401
 
     ensure_upload_dirs()
     

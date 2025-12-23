@@ -329,7 +329,7 @@ def read_appointments():
     
     # Order by start_time ascending (earliest first)
     appointments = query.order_by(models.Appointment.start_time.asc()).offset(skip).limit(limit).all()
-    return jsonify_pydantic(appointments, schemas.Appointment)
+    return jsonify_pydantic(appointments, schemas.AppointmentWithMedia)
 
 # =============== DASHBOARD STATS ===============
 

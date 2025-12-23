@@ -8,53 +8,57 @@
 
 {% block content %}
 <div class="container user-layout">
-    <header style="text-align: center; margin: 2rem 0; position: relative;">
-        <!-- User Menu Button (top right) -->
-        <div style="position: absolute; top: 0; right: 0;">
-            <div class="user-menu-container" style="position: relative;">
-                <button class="btn" onclick="toggleUserMenu()" id="user-menu-btn"
-                    style="border-radius: 50%; width: 44px; height: 44px; padding: 0;">
-                    <i class="fa-solid fa-user" id="user-menu-icon"></i>
-                </button>
+    <header class="main-header">
+        <!-- Global Back Button (Top Left) -->
+        <button class="icon-btn back-btn" id="global-back-btn" onclick="goBack()" style="display: none;">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
 
-                <!-- Dropdown Menu -->
-                <div id="user-menu-dropdown"
-                    style="display: none; position: absolute; right: 0; top: 50px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; min-width: 200px; box-shadow: 0 4px 12px var(--shadow); z-index: 50;">
-                    <!-- Guest State -->
-                    <div id="guest-menu-items">
-                        <button class="dropdown-item" onclick="openAuthModal('login')">
-                            <i class="fa-solid fa-right-to-bracket"></i> Entrar
-                        </button>
-                        <button class="dropdown-item" onclick="openAuthModal('register')">
-                            <i class="fa-solid fa-user-plus"></i> Cadastrar
-                        </button>
-                    </div>
+        <!-- Logo/Title -->
+        <div class="header-brand">
+            <h1><i class="fa-solid fa-scissors"></i> Barbearia Balhego</h1>
+            <p>Agende seu horário</p>
+        </div>
 
-                    <!-- Logged In State -->
-                    <div id="logged-menu-items" style="display: none;">
-                        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
-                            <strong id="menu-customer-name">Usuário</strong>
-                            <p style="font-size: 0.75rem; color: var(--text-secondary);" id="menu-customer-phone"></p>
-                        </div>
-                        <button class="dropdown-item" onclick="openHistoryModal()">
-                            <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
-                        </button>
-                        <button class="dropdown-item" onclick="logoutCustomer()">
-                            <i class="fa-solid fa-right-from-bracket"></i> Sair
-                        </button>
-                    </div>
+        <!-- User Menu Button (Top Right) -->
+        <div class="user-menu-container">
+            <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn">
+                <i class="fa-solid fa-user" id="user-menu-icon"></i>
+            </button>
 
-                    <div style="border-top: 1px solid var(--border); padding: 0.5rem;">
-                        <button class="dropdown-item" onclick="toggleTheme()">
-                            <i class="fa-solid fa-moon" id="theme-icon"></i> Alternar Tema
-                        </button>
+            <!-- Dropdown Menu -->
+            <div id="user-menu-dropdown" class="dropdown-menu">
+                <!-- Guest State -->
+                <div id="guest-menu-items">
+                    <button class="dropdown-item" onclick="openAuthModal('login')">
+                        <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                    </button>
+                    <button class="dropdown-item" onclick="openAuthModal('register')">
+                        <i class="fa-solid fa-user-plus"></i> Cadastrar
+                    </button>
+                </div>
+
+                <!-- Logged In State -->
+                <div id="logged-menu-items" style="display: none;">
+                    <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
+                        <strong id="menu-customer-name">Usuário</strong>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary);" id="menu-customer-phone"></p>
                     </div>
+                    <button class="dropdown-item" onclick="openHistoryModal()">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
+                    </button>
+                    <button class="dropdown-item" onclick="logoutCustomer()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                    </button>
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding: 0.5rem;">
+                    <button class="dropdown-item" onclick="toggleTheme()">
+                        <i class="fa-solid fa-moon" id="theme-icon"></i> Alternar Tema
+                    </button>
                 </div>
             </div>
         </div>
-
-        <h1><i class="fa-solid fa-scissors"></i> Barbearia</h1>
-        <p style="color: var(--text-secondary);">Agende seu horário com facilidade</p>
     </header>
 
     <!-- Step 1: Select Barber -->
@@ -65,16 +69,12 @@
 
     <!-- Step 2: Select Service -->
     <div id="step-2" class="step fade-in" style="display: none;">
-        <button class="btn" onclick="goToStep(1)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
-            Voltar</button>
         <h2>2. Escolha o serviço</h2>
         <div id="user-services-list" style="display: grid; gap: 1rem; margin-top: 1rem;"></div>
     </div>
 
     <!-- Step 3: Date & Time -->
     <div id="step-3" class="step fade-in" style="display: none;">
-        <button class="btn" onclick="goToStep(2)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
-            Voltar</button>
         <h2>3. Escolha o horário</h2>
         <label for="booking-date">Data</label>
         <input type="date" id="booking-date" onchange="loadSlots()">
@@ -84,8 +84,7 @@
 
     <!-- Step 4: Confirm -->
     <div id="step-4" class="step fade-in" style="display: none;">
-        <button class="btn" onclick="goToStep(3)" style="margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i>
-            Voltar</button>
+
         <h2>4. Seus Dados</h2>
         <div class="card">
             <h3 id="confirm-barber-name" style="color: var(--accent);"></h3>
@@ -190,11 +189,22 @@
 <!-- History Modal -->
 <div id="history-modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
-    <div class="card" style="width: 500px; max-width: 95%; max-height: 80vh; overflow-y: auto;">
-        <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
-        <div id="history-list" style="margin-top: 1rem;"></div>
-        <button class="btn" onclick="document.getElementById('history-modal').style.display='none'"
-            style="width: 100%; margin-top: 1rem;">Fechar</button>
+    <div class="card" style="width: 500px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; color: var(--accent);"><i
+                    class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+            <button onclick="document.getElementById('history-modal').style.display='none'"
+                class="btn-icon modal-close-icon">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <input type="date" id="history-date-filter" onchange="filterHistory()"
+                style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit;">
+        </div>
+
+        <div id="history-list" style="overflow-y: auto; flex: 1; padding-right: 5px;"></div>
     </div>
 </div>
 </div>
@@ -210,6 +220,10 @@
         </div>
         <span id="story-barber-name" style="font-weight: bold;"></span>
         <span id="story-time" style="opacity: 0.7; font-size: 0.8rem;"></span>
+        <button id="story-pause-btn" onclick="toggleStoryPause()"
+            style="background: transparent; border: none; color: white; margin-left: 10px; cursor: pointer; font-size: 1rem;">
+            <i class="fa-solid fa-pause"></i>
+        </button>
     </div>
     <button class="story-close" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
 

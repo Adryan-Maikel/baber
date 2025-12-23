@@ -176,8 +176,17 @@ class AppointmentHistory(BaseModel):
     barber_service_id: Optional[int] = None
     service_id: Optional[int] = None
     duration_minutes: Optional[int] = None
+    service_id: Optional[int] = None
+    duration_minutes: Optional[int] = None
     price: Optional[float] = None
     status: str
+    rating: Optional[int] = None
+    feedback_notes: Optional[str] = None
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
+    media_type: Optional[str] = None
+    barber_avatar: Optional[str] = None
+    story_is_public: Optional[bool] = True
     
     class Config:
         from_attributes = True
@@ -205,6 +214,7 @@ class Appointment(AppointmentBase):
     end_time: datetime
     status: str = "scheduled"
     feedback_notes: Optional[str] = None
+    rating: Optional[int] = None
     barber: Optional[BarberSimple] = None
     barber_service: Optional[BarberService] = None
     service: Optional[Service] = None  # Legacy
@@ -224,8 +234,10 @@ class AppointmentMediaCreate(AppointmentMediaBase):
 class FeedbackCreate(BaseModel):
     status: Optional[str] = None
     notes: Optional[str] = None
+    rating: Optional[int] = None
     media_url: Optional[str] = None
     media_type: str = "image"
+    is_public: Optional[bool] = True
 
 class AppointmentMedia(AppointmentMediaBase):
     id: int
