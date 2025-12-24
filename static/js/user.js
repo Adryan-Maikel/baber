@@ -237,7 +237,10 @@ async function openHistoryModal() {
 
     const historyList = document.getElementById('history-list');
     historyList.innerHTML = '<p style="color: var(--text-secondary);">Carregando...</p>';
-    document.getElementById('history-modal').style.display = 'flex';
+
+    // Use new standard class toggle
+    document.getElementById('history-modal').classList.add('active');
+
     closeUserMenu();
 
     // Reset filter
@@ -338,6 +341,14 @@ function filterHistory() {
     renderHistory(filtered);
 }
 
+// Close History Modal Standard
+function closeHistoryModal() {
+    document.getElementById('history-modal').classList.remove('active');
+}
+
+// Ensure global scope access if needed by onclick in HTML
+window.closeHistoryModal = closeHistoryModal;
+
 // Feedback Functions
 let currentFeedbackApptId = null;
 let currentRating = 0;
@@ -350,25 +361,38 @@ function openFeedbackModal(apptId, existingRating, existingNotes, isPublic = tru
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'feedback-modal';
-        modal.className = 'modal-overlay';
+        modal.className = 'custom-modal-overlay'; // Standard Overlay
         modal.innerHTML = `
-            <div class="card" style="max-width: 400px; width: 90%; text-align: center;">
-                <h3 id="feedback-modal-title" style="margin-bottom: 1rem; color: var(--accent);">Avaliar Atendimento</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Como foi sua experiência?</p>
-                
-                <div class="star-rating-input">
-                    <i class="fa-regular fa-star" onclick="setRating(1)" id="star-1"></i>
-                    <i class="fa-regular fa-star" onclick="setRating(2)" id="star-2"></i>
-                    <i class="fa-regular fa-star" onclick="setRating(3)" id="star-3"></i>
-                    <i class="fa-regular fa-star" onclick="setRating(4)" id="star-4"></i>
-                    <i class="fa-regular fa-star" onclick="setRating(5)" id="star-5"></i>
+            <div class="custom-modal">
+                <div class="custom-modal-header">
+                    <h3 id="feedback-modal-title">Avaliar Atendimento</h3>
+                    <!-- Close button in header (optional, usually title is enough but standard has it) -->
+                    <!-- But previously we didn't have one here, user relied on Cancel button or backdrop? -->
+                    <!-- We will add standard close X for consistency -->
+                    <button class="custom-modal-close" onclick="closeFeedbackModal()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
                 
-                <textarea id="feedback-notes" placeholder="Deixe um comentário (opcional)..." rows="3" style="width: 100%; margin-bottom: 1rem;"></textarea>
-                
-                <div id="feedback-media-section"></div>
-                
-                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <div class="custom-modal-body">
+                    <div class="custom-modal-content">
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; text-align: center;">Como foi sua experiência?</p>
+                        
+                        <div class="star-rating-input" style="text-align: center;">
+                            <i class="fa-regular fa-star" onclick="setRating(1)" id="star-1"></i>
+                            <i class="fa-regular fa-star" onclick="setRating(2)" id="star-2"></i>
+                            <i class="fa-regular fa-star" onclick="setRating(3)" id="star-3"></i>
+                            <i class="fa-regular fa-star" onclick="setRating(4)" id="star-4"></i>
+                            <i class="fa-regular fa-star" onclick="setRating(5)" id="star-5"></i>
+                        </div>
+                        
+                        <textarea id="feedback-notes" placeholder="Deixe um comentário (opcional)..." rows="3" style="width: 100%; margin-bottom: 1rem;"></textarea>
+                        
+                        <div id="feedback-media-section"></div>
+                    </div>
+                </div>
+
+                <div class="custom-modal-footer">
                      <button class="btn" onclick="closeFeedbackModal()" style="border: 1px solid var(--border);">Cancelar</button>
                      <button class="btn btn-primary" onclick="submitFeedback()">Enviar</button>
                 </div>
@@ -406,7 +430,7 @@ function openFeedbackModal(apptId, existingRating, existingNotes, isPublic = tru
                          <input type="checkbox" id="feedback-public" class="privacy-checkbox" onchange="updatePrivacyEmote()">
                          <div class="privacy-label">
                              <i id="privacy-emote-display" class="privacy-emote fa-solid fa-earth-americas"></i>
-                             <span id="privacy-text-display" class="privacy-text" style="display:none;"></span>
+                             <span id="privacy-text-display" class="privacy-text"></span>
                          </div>
                     </div>
                 </div>
@@ -444,12 +468,12 @@ function updatePrivacyEmote() {
     if (checkbox.checked) {
         emoteSpan.className = 'privacy-emote fa-solid fa-earth-americas'; // Earth for public
         emoteSpan.textContent = ''; // Clear emoji text
-        textSpan.textContent = 'Visível nos stories';
+        textSpan.textContent = 'Visível para todos.';
         textSpan.style.color = 'var(--success)';
     } else {
         emoteSpan.className = 'privacy-emote fa-solid fa-lock'; // Lock for private
         emoteSpan.textContent = ''; // Clear emoji text
-        textSpan.textContent = 'Oculto dos stories';
+        textSpan.textContent = 'Oculto (somente para você)';
         textSpan.style.color = 'var(--text-secondary)';
     }
 }

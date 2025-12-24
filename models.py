@@ -87,7 +87,7 @@ class Appointment(Base):
     barber_id = Column(Integer, ForeignKey("barbers.id"), nullable=True)
     barber_service_id = Column(Integer, ForeignKey("barber_services.id"), nullable=True)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=True)  # Legacy
-    start_time = Column(DateTime)
+    start_time = Column(DateTime, index=True) # Indexed for frequent availability queries
     end_time = Column(DateTime)
     status = Column(String, default="scheduled")  # scheduled, completed, no_show
     feedback_notes = Column(String, nullable=True)

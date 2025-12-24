@@ -187,24 +187,26 @@
 </div>
 
 <!-- History Modal -->
-<div id="history-modal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
-    <div class="card" style="width: 500px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="margin: 0; font-size: 1.25rem; color: var(--accent);"><i
-                    class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
-            <button onclick="document.getElementById('history-modal').style.display='none'"
-                class="btn-icon modal-close-icon">
+<div id="history-modal" class="custom-modal-overlay"> <!-- JS will toggle .active -->
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+            <button class="custom-modal-close" onclick="closeHistoryModal()">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
 
-        <div style="margin-bottom: 1rem;">
-            <input type="date" id="history-date-filter" onchange="filterHistory()"
-                style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit;">
-        </div>
+        <div class="custom-modal-body">
+            <div class="custom-modal-content">
+                <div style="margin-bottom: 1rem;">
+                    <!-- Reusing form-input style from global or user css -->
+                    <input type="date" id="history-date-filter" onchange="filterHistory()"
+                        style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: inherit;">
+                </div>
 
-        <div id="history-list" style="overflow-y: auto; flex: 1; padding-right: 5px;"></div>
+                <div id="history-list" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+            </div>
+        </div>
     </div>
 </div>
 </div>
@@ -228,12 +230,12 @@
     <button class="story-close" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
 
     <div id="story-content">
-        <button class="story-nav" onclick="prevStory()"></button>
-        <div id="story-media-container"
+        <button class="story-nav left" onclick="prevStory()"></button>
+        <div id="story-media-container" onclick="toggleStoryPause()"
             style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
             <!-- Media injected here -->
         </div>
-        <button class="story-nav" onclick="nextStory()"></button>
+        <button class="story-nav right" onclick="nextStory()"></button>
     </div>
 </div>
 

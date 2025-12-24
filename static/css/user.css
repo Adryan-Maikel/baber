@@ -610,12 +610,21 @@
 }
 
 .story-nav {
-    width: 30%;
-    height: 100%;
+    position: fixed;
+    width: 40dvw;
+    height: 100dvh;
     background: transparent;
     border: none;
     cursor: pointer;
     outline: none;
+}
+
+.story-nav.right {
+    right: 0;
+}
+
+.story-nav.left {
+    left: 0;
 }
 
 .story-header {
@@ -683,9 +692,13 @@
     /* Hidden input */
 }
 
+.privacy-text,
+.privacy-emote {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
+}
+
 .privacy-emote {
     font-size: 1.5rem;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
     display: inline-block;
 }
 

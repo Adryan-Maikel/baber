@@ -286,15 +286,15 @@ label {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
+    background: var(--card-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--accent);
     border-radius: 5px;
-    border: 2px solid var(--bg-secondary);
+    border: 2px solid var(--card-bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+    background: var(--accent-hover);
 }
