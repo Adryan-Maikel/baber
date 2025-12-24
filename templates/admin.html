@@ -8,7 +8,718 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Theme Management
+    function loadThemeSettings() {
+        fetch('/panel/theme')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to load theme');
+                }
+                return res.json();
+            })
+            .then(data => {
+                // Populate inputs and hex fields
+                for (const [key, value] of Object.entries(data)) {
+                    if (!value) continue;
+                    const input = document.getElementById(`theme-${key}`);
+                    const hexInput = document.getElementById(`theme-${key}-hex`);
+                    if (input) {
+                        input.value = value;
+                    }
+                    if (hexInput) {
+                        hexInput.value = value.toUpperCase();
+                    }
+                }
+                // Initialize hex inputs after a delay to ensure DOM is ready
+                setTimeout(initializeHexInputs, 50);
+            })
+            .catch(err => {
+                console.log('Theme settings not loaded, using defaults:', err);
+            });
+    }
+
+    function previewThemeVal(cssVar, val) {
+        document.documentElement.style.setProperty(`--${cssVar}`, val);
+        // Verify if accent changes need RGB update manually
+        if (cssVar === 'accent') {
+            // Approximate RGB update for preview only (real RGB calc happens on save/reload)
+            const r = parseInt(val.substr(1, 2), 16);
+            const g = parseInt(val.substr(3, 2), 16);
+            const b = parseInt(val.substr(5, 2), 16);
+            document.documentElement.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+        }
+
+        // Update custom theme preview if relevant colors change
+        if (['bg-color', 'bg-secondary', 'card-bg', 'border'].includes(cssVar)) {
+            if (typeof updateCustomPreviewCard === 'function') {
+                updateCustomPreviewCard();
+            }
+        }
+    }
+
+    function saveCustomTheme() {
+        const data = {};
+        const inputs = document.querySelectorAll('[id^="theme-"]');
+        inputs.forEach(input => {
+            const key = input.id.replace('theme-', '');
+            data[key] = input.value;
+        });
+
+        fetch('/panel/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.ok) {
+                    alert('Tema salvo com sucesso! A página será atualizada.');
+                    window.location.reload();
+                } else {
+                    alert('Erro ao salvar tema: ' + res.detail);
+                }
+            });
+    }
+
+    function resetThemeDefaults() {
+        if (!confirm('Deseja restaurar as cores originais?')) return;
+        // Default Dark Theme Values
+        const defaults = {
+            bg_color: "#050505",
+            bg_secondary: "#0a0a0a",
+            card_bg: "#141414",
+            card_hover: "#1f1f1f",
+            text_primary: "#ffffff",
+            text_secondary: "#a0a0a0",
+            accent_color: "#2563eb",
+            accent_hover: "#1d4ed8",
+            danger_color: "#dc2626",
+            success_color: "#16a34a",
+            border_color: "#262626",
+            star_color: "#fbbf24",
+            whatsapp_color: "#25D366"
+        };
+
+        fetch('/panel/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(defaults)
+        })
+            .then(res => {
+                window.location.reload();
+            });
+    }
+
+    // Theme Presets
+    window.themePresets = {
+        dark: {
+            bg_color: "#050505",
+            bg_secondary: "#0a0a0a",
+            card_bg: "#141414",
+            card_hover: "#1f1f1f",
+            text_primary: "#ffffff",
+            text_secondary: "#a0a0a0",
+            accent_color: "#2563eb",
+            accent_hover: "#1d4ed8",
+            danger_color: "#dc2626",
+            success_color: "#16a34a",
+            border_color: "#262626",
+            star_color: "#fbbf24",
+            whatsapp_color: "#25D366"
+        },
+        light: {
+            bg_color: "#f8fafc",
+            bg_secondary: "#f1f5f9",
+            card_bg: "#ffffff",
+            card_hover: "#f8fafc",
+            text_primary: "#0f172a",
+            text_secondary: "#64748b",
+            accent_color: "#2563eb",
+            accent_hover: "#1d4ed8",
+            danger_color: "#dc2626",
+            success_color: "#16a34a",
+            border_color: "#e2e8f0",
+            star_color: "#f59e0b",
+            whatsapp_color: "#25D366"
+        }
+    };
+
+    function importPreset(presetName) {
+        const preset = themePresets[presetName];
+        if (!preset) return;
+
+        // Mapping from preset keys to input IDs and CSS variable names
+        const mapping = {
+            bg_color: { inputId: 'theme-bg_color', cssVar: 'bg-color' },
+            bg_secondary: { inputId: 'theme-bg_secondary', cssVar: 'bg-secondary' },
+            card_bg: { inputId: 'theme-card_bg', cssVar: 'card-bg' },
+            card_hover: { inputId: 'theme-card_hover', cssVar: 'card-hover' },
+            text_primary: { inputId: 'theme-text_primary', cssVar: 'text-primary' },
+            text_secondary: { inputId: 'theme-text_secondary', cssVar: 'text-secondary' },
+            accent_color: { inputId: 'theme-accent_color', cssVar: 'accent' },
+            accent_hover: { inputId: 'theme-accent_hover', cssVar: 'accent-hover' },
+            danger_color: { inputId: 'theme-danger_color', cssVar: 'danger' },
+            success_color: { inputId: 'theme-success_color', cssVar: 'success' },
+            border_color: { inputId: 'theme-border_color', cssVar: 'border' },
+            star_color: { inputId: 'theme-star_color', cssVar: 'star-color' },
+            whatsapp_color: { inputId: 'theme-whatsapp_color', cssVar: 'whatsapp-color' }
+        };
+
+        // Apply each color from the preset
+        for (const [key, value] of Object.entries(preset)) {
+            const map = mapping[key];
+            if (map) {
+                // Update input value
+                const input = document.getElementById(map.inputId);
+                const hexInput = document.getElementById(map.inputId + '-hex');
+                if (input) input.value = value;
+                if (hexInput) hexInput.value = value.toUpperCase();
+
+                // Apply to CSS for immediate preview
+                document.documentElement.style.setProperty('--' + map.cssVar, value);
+            }
+        }
+
+        // Update custom theme preview card
+        updateCustomPreviewCard();
+
+        // Show notification
+        const presetLabel = presetName === 'dark' ? 'Escuro' : 'Claro';
+        showAlertModal(`Cores do tema ${presetLabel} importadas! Clique em "Salvar" para aplicar.`);
+    }
+
+    // Update hex input when color picker changes
+    function updateColorHex(colorInput) {
+        const hexInput = document.getElementById(colorInput.id + '-hex');
+        if (hexInput) {
+            hexInput.value = colorInput.value.toUpperCase();
+        }
+    }
+
+    // Update color picker when hex input changes
+    function updateColorFromHex(hexInput, colorInputId, cssVar) {
+        let hex = hexInput.value.trim();
+
+        // Add # if missing
+        if (!hex.startsWith('#')) {
+            hex = '#' + hex;
+        }
+
+        // Validate hex format (6 or 8 characters for alpha)
+        if (/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(hex)) {
+            const colorInput = document.getElementById(colorInputId);
+            if (colorInput) {
+                // Color picker only supports 6-char hex, truncate alpha
+                colorInput.value = hex.substring(0, 7);
+                // But apply full hex (with alpha) to CSS
+                previewThemeVal(cssVar, hex);
+            }
+            hexInput.value = hex.toUpperCase();
+        }
+    }
+
+    // Convert rgba/rgb to hex
+    function rgbaToHex(color) {
+        if (!color) return '#000000';
+
+        // Already hex
+        if (color.startsWith('#')) {
+            // Handle 8-character hex (with alpha)
+            if (color.length === 9) {
+                return color.substring(0, 7).toUpperCase();
+            }
+            return color.toUpperCase();
+        }
+
+        // Parse rgba or rgb
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+            const r = parseInt(match[1]).toString(16).padStart(2, '0');
+            const g = parseInt(match[2]).toString(16).padStart(2, '0');
+            const b = parseInt(match[3]).toString(16).padStart(2, '0');
+            return `#${r}${g}${b}`.toUpperCase();
+        }
+
+        return '#000000';
+    }
+
+    // Initialize all hex inputs from color inputs
+    function initializeHexInputs() {
+        const colorInputs = document.querySelectorAll('.color-input-compact');
+        colorInputs.forEach(input => {
+            const hexInput = document.getElementById(input.id + '-hex');
+            if (hexInput && input.value) {
+                hexInput.value = input.value.toUpperCase();
+            }
+        });
+    }
+
+    // Update colors edit state based on current theme
+    function updateColorsEditState(theme) {
+        const notice = document.getElementById('colors-edit-notice');
+        const saveActions = document.getElementById('colors-save-actions');
+        const presetSection = document.getElementById('preset-import-section');
+        const colorInputs = document.querySelectorAll('.color-input-compact');
+        const hexInputs = document.querySelectorAll('.color-hex-input');
+
+        const isCustom = theme === 'custom';
+
+        // Show/hide notice, save buttons, and import section
+        if (notice) {
+            notice.classList.toggle('hidden', isCustom);
+        }
+        if (saveActions) {
+            saveActions.style.display = isCustom ? 'flex' : 'none';
+        }
+        if (presetSection) {
+            presetSection.style.display = isCustom ? 'flex' : 'none';
+        }
+
+        // Enable/disable inputs
+        colorInputs.forEach(input => {
+            input.disabled = !isCustom;
+        });
+        hexInputs.forEach(input => {
+            input.disabled = !isCustom;
+        });
+
+        // Update custom theme preview card colors
+        updateCustomPreviewCard();
+    }
+
+    // Update the custom theme preview card with current colors
+    function updateCustomPreviewCard() {
+        const customPreview = document.querySelector('#theme-custom .theme-preview');
+        if (!customPreview) return;
+
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        let bgColor, cardBg, borderColor, bgSecondary;
+
+        if (currentTheme === 'custom') {
+            // Get current colors from inputs (custom theme colors)
+            bgColor = document.getElementById('theme-bg_color')?.value || '#050505';
+            cardBg = document.getElementById('theme-card_bg')?.value || '#141414';
+            borderColor = document.getElementById('theme-border_color')?.value || '#262626';
+            bgSecondary = document.getElementById('theme-bg_secondary')?.value || '#0a0a0a';
+        } else {
+            // Get from Storage (Saved Custom Colors) to show what Custom looks like
+            const customColors = JSON.parse(localStorage.getItem('customColors') || '{}');
+            // We need defaultThemeColors but it might be defined later. 
+            // Fallback hardcoded defaults if not available yet (though it should be)
+            const defs = (typeof defaultThemeColors !== 'undefined') ? defaultThemeColors : {
+                'bg-color': '#111827', 'bg-secondary': '#1f2937', 'card-bg': '#1f2937', 'border': '#374151'
+            };
+
+            bgColor = customColors['--bg-color'] || defs['bg-color'];
+            cardBg = customColors['--card-bg'] || defs['card-bg'];
+            borderColor = customColors['--border'] || defs['border'];
+            bgSecondary = customColors['--bg-secondary'] || defs['bg-secondary'];
+        }
+
+        // Update the preview card - Fundo principal
+        customPreview.style.background = bgColor;
+
+        // Sidebar - representa o Menu Lateral
+        const sidebar = customPreview.querySelector('.tp-sidebar');
+        if (sidebar) {
+            sidebar.style.background = cardBg;
+            sidebar.style.borderRight = `1px solid ${borderColor}`;
+        }
+
+        // Content - representa a área de Conteúdo
+        const content = customPreview.querySelector('.tp-content');
+        if (content) {
+            content.style.background = bgSecondary;
+        }
+    }
+
+    // Load theme colors into inputs
+    function loadThemeColorsToInputs(themeName) {
+        const preset = themePresets[themeName];
+        if (!preset) return;
+
+        const mapping = {
+            bg_color: { inputId: 'theme-bg_color', cssVar: 'bg-color' },
+            bg_secondary: { inputId: 'theme-bg_secondary', cssVar: 'bg-secondary' },
+            card_bg: { inputId: 'theme-card_bg', cssVar: 'card-bg' },
+            card_hover: { inputId: 'theme-card_hover', cssVar: 'card-hover' },
+            text_primary: { inputId: 'theme-text_primary', cssVar: 'text-primary' },
+            text_secondary: { inputId: 'theme-text_secondary', cssVar: 'text-secondary' },
+            accent_color: { inputId: 'theme-accent_color', cssVar: 'accent' },
+            accent_hover: { inputId: 'theme-accent_hover', cssVar: 'accent-hover' },
+            danger_color: { inputId: 'theme-danger_color', cssVar: 'danger' },
+            success_color: { inputId: 'theme-success_color', cssVar: 'success' },
+            border_color: { inputId: 'theme-border_color', cssVar: 'border' },
+            star_color: { inputId: 'theme-star_color', cssVar: 'star-color' },
+            whatsapp_color: { inputId: 'theme-whatsapp_color', cssVar: 'whatsapp-color' }
+        };
+
+        for (const [key, value] of Object.entries(preset)) {
+            const map = mapping[key];
+            if (map) {
+                const input = document.getElementById(map.inputId);
+                const hexInput = document.getElementById(map.inputId + '-hex');
+                if (input) {
+                    input.value = value;
+                }
+                if (hexInput) {
+                    hexInput.value = value.toUpperCase();
+                }
+            }
+        }
+    }
+
+    // Call on load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get current theme
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+
+        // Apply the current theme's CSS
+        if (currentTheme === 'custom') {
+            loadThemeSettings(); // Load and apply custom colors
+        } else {
+            // Apply preset, but load custom colors into inputs
+            const preset = themePresets[currentTheme];
+            if (preset) {
+                const cssMapping = {
+                    bg_color: 'bg-color', bg_secondary: 'bg-secondary',
+                    card_bg: 'card-bg', card_hover: 'card-hover',
+                    text_primary: 'text-primary', text_secondary: 'text-secondary',
+                    accent_color: 'accent', accent_hover: 'accent-hover',
+                    danger_color: 'danger', success_color: 'success',
+                    border_color: 'border', star_color: 'star-color',
+                    whatsapp_color: 'whatsapp-color'
+                };
+                for (const [key, cssVar] of Object.entries(cssMapping)) {
+                    if (preset[key]) {
+                        document.documentElement.style.setProperty('--' + cssVar, preset[key]);
+                    }
+                }
+            }
+            // Load custom colors into inputs (they always show custom theme)
+            loadThemeSettings();
+        }
+
+        // Then update states
+        setTimeout(() => {
+            updateColorsEditState(currentTheme);
+            initializeHexInputs();
+        }, 200);
+    });
+</script>
 <style>
+    /* Color Picker Styles */
+    input[type="color"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 45px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        padding: 3px;
+        background: var(--card-bg);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="color"]:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+        border-radius: 5px;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 5px;
+    }
+
+    input[type="color"]::-moz-color-swatch {
+        border: none;
+        border-radius: 5px;
+    }
+
+    /* Expandable Settings Cards */
+    .settings-card {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        max-width: 800px;
+    }
+
+    .settings-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        user-select: none;
+    }
+
+    .settings-card-header:hover {
+        background: var(--card-hover);
+    }
+
+    .settings-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .settings-card-title i {
+        color: var(--accent);
+        width: 20px;
+        text-align: center;
+    }
+
+    .settings-card-arrow {
+        transition: transform 0.3s ease;
+        color: var(--text-secondary);
+    }
+
+    .settings-card.expanded .settings-card-arrow {
+        transform: rotate(180deg);
+    }
+
+    .settings-card-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, padding 0.3s ease;
+        padding: 0 1.25rem;
+    }
+
+    .settings-card.expanded .settings-card-body {
+        max-height: 2000px;
+        padding: 0 1.25rem 1.25rem 1.25rem;
+    }
+
+    .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .color-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .color-item label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .settings-form-group {
+        margin-bottom: 1rem;
+    }
+
+    .settings-form-group label {
+        display: block;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .settings-form-group input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    .settings-form-group input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Preset Import Section */
+    .preset-import-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+    }
+
+    .preset-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .preset-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .preset-btn.dark-preset {
+        background: linear-gradient(135deg, #1f2937, #111827);
+        color: #f9fafb;
+        border: 1px solid #374151;
+    }
+
+    .preset-btn.dark-preset:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .preset-btn.light-preset {
+        background: linear-gradient(135deg, #ffffff, #f3f4f6);
+        color: #111827;
+        border: 1px solid #d1d5db;
+    }
+
+    .preset-btn.light-preset:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Colors Edit Notice */
+    .colors-edit-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid var(--accent);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        color: var(--accent);
+        font-size: 0.9rem;
+    }
+
+    .colors-edit-notice.hidden {
+        display: none;
+    }
+
+    /* Compact Color Grid - Vertical Layout */
+    .color-grid-compact {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .color-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem;
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+        border: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .color-row label {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .color-picker-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .color-input-compact {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        padding: 0;
+        background: transparent;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .color-input-compact:hover {
+        border-color: var(--accent);
+        transform: scale(1.1);
+    }
+
+    .color-input-compact::-webkit-color-swatch-wrapper {
+        padding: 0;
+        border-radius: 6px;
+    }
+
+    .color-input-compact::-webkit-color-swatch {
+        border: none;
+        border-radius: 6px;
+    }
+
+    .color-input-compact::-moz-color-swatch {
+        border: none;
+        border-radius: 6px;
+    }
+
+    .color-hex-input {
+        width: 72px;
+        padding: 0.25rem 0.35rem;
+        font-size: 0.65rem;
+        font-family: monospace;
+        text-transform: uppercase;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg-color);
+        color: var(--text-primary);
+        text-align: center;
+    }
+
+    .color-hex-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    /* Disabled state for non-custom themes */
+    .color-input-compact:disabled,
+    .color-hex-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .admin-layout {
         display: flex;
         min-height: 100vh;
@@ -543,90 +1254,264 @@
                 <p style="color: var(--text-secondary);">Personalize o painel administrativo</p>
             </div>
 
-            <div class="card" style="max-width: 800px;">
-                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fa-solid fa-palette"></i> Aparência
-                </h3>
-
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>Tema do Painel</label>
-                        <div class="theme-selector">
-                            <div class="theme-option" onclick="setTheme('light')" id="theme-light">
-                                <div class="theme-preview light">
-                                    <div class="tp-header"></div>
-                                    <div class="tp-sidebar"></div>
-                                    <div class="tp-content"></div>
-                                </div>
-                                <span>Claro</span>
+            <!-- Appearance Card -->
+            <div class="settings-card expanded" id="card-appearance">
+                <div class="settings-card-header" onclick="toggleSettingsCard('card-appearance')">
+                    <div class="settings-card-title">
+                        <i class="fa-solid fa-palette"></i>
+                        Aparência
+                    </div>
+                    <i class="fa-solid fa-chevron-down settings-card-arrow"></i>
+                </div>
+                <div class="settings-card-body">
+                    <label style="display: block; margin-bottom: 0.75rem; color: var(--text-secondary);">Tema do
+                        Painel</label>
+                    <div class="theme-selector">
+                        <div class="theme-option" onclick="setTheme('light')" id="theme-light">
+                            <div class="theme-preview light">
+                                <div class="tp-header"></div>
+                                <div class="tp-sidebar"></div>
+                                <div class="tp-content"></div>
                             </div>
-                            <div class="theme-option" onclick="setTheme('dark')" id="theme-dark">
-                                <div class="theme-preview dark">
-                                    <div class="tp-header"></div>
-                                    <div class="tp-sidebar"></div>
-                                    <div class="tp-content"></div>
-                                </div>
-                                <span>Escuro</span>
-                            </div>
-                            <div class="theme-option" onclick="setTheme('custom')" id="theme-custom">
-                                <div class="theme-preview custom"
-                                    style="background: var(--bg-color); border-color: var(--accent);">
-                                    <div class="tp-header" style="background: var(--bg-secondary);"></div>
-                                    <div class="tp-sidebar" style="background: var(--card-bg);"></div>
-                                </div>
-                                <span>Customizado</span>
-                            </div>
+                            <span>Claro</span>
                         </div>
-
-                        <!-- Custom Theme Controls -->
-                        <div id="custom-theme-controls"
-                            style="display: none; margin-top: 1rem; background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem;">
-                            <div class="filter-bar"
-                                style="margin-bottom: 0; box-shadow: none; border: none; padding: 0;">
-                                <div class="filter-group">
-                                    <label>Cor Principal</label>
-                                    <input type="color" id="color-accent" value="#3b82f6"
-                                        oninput="applyCustomColor('--accent', this.value)">
-                                </div>
-                                <div class="filter-group">
-                                    <label>Fundo (BG)</label>
-                                    <input type="color" id="color-bg" value="#111827"
-                                        oninput="applyCustomColor('--bg-color', this.value)">
-                                </div>
-                                <div class="filter-group">
-                                    <label>Cartões</label>
-                                    <input type="color" id="color-card" value="#1f2937"
-                                        oninput="applyCustomColor('--card-bg', this.value)">
-                                </div>
-                                <div class="filter-group">
-                                    <label>Sidebar</label>
-                                    <input type="color" id="color-sidebar" value="#1f2937"
-                                        oninput="applyCustomColor('--sidebar-bg', this.value)">
-                                </div>
+                        <div class="theme-option" onclick="setTheme('dark')" id="theme-dark">
+                            <div class="theme-preview dark">
+                                <div class="tp-header"></div>
+                                <div class="tp-sidebar"></div>
+                                <div class="tp-content"></div>
                             </div>
+                            <span>Escuro</span>
+                        </div>
+                        <div class="theme-option" onclick="setTheme('custom')" id="theme-custom">
+                            <div class="theme-preview custom">
+                                <div class="tp-header"></div>
+                                <div class="tp-sidebar"></div>
+                                <div class="tp-content"></div>
+                            </div>
+                            <span>Customizado</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card" style="max-width: 800px; margin-top: 1.5rem;">
-                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fa-solid fa-user-gear"></i> Sua Conta
-                </h3>
-                <div
-                    style="background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
+            <!-- Colors Card -->
+            <div class="settings-card" id="card-colors">
+                <div class="settings-card-header" onclick="toggleSettingsCard('card-colors')">
+                    <div class="settings-card-title">
+                        <i class="fa-solid fa-droplet"></i>
+                        Cores
+                    </div>
+                    <i class="fa-solid fa-chevron-down settings-card-arrow"></i>
+                </div>
+                <div class="settings-card-body" id="custom-theme-controls">
+                    <div id="colors-edit-notice" class="colors-edit-notice">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Selecione o tema <strong>Customizado</strong> para editar as cores</span>
+                    </div>
+
+                    <!-- Import Presets Section -->
+                    <div id="preset-import-section" class="preset-import-section" style="display: none;">
+                        <span style="color: var(--text-secondary); font-size: 0.9rem;">Importar Base:</span>
+                        <div class="preset-buttons">
+                            <button class="btn preset-btn dark-preset" onclick="importPreset('dark')"
+                                title="Importar cores do tema escuro">
+                                <i class="fa-solid fa-moon"></i> Escuro
+                            </button>
+                            <button class="btn preset-btn light-preset" onclick="importPreset('light')"
+                                title="Importar cores do tema claro">
+                                <i class="fa-solid fa-sun"></i> Claro
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="color-grid-compact">
+                        <div class="color-row">
+                            <label>Fundo Principal</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-bg_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('bg-color', this.value)">
+                                <input type="text" id="theme-bg_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-bg_color', 'bg-color')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Fundo Secundário</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-bg_secondary" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('bg-secondary', this.value)">
+                                <input type="text" id="theme-bg_secondary-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-bg_secondary', 'bg-secondary')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Cartões</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-card_bg" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('card-bg', this.value)">
+                                <input type="text" id="theme-card_bg-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-card_bg', 'card-bg')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Cartões (Hover)</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-card_hover" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('card-hover', this.value)">
+                                <input type="text" id="theme-card_hover-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-card_hover', 'card-hover')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Texto Primário</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-text_primary" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('text-primary', this.value)">
+                                <input type="text" id="theme-text_primary-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-text_primary', 'text-primary')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Texto Secundário</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-text_secondary" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('text-secondary', this.value)">
+                                <input type="text" id="theme-text_secondary-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-text_secondary', 'text-secondary')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Destaque</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-accent_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('accent', this.value)">
+                                <input type="text" id="theme-accent_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-accent_color', 'accent')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Destaque (Hover)</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-accent_hover" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('accent-hover', this.value)">
+                                <input type="text" id="theme-accent_hover-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-accent_hover', 'accent-hover')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Sucesso</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-success_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('success', this.value)">
+                                <input type="text" id="theme-success_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-success_color', 'success')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Perigo</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-danger_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('danger', this.value)">
+                                <input type="text" id="theme-danger_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-danger_color', 'danger')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Bordas</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-border_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('border', this.value)">
+                                <input type="text" id="theme-border_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-border_color', 'border')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>Estrelas</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-star_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('star-color', this.value)">
+                                <input type="text" id="theme-star_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-star_color', 'star-color')">
+                            </div>
+                        </div>
+                        <div class="color-row">
+                            <label>WhatsApp</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="theme-whatsapp_color" class="color-input-compact"
+                                    onchange="updateColorHex(this); previewThemeVal('whatsapp-color', this.value)">
+                                <input type="text" id="theme-whatsapp_color-hex" class="color-hex-input" maxlength="9"
+                                    onchange="updateColorFromHex(this, 'theme-whatsapp_color', 'whatsapp-color')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="colors-save-actions" class="settings-actions" style="display: none;">
+                        <button class="btn" onclick="resetThemeDefaults()">
+                            <i class="fa-solid fa-rotate-left"></i> Restaurar
+                        </button>
+                        <button class="btn btn-primary" onclick="saveCustomTheme()">
+                            <i class="fa-solid fa-check"></i> Salvar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Card -->
+            <div class="settings-card" id="card-security">
+                <div class="settings-card-header" onclick="toggleSettingsCard('card-security')">
+                    <div class="settings-card-title">
+                        <i class="fa-solid fa-lock"></i>
+                        Segurança
+                    </div>
+                    <i class="fa-solid fa-chevron-down settings-card-arrow"></i>
+                </div>
+                <div class="settings-card-body">
+                    <form id="password-change-form" onsubmit="changePassword(event)">
+                        <div class="settings-form-group">
+                            <label for="current-password">Senha Atual</label>
+                            <input type="password" id="current-password" placeholder="Digite sua senha atual" required>
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="new-password">Nova Senha</label>
+                            <input type="password" id="new-password" placeholder="Digite a nova senha" required
+                                minlength="6">
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="confirm-password">Confirmar Nova Senha</label>
+                            <input type="password" id="confirm-password" placeholder="Confirme a nova senha" required
+                                minlength="6">
+                        </div>
+                        <div class="settings-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-key"></i> Alterar Senha
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Account Card -->
+            <div class="settings-card" id="card-account">
+                <div class="settings-card-header" onclick="toggleSettingsCard('card-account')">
+                    <div class="settings-card-title">
+                        <i class="fa-solid fa-user-gear"></i>
+                        Sua Conta
+                    </div>
+                    <i class="fa-solid fa-chevron-down settings-card-arrow"></i>
+                </div>
+                <div class="settings-card-body">
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0;">
                         <div class="barber-avatar" style="width: 60px; height: 60px;">
                             <i class="fa-solid fa-user"></i>
                         </div>
-                        <div>
-                            <strong id="settings-user-name">Carregando...</strong>
+                        <div style="flex: 1;">
+                            <strong id="settings-user-name" style="font-size: 1.1rem;">Carregando...</strong>
                             <p id="settings-user-role" style="color: var(--text-secondary); font-size: 0.9rem;">...</p>
                         </div>
+                        <button class="btn btn-primary" onclick="editProfile()">
+                            <i class="fa-solid fa-pen"></i> Editar Perfil
+                        </button>
                     </div>
-                    <button class="btn btn-primary" onclick="editProfile()">
-                        <i class="fa-solid fa-pen"></i> Editar Perfil
-                    </button>
                 </div>
             </div>
         </div>
@@ -1074,34 +1959,141 @@
         }
     }
 
+    // Toggle Settings Card expand/collapse
+    function toggleSettingsCard(cardId) {
+        const card = document.getElementById(cardId);
+        if (card) {
+            card.classList.toggle('expanded');
+        }
+    }
+
+    // Password Change
+    async function changePassword(event) {
+        event.preventDefault();
+
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            await showAlertModal('As senhas não coincidem!');
+            return;
+        }
+
+        // Validate minimum length
+        if (newPassword.length < 6) {
+            await showAlertModal('A nova senha deve ter pelo menos 6 caracteres!');
+            return;
+        }
+
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const res = await fetch('/panel/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.detail || 'Erro ao alterar senha');
+            }
+
+            await showAlertModal('Senha alterada com sucesso!');
+
+            // Clear the form
+            document.getElementById('password-change-form').reset();
+
+        } catch (error) {
+            await showAlertModal('Erro: ' + error.message);
+        }
+    }
+
     function setTheme(theme) {
+        // If already on this theme, do nothing
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        if (currentTheme === theme) {
+            return; // Cancel - already on this theme
+        }
+
         document.body.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
         updateThemeUI(theme);
+        updateColorsEditState(theme);
 
-        const customControls = document.getElementById('custom-theme-controls');
         if (theme === 'custom') {
-            customControls.style.display = 'block';
-            loadCustomColors(); // Ensure inputs match current vars
+            // Load and APPLY custom colors to CSS + inputs
+            loadCustomColors();
         } else {
-            customControls.style.display = 'none';
-            // Remove custom overrides
-            document.body.style.removeProperty('--accent');
-            document.body.style.removeProperty('--bg-color');
-            document.body.style.removeProperty('--card-bg');
-            document.body.style.removeProperty('--sidebar-bg');
+            // Apply preset colors to CSS
+            applyPresetToCSS(theme);
+            // Load custom colors into inputs (read-only display)
+            loadThemeColorsToInputs(theme);
         }
+
+        // Update custom theme preview card
+        setTimeout(updateCustomPreviewCard, 100);
+    }
+
+    // Apply preset colors to CSS variables
+    function applyPresetToCSS(themeName) {
+        const preset = themePresets[themeName];
+        if (!preset) return;
+
+        const cssMapping = {
+            bg_color: 'bg-color', bg_secondary: 'bg-secondary',
+            card_bg: 'card-bg', card_hover: 'card-hover',
+            text_primary: 'text-primary', text_secondary: 'text-secondary',
+            accent_color: 'accent', accent_hover: 'accent-hover',
+            danger_color: 'danger', success_color: 'success',
+            border_color: 'border', star_color: 'star-color',
+            whatsapp_color: 'whatsapp-color'
+        };
+
+        for (const [key, cssVar] of Object.entries(cssMapping)) {
+            if (preset[key]) {
+                document.documentElement.style.setProperty('--' + cssVar, preset[key]);
+            }
+        }
+    }
+
+    // Load custom colors into inputs only (without changing CSS)
+    function loadSavedCustomColorsToInputs() {
+        fetch('/panel/theme')
+            .then(res => res.ok ? res.json() : Promise.reject('Failed'))
+            .then(data => {
+                for (const [key, value] of Object.entries(data)) {
+                    if (!value) continue;
+                    const input = document.getElementById(`theme-${key}`);
+                    const hexInput = document.getElementById(`theme-${key}-hex`);
+                    if (input) input.value = value;
+                    if (hexInput) hexInput.value = value.toUpperCase();
+                }
+                updateCustomPreviewCard();
+            })
+            .catch(() => {
+                // Use dark preset as default for inputs
+                loadThemeColorsToInputs('dark');
+            });
     }
 
     function updateThemeUI(theme) {
         document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
         const activeBtn = document.getElementById(`theme-${theme}`);
         if (activeBtn) activeBtn.classList.add('active');
-
-        const customControls = document.getElementById('custom-theme-controls');
-        if (customControls) {
-            customControls.style.display = theme === 'custom' ? 'block' : 'none';
-        }
     }
 
     function applyCustomColor(varName, value) {
@@ -1113,23 +2105,101 @@
         localStorage.setItem('customColors', JSON.stringify(customColors));
     }
 
+    // Mapping between CSS variable names and input IDs
+    const themeInputMapping = {
+        'bg-color': 'theme-bg_color',
+        'bg-secondary': 'theme-bg_secondary',
+        'card-bg': 'theme-card_bg',
+        'card-hover': 'theme-card_hover',
+        'text-primary': 'theme-text_primary',
+        'text-secondary': 'theme-text_secondary',
+        'accent': 'theme-accent_color',
+        'accent-hover': 'theme-accent_hover',
+        'success': 'theme-success_color',
+        'danger': 'theme-danger_color',
+        'border': 'theme-border_color',
+        'star-color': 'theme-star_color',
+        'whatsapp-color': 'theme-whatsapp_color'
+    };
+
+    // Default theme colors (dark theme)
+    const defaultThemeColors = {
+        'bg-color': '#111827',
+        'bg-secondary': '#1f2937',
+        'card-bg': '#1f2937',
+        'card-hover': '#374151',
+        'text-primary': '#f9fafb',
+        'text-secondary': '#9ca3af',
+        'accent': '#3b82f6',
+        'accent-hover': '#2563eb',
+        'success': '#10b981',
+        'danger': '#ef4444',
+        'border': '#374151',
+        'star-color': '#f59e0b',
+        'whatsapp-color': '#25d366'
+    };
+
     function loadCustomColors() {
         let customColors = JSON.parse(localStorage.getItem('customColors') || '{}');
 
-        // Defaults if empty
-        if (!customColors['--accent']) customColors['--accent'] = '#3b82f6';
-        if (!customColors['--bg-color']) customColors['--bg-color'] = '#111827';
-        if (!customColors['--card-bg']) customColors['--card-bg'] = '#1f2937';
-        if (!customColors['--sidebar-bg']) customColors['--sidebar-bg'] = '#1f2937';
+        // Apply stored colors and update input values
+        for (const [cssVar, inputId] of Object.entries(themeInputMapping)) {
+            const cssKey = '--' + cssVar;
+            const value = customColors[cssKey] || defaultThemeColors[cssVar];
 
-        for (const [key, value] of Object.entries(customColors)) {
-            document.body.style.setProperty(key, value);
+            // Apply to documentElement for consistency
+            if (customColors[cssKey]) {
+                document.documentElement.style.setProperty(cssKey, customColors[cssKey]);
+            }
 
-            // Update inputs
-            const inputId = key.replace('--', 'color-'); // --accent -> color-accent
+            // Update input value
             const input = document.getElementById(inputId);
-            if (input) input.value = value;
+            if (input) {
+                input.value = value;
+            }
         }
+    }
+
+
+
+    function saveCustomTheme() {
+        let customColors = {};
+
+        // Collect all values from inputs
+        for (const [cssVar, inputId] of Object.entries(themeInputMapping)) {
+            const input = document.getElementById(inputId);
+            if (input && input.value) {
+                const cssKey = '--' + cssVar;
+                customColors[cssKey] = input.value;
+                document.documentElement.style.setProperty(cssKey, input.value);
+            }
+        }
+
+        localStorage.setItem('customColors', JSON.stringify(customColors));
+        localStorage.setItem('theme', 'custom');
+        document.body.setAttribute('data-theme', 'custom');
+        updateThemeUI('custom');
+
+        showAlertModal('Tema personalizado salvo com sucesso!');
+    }
+
+    function resetThemeDefaults() {
+        // Clear custom colors from localStorage
+        localStorage.removeItem('customColors');
+
+        // Reset all CSS variables to defaults
+        for (const [cssVar, defaultValue] of Object.entries(defaultThemeColors)) {
+            document.documentElement.style.removeProperty('--' + cssVar);
+
+            // Update input values
+            const inputId = themeInputMapping[cssVar];
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = defaultValue;
+            }
+        }
+
+        showAlertModal('Cores restauradas para o padrão!');
     }
 
     // Initialize Theme on Load

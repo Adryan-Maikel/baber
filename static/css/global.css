@@ -29,6 +29,21 @@ body[data-theme="dark"] {
 
     --border: #262626;
     --shadow: rgba(0, 0, 0, 0.7);
+    --shadow-rgb: 0, 0, 0;
+
+    /* RGB helpers for opacity */
+    --accent-rgb: 37, 99, 235;
+    --danger-rgb: 220, 38, 38;
+
+    /* Specific UI Colors */
+    --star-color: #fbbf24;
+    --whatsapp-color: #25D366;
+    --whatsapp-hover: #128C7E;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
     --font-main: 'Outfit', sans-serif;
 }
 
@@ -54,6 +69,21 @@ body[data-theme="light"] {
 
     --border: #e2e8f0;
     --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-rgb: 0, 0, 0;
+
+    /* RGB helpers for opacity */
+    --accent-rgb: 37, 99, 235;
+    --danger-rgb: 220, 38, 38;
+
+    /* Specific UI Colors */
+    --star-color: #fbbf24;
+    --whatsapp-color: #25D366;
+    --whatsapp-hover: #128C7E;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(0, 0, 0, 0.05);
+    --glass-border: rgba(0, 0, 0, 0.1);
+
     --font-main: 'Outfit', sans-serif;
 }
 
@@ -74,6 +104,15 @@ body {
     --success-hover: #15803d;
     --border: #262626;
     --shadow: rgba(0, 0, 0, 0.7);
+    --shadow-rgb: 0, 0, 0;
+    --accent-rgb: 37, 99, 235;
+    --danger-rgb: 220, 38, 38;
+    --star-color: #fbbf24;
+    --whatsapp-color: #25D366;
+    --whatsapp-hover: #128C7E;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
     --font-main: 'Outfit', sans-serif;
 
     --transition-speed: 0.3s;

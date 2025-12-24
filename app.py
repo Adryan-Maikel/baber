@@ -42,6 +42,73 @@ app.register_blueprint(upload_bp)
 app.register_blueprint(stories_bp)
 
 
+
+# Context Processor for Theme
+@app.context_processor
+def inject_theme():
+    """Inject theme variables into all templates"""
+    from models import ThemeConfig
+    
+    # Helper to hex -> rgb
+    def hex_to_rgb(hex_color):
+        if not hex_color: return (0,0,0)
+        hex_color = hex_color.lstrip('#')
+        try:
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        except:
+            return (0,0,0)
+        
+    db = SessionLocal()
+    try:
+        config = db.query(ThemeConfig).first()
+        if not config:
+            # Create default if missing
+            config = ThemeConfig()
+            db.add(config)
+            db.commit()
+            db.refresh(config)
+            
+        # Convert accents/shadows to RGB for opacity vars
+        accent_rgb = ",".join(map(str, hex_to_rgb(config.accent_color)))
+        danger_rgb = ",".join(map(str, hex_to_rgb(config.danger_color)))
+        # Shadow roughly black or dark
+        shadow_rgb = "0, 0, 0" 
+        
+        theme_css = f"""
+        <style>
+            :root {{
+                --bg-color: {config.bg_color};
+                --bg-secondary: {config.bg_secondary};
+                --card-bg: {config.card_bg};
+                --card-hover: {config.card_hover};
+                
+                --text-primary: {config.text_primary};
+                --text-secondary: {config.text_secondary};
+                
+                --accent: {config.accent_color};
+                --accent-hover: {config.accent_hover};
+                --accent-rgb: {accent_rgb};
+                --accent-light: rgba({accent_rgb}, 0.15);
+                
+                --danger: {config.danger_color};
+                --danger-rgb: {danger_rgb};
+                
+                --success: {config.success_color};
+                
+                --border: {config.border_color};
+                
+                --star-color: {config.star_color};
+                --whatsapp-color: {config.whatsapp_color};
+            }}
+        </style>
+        """
+        return dict(theme_css=theme_css, theme_config=config)
+    except Exception as e:
+        print(f"Error loading theme: {e}")
+        return dict(theme_css="", theme_config=None)
+    finally:
+        db.close()
+
 @app.route("/")
 def read_root():
     return render_template("index.html")

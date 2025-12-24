@@ -111,3 +111,39 @@ class AppointmentMedia(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     appointment = relationship("Appointment", back_populates="media")
+
+class ThemeConfig(Base):
+    """Store global theme settings"""
+    __tablename__ = "theme_config"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    # Basic Colors
+    bg_color = Column(String, default="#050505")
+    bg_secondary = Column(String, default="#0a0a0a")
+    card_bg = Column(String, default="#141414")
+    card_hover = Column(String, default="#1f1f1f")
+    
+    # Text
+    text_primary = Column(String, default="#ffffff")
+    text_secondary = Column(String, default="#a0a0a0")
+    
+    # Accents
+    accent_color = Column(String, default="#2563eb")
+    accent_hover = Column(String, default="#1d4ed8")
+    
+    # Danger/Success
+    danger_color = Column(String, default="#dc2626")
+    success_color = Column(String, default="#16a34a")
+    
+    # Border/Shadow
+    border_color = Column(String, default="#262626")
+    
+    # Specifics
+    star_color = Column(String, default="#fbbf24")
+    whatsapp_color = Column(String, default="#25D366")
+    
+    # Derived/Complex values stored as strings for simplicity if needed, 
+    # but ideally we compute RGBA on the fly or store them here too.
+    # For full Customization, we store the base RGB values or Opacities if user wants deep control.
+    # For now, let's store the main Hex codes.
+

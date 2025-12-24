@@ -58,7 +58,7 @@
     /* Return to surface + subtle squash */
     box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
     /* Shadow disappears */
-    transition: all 0.5s ease-out;
+    transition: all 0.5s linear(0 0%, 0 1.8%, 0.01 3.6%, 0.03 6.35%, 0.07 9.1%, 0.13 11.4%, 0.19 13.4%, 0.27 15%, 0.34 16.1%, 0.54 18.35%, 0.66 20.6%, 0.72 22.4%, 0.77 24.6%, 0.81 27.3%, 0.85 30.4%, 0.88 35.1%, 0.92 40.6%, 0.94 47.2%, 0.96 55%, 0.98 64%, 0.99 74.4%, 1 86.4%, 1 100%);
     /* Snap down vertically */
 }
 
@@ -67,17 +67,17 @@
     background: linear-gradient(135deg, var(--accent), var(--accent-hover));
     color: white;
     border: none;
-    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.3);
     /* Glowy shadow for primary */
 }
 
 .btn-primary:hover {
-    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+    box-shadow: 0 10px 25px rgba(var(--accent-rgb), 0.5);
     /* Stronger glow */
 }
 
 .btn-primary:active {
-    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 5px rgba(var(--accent-rgb), 0.2);
 }
 
 /* Selection State */
@@ -125,8 +125,8 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
     /* Glassmorphism base */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -145,7 +145,7 @@
     background: var(--accent);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 8px 15px rgba(var(--accent-rgb), 0.3);
     /* Glow color based on default accent */
     border-color: transparent;
 }
@@ -260,7 +260,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(var(--shadow-rgb), 0.6);
     backdrop-filter: blur(8px);
     /* Strong blur on background */
     -webkit-backdrop-filter: blur(8px);
@@ -285,7 +285,7 @@
     /* Ensure modal cards have glass effect on top of blur overlay */
     background: var(--card-bg);
     /* Opaque or slightly transparent if global var allows */
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(var(--shadow-rgb), 0.5);
 }
 
 .modal-overlay.active .card {
@@ -501,8 +501,8 @@
     color: #fff;
     width: 90%;
     max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.5);
+    border: 1px solid var(--glass-border);
     z-index: 2005;
     animation: slideUpFade 0.5s ease-out;
     display: flex;
@@ -538,7 +538,7 @@
 }
 
 .feedback-stars {
-    color: #fbbf24;
+    color: var(--star-color);
     /* Amber-400 */
     font-size: 0.9rem;
 }
@@ -560,7 +560,7 @@
 
 .star-rating-input i:hover,
 .star-rating-input i.active {
-    color: #fbbf24;
+    color: var(--star-color);
     transform: scale(1.1);
 }
 
@@ -587,7 +587,7 @@
     border-radius: 4px;
     /* Rounded */
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 2px rgba(var(--shadow-rgb), 0.2);
 }
 
 .story-progress-fill {

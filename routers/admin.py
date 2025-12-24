@@ -4,7 +4,8 @@ from sqlalchemy import func, desc
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta, datetime
 import models, schemas
-from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash, get_db
+from models import ThemeConfig
+from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash, get_db, verify_password
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/panel')
 
@@ -559,4 +560,101 @@ def submit_feedback(appointment_id):
         
     db.commit()
     return jsonify({"ok": True, "appointment_id": appointment.id})
+
+    return jsonify({"ok": True, "appointment_id": appointment.id})
+
+
+# =============== THEME SETTINGS ===============
+
+@admin_bp.route("/theme", methods=["GET"])
+def get_theme_settings():
+    """Get current theme settings"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+        
+    db = get_db()
+    config = db.query(ThemeConfig).first()
+    if not config:
+        config = ThemeConfig()
+        db.add(config)
+        db.commit()
+    
+    # Return as dict since we didn't make a Pydantic schema yet, or just direct
+    return jsonify({
+        "bg_color": config.bg_color,
+        "bg_secondary": config.bg_secondary,
+        "card_bg": config.card_bg,
+        "card_hover": config.card_hover,
+        "text_primary": config.text_primary,
+        "text_secondary": config.text_secondary, 
+        "accent_color": config.accent_color,
+        "accent_hover": config.accent_hover,
+        "danger_color": config.danger_color,
+        "success_color": config.success_color,
+        "border_color": config.border_color,
+        "star_color": config.star_color,
+        "whatsapp_color": config.whatsapp_color
+    })
+
+@admin_bp.route("/theme", methods=["POST"])
+def update_theme_settings():
+    """Update theme settings"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    data = request.json
+    db = get_db()
+    config = db.query(ThemeConfig).first()
+    if not config:
+        config = ThemeConfig()
+        db.add(config)
+    
+    # Update fields if present
+    fields = [
+        "bg_color", "bg_secondary", "card_bg", "card_hover",
+        "text_primary", "text_secondary",
+        "accent_color", "accent_hover",
+        "danger_color", "success_color",
+        "border_color", "star_color", "whatsapp_color"
+    ]
+    
+    for field in fields:
+        if field in data:
+            setattr(config, field, data[field])
+            
+    db.commit()
+    return jsonify({"ok": True})
+
+
+# =============== PASSWORD CHANGE ===============
+
+@admin_bp.route("/change-password", methods=["POST"])
+def change_password():
+    """Change password for current user (admin or barber)"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+    
+    data = request.json
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    
+    if not current_password or not new_password:
+        return jsonify({"detail": "Senha atual e nova senha são obrigatórias"}), 400
+    
+    if len(new_password) < 6:
+        return jsonify({"detail": "A nova senha deve ter pelo menos 6 caracteres"}), 400
+    
+    # Verify current password
+    if not verify_password(current_password, current_user.hashed_password):
+        return jsonify({"detail": "Senha atual incorreta"}), 400
+    
+    # Update password
+    db = get_db()
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    
+    return jsonify({"ok": True, "message": "Senha alterada com sucesso"})
 

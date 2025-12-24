@@ -125,7 +125,7 @@
     background: var(--card-bg);
     border-radius: 0.75rem;
     border: 1px solid var(--border);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(var(--shadow-rgb), 0.1), 0 2px 4px -1px rgba(var(--shadow-rgb), 0.06);
 }
 
 .filter-group {
@@ -232,7 +232,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(var(--shadow-rgb), 0.8);
     align-items: center;
     justify-content: center;
     z-index: 1000;
@@ -299,13 +299,13 @@
 
 /* WhatsApp Button */
 .btn-whatsapp {
-    background: #25D366;
+    background: var(--whatsapp-color);
     color: var(--text-primary);
     border: none;
 }
 
 .btn-whatsapp:hover {
-    background: #128C7E;
+    background: var(--whatsapp-hover);
 }
 
 /* Responsive */
@@ -428,12 +428,12 @@
 
 .theme-option:hover .theme-preview {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(var(--shadow-rgb), 0.1);
 }
 
 .theme-option.active .theme-preview {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 .theme-option span {
@@ -473,4 +473,20 @@
 
 .theme-preview.dark .tp-content {
     flex: 1;
+}
+
+/* Custom Theme Preview */
+.theme-preview.custom {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+}
+
+.theme-preview.custom .tp-sidebar {
+    width: 30%;
+    background: linear-gradient(180deg, #0f3460, #1a1a2e);
+    border-right: 1px solid #e94560;
+}
+
+.theme-preview.custom .tp-content {
+    flex: 1;
+    background: linear-gradient(135deg, transparent, rgba(233, 69, 96, 0.1));
 }
