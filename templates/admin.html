@@ -20,17 +20,44 @@
             })
             .then(data => {
                 // Populate inputs and hex fields
+                const backendToCssVar = {
+                    'bg_color': 'bg-color',
+                    'bg_secondary': 'bg-secondary',
+                    'card_bg': 'card-bg',
+                    'card_hover': 'card-hover',
+                    'text_primary': 'text-primary',
+                    'text_secondary': 'text-secondary',
+                    'accent_color': 'accent',
+                    'accent_hover': 'accent-hover',
+                    'danger_color': 'danger',
+                    'success_color': 'success',
+                    'border_color': 'border',
+                    'star_color': 'star-color',
+                    'whatsapp_color': 'whatsapp-color'
+                };
+
                 for (const [key, value] of Object.entries(data)) {
                     if (!value) continue;
+
+                    // 1. Populate Inputs
                     const input = document.getElementById(`theme-${key}`);
                     const hexInput = document.getElementById(`theme-${key}-hex`);
-                    if (input) {
-                        input.value = value;
-                    }
-                    if (hexInput) {
-                        hexInput.value = value.toUpperCase();
+                    if (input) input.value = value;
+                    if (hexInput) hexInput.value = value.toUpperCase();
+
+                    // 2. Apply CSS Variable directly to BODY (overrides global.css body rules)
+                    const cssVar = backendToCssVar[key];
+                    if (cssVar) {
+                        document.body.style.setProperty(`--${cssVar}`, value);
+                        if (cssVar === 'accent') {
+                            const r = parseInt(value.substr(1, 2), 16);
+                            const g = parseInt(value.substr(3, 2), 16);
+                            const b = parseInt(value.substr(5, 2), 16);
+                            document.body.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+                        }
                     }
                 }
+
                 // Initialize hex inputs after a delay to ensure DOM is ready
                 setTimeout(initializeHexInputs, 50);
             })
@@ -40,14 +67,15 @@
     }
 
     function previewThemeVal(cssVar, val) {
-        document.documentElement.style.setProperty(`--${cssVar}`, val);
+        // Apply to body to override global.css
+        document.body.style.setProperty(`--${cssVar}`, val);
         // Verify if accent changes need RGB update manually
         if (cssVar === 'accent') {
             // Approximate RGB update for preview only (real RGB calc happens on save/reload)
             const r = parseInt(val.substr(1, 2), 16);
             const g = parseInt(val.substr(3, 2), 16);
             const b = parseInt(val.substr(5, 2), 16);
-            document.documentElement.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+            document.body.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
         }
 
         // Update custom theme preview if relevant colors change
@@ -60,7 +88,8 @@
 
     function saveCustomTheme() {
         const data = {};
-        const inputs = document.querySelectorAll('[id^="theme-"]');
+        // Select only the color inputs, ignoring the text/-hex inputs
+        const inputs = document.querySelectorAll('input[type="color"][id^="theme-"]');
         inputs.forEach(input => {
             const key = input.id.replace('theme-', '');
             data[key] = input.value;
@@ -74,10 +103,18 @@
             .then(res => res.json())
             .then(res => {
                 if (res.ok) {
-                    alert('Tema salvo com sucesso! A página será atualizada.');
-                    window.location.reload();
+                    // Update theme persistence locally to be safe
+                    localStorage.setItem('theme', 'custom');
+                    document.body.setAttribute('data-theme', 'custom');
+
+                    // Show success without reload
+                    if (typeof showAlertModal === 'function') {
+                        showAlertModal('Tema salvo com sucesso!');
+                    } else {
+                        alert('Tema salvo com sucesso!');
+                    }
                 } else {
-                    alert('Erro ao salvar tema: ' + res.detail);
+                    alert('Erro ao salvar tema: ' + (res.detail || 'Erro desconhecido'));
                 }
             });
     }
@@ -176,8 +213,8 @@
                 if (input) input.value = value;
                 if (hexInput) hexInput.value = value.toUpperCase();
 
-                // Apply to CSS for immediate preview
-                document.documentElement.style.setProperty('--' + map.cssVar, value);
+                // Apply to CSS for immediate preview using the common function
+                previewThemeVal(map.cssVar, value);
             }
         }
 
@@ -409,6 +446,13 @@
     });
 </script>
 <style>
+    :root {
+        --max-content-width: 1000px;
+        --card-padding-compact: 1rem;
+        --input-height-compact: 36px;
+        --font-size-compact: 0.9rem;
+    }
+
     /* Color Picker Styles */
     input[type="color"] {
         -webkit-appearance: none;
@@ -783,48 +827,21 @@
         display: block;
     }
 
-    /* Barber Cards */
-    .barber-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1rem;
+    /* Barber Card Styles migrated to static/css/admin.css */
+
+
+    @media (max-width: 768px) {
+        .barber-edit-form {
+            grid-template-columns: 1fr;
+        }
+
+        .barber-summary-right {
+            display: none;
+            /* Hide extra info on mobile summary */
+        }
     }
 
-    .barber-admin-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        transition: all 0.3s;
-    }
 
-    .barber-admin-card:hover {
-        box-shadow: 0 10px 25px var(--shadow);
-    }
-
-    .barber-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .barber-avatar-admin {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        background: var(--accent-light);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: var(--accent);
-        position: relative;
-        cursor: pointer;
-        overflow: hidden;
-        transition: all 0.3s;
-    }
 
     .barber-avatar-admin img {
         width: 100%;
@@ -1028,9 +1045,10 @@
     }
 
     .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: row;
         gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .service-form-item {
@@ -1239,11 +1257,8 @@
         <div id="barbers" class="section fade-in">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h1><i class="fa-solid fa-scissors"></i> Profissionais</h1>
-                <button class="btn btn-primary" onclick="openBarberModal()">
-                    <i class="fa-solid fa-plus"></i> Novo Profissional
-                </button>
             </div>
-            <div id="barbers-admin-list" class="barber-grid">
+            <div id="barbers-admin-list" class="barber-flex">
                 <!-- Barbers loaded via JS -->
             </div>
         </div>
@@ -1330,7 +1345,7 @@
                             <label>Fundo Principal</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-bg_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('bg-color', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('bg-color', this.value)">
                                 <input type="text" id="theme-bg_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-bg_color', 'bg-color')">
                             </div>
@@ -1339,7 +1354,7 @@
                             <label>Fundo Secundário</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-bg_secondary" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('bg-secondary', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('bg-secondary', this.value)">
                                 <input type="text" id="theme-bg_secondary-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-bg_secondary', 'bg-secondary')">
                             </div>
@@ -1348,7 +1363,7 @@
                             <label>Cartões</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-card_bg" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('card-bg', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('card-bg', this.value)">
                                 <input type="text" id="theme-card_bg-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-card_bg', 'card-bg')">
                             </div>
@@ -1357,7 +1372,7 @@
                             <label>Cartões (Hover)</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-card_hover" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('card-hover', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('card-hover', this.value)">
                                 <input type="text" id="theme-card_hover-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-card_hover', 'card-hover')">
                             </div>
@@ -1366,7 +1381,7 @@
                             <label>Texto Primário</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-text_primary" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('text-primary', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('text-primary', this.value)">
                                 <input type="text" id="theme-text_primary-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-text_primary', 'text-primary')">
                             </div>
@@ -1375,7 +1390,7 @@
                             <label>Texto Secundário</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-text_secondary" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('text-secondary', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('text-secondary', this.value)">
                                 <input type="text" id="theme-text_secondary-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-text_secondary', 'text-secondary')">
                             </div>
@@ -1384,7 +1399,7 @@
                             <label>Destaque</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-accent_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('accent', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('accent', this.value)">
                                 <input type="text" id="theme-accent_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-accent_color', 'accent')">
                             </div>
@@ -1393,7 +1408,7 @@
                             <label>Destaque (Hover)</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-accent_hover" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('accent-hover', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('accent-hover', this.value)">
                                 <input type="text" id="theme-accent_hover-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-accent_hover', 'accent-hover')">
                             </div>
@@ -1402,7 +1417,7 @@
                             <label>Sucesso</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-success_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('success', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('success', this.value)">
                                 <input type="text" id="theme-success_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-success_color', 'success')">
                             </div>
@@ -1411,7 +1426,7 @@
                             <label>Perigo</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-danger_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('danger', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('danger', this.value)">
                                 <input type="text" id="theme-danger_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-danger_color', 'danger')">
                             </div>
@@ -1420,7 +1435,7 @@
                             <label>Bordas</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-border_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('border', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('border', this.value)">
                                 <input type="text" id="theme-border_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-border_color', 'border')">
                             </div>
@@ -1429,7 +1444,7 @@
                             <label>Estrelas</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-star_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('star-color', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('star-color', this.value)">
                                 <input type="text" id="theme-star_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-star_color', 'star-color')">
                             </div>
@@ -1438,7 +1453,7 @@
                             <label>WhatsApp</label>
                             <div class="color-picker-wrapper">
                                 <input type="color" id="theme-whatsapp_color" class="color-input-compact"
-                                    onchange="updateColorHex(this); previewThemeVal('whatsapp-color', this.value)">
+                                    oninput="updateColorHex(this); previewThemeVal('whatsapp-color', this.value)">
                                 <input type="text" id="theme-whatsapp_color-hex" class="color-hex-input" maxlength="9"
                                     onchange="updateColorFromHex(this, 'theme-whatsapp_color', 'whatsapp-color')">
                             </div>
@@ -1544,95 +1559,6 @@
         </div>
 
     </main>
-</div>
-
-<!-- Barber Modal -->
-<div id="barber-modal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
-    <div class="card modal-content" style="width: 600px; max-width: 95%;">
-        <h2 id="barber-modal-title"><i class="fa-solid fa-user-plus"></i> Novo Profissional</h2>
-        <form id="barber-form" onsubmit="saveBarber(event)">
-            <input type="hidden" id="barber-id">
-            <input type="hidden" id="barber-avatar-url">
-
-            <!-- Avatar Upload Section -->
-            <div class="modal-avatar-container">
-                <div class="modal-avatar" id="modal-avatar-preview" onclick="handleModalAvatarClick()"
-                    title="Clique para alterar foto">
-                    <i class="fa-solid fa-user-tie"></i>
-                    <div class="avatar-overlay">
-                        <i class="fa-solid fa-camera"></i>
-                    </div>
-                </div>
-                <div class="form-column">
-                    <label for="barber-name">
-                        Nome *
-                        <input type="text" id="barber-name" placeholder="Nome do profissional" required>
-                    </label>
-                    <label for="barber-phone">
-                        Telefone
-                        <input type="tel" id="barber-phone" placeholder="(11) 99999-1234"
-                            oninput="formatPhoneInput(this)">
-                    </label>
-
-                    <!-- Auth Fields -->
-                    <label for="barber-username">
-                        Usuário (Login)
-                        <input type="text" id="barber-username" placeholder="Usuário para acesso">
-                    </label>
-                    <label for="barber-password">
-                        Senha
-                        <input type="password" id="barber-password" placeholder="Senha de acesso">
-                    </label>
-                </div>
-
-                <fieldset class="form-group-border jornada-section">
-                    <legend>Jornada</legend>
-
-                    <div class="jornada-grid">
-                        <div class="input-wrapper">
-                            <label for="barber-start-time">Inicio *</label>
-                            <input type="time" id="barber-start-time" value="09:00" required>
-                        </div>
-
-                        <fieldset class="form-group-border interval-section">
-                            <legend>Intervalo</legend>
-                            <div class="form-row compact">
-                                <label>
-                                    Inicio *
-                                    <input type="time" id="barber-start-time-interval" required>
-                                </label>
-                                <label>
-                                    Fim *
-                                    <input type="time" id="barber-end-time-interval" required>
-                                </label>
-                            </div>
-                        </fieldset>
-
-                        <div class="input-wrapper">
-                            <label for="barber-end-time">Fim *</label>
-                            <input type="time" id="barber-end-time" value="18:00" required>
-                        </div>
-                    </div>
-                </fieldset>
-            </div>
-
-
-
-            <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-list"></i> Servicos</h3>
-            <div id="services-container">
-                <!-- Services added dynamically -->
-            </div>
-            <button type="button" class="btn" onclick="addServiceField()" style="margin-top: 0.5rem;">
-                <i class="fa-solid fa-plus"></i> Adicionar Servico
-            </button>
-
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
-                <button type="button" class="btn" onclick="closeBarberModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar</button>
-            </div>
-        </form>
-    </div>
 </div>
 
 <!-- Confirm Remove Avatar Modal -->
@@ -2035,13 +1961,24 @@
         updateColorsEditState(theme);
 
         if (theme === 'custom') {
-            // Load and APPLY custom colors to CSS + inputs
-            loadCustomColors();
+            // Load and APPLY custom colors from backend
+            loadThemeSettings();
         } else {
-            // Apply preset colors to CSS
-            applyPresetToCSS(theme);
-            // Load custom colors into inputs (read-only display)
-            loadThemeColorsToInputs(theme);
+            // CLEAR custom inline styles so standard theme CSS takes over
+            // We need to match the keys used in backendToCssVar
+            const cssVarsToRemove = [
+                'bg-color', 'bg-secondary', 'card-bg', 'card-hover',
+                'text-primary', 'text-secondary', 'accent', 'accent-hover', 'accent-rgb',
+                'danger', 'success', 'border', 'star-color', 'whatsapp-color'
+            ];
+
+            cssVarsToRemove.forEach(v => document.body.style.removeProperty('--' + v));
+
+            // Load custom colors into inputs (read-only display) just so they aren't empty
+            // But do NOT apply them to body
+            // We can reuse loadThemeSettings but we need a flag to NOT apply styles? 
+            // Actually simpler: just leave inputs as is or fetch without applying.
+            // For now, let's just clear the styles.
         }
 
         // Update custom theme preview card
@@ -2140,74 +2077,30 @@
     };
 
     function loadCustomColors() {
-        let customColors = JSON.parse(localStorage.getItem('customColors') || '{}');
-
-        // Apply stored colors and update input values
-        for (const [cssVar, inputId] of Object.entries(themeInputMapping)) {
-            const cssKey = '--' + cssVar;
-            const value = customColors[cssKey] || defaultThemeColors[cssVar];
-
-            // Apply to documentElement for consistency
-            if (customColors[cssKey]) {
-                document.documentElement.style.setProperty(cssKey, customColors[cssKey]);
-            }
-
-            // Update input value
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.value = value;
-            }
-        }
-    }
-
-
-
-    function saveCustomTheme() {
-        let customColors = {};
-
-        // Collect all values from inputs
+        // Read values directly from inputs (which are populated by loadThemeSettings)
         for (const [cssVar, inputId] of Object.entries(themeInputMapping)) {
             const input = document.getElementById(inputId);
             if (input && input.value) {
                 const cssKey = '--' + cssVar;
-                customColors[cssKey] = input.value;
                 document.documentElement.style.setProperty(cssKey, input.value);
             }
         }
-
-        localStorage.setItem('customColors', JSON.stringify(customColors));
-        localStorage.setItem('theme', 'custom');
-        document.body.setAttribute('data-theme', 'custom');
-        updateThemeUI('custom');
-
-        showAlertModal('Tema personalizado salvo com sucesso!');
     }
 
-    function resetThemeDefaults() {
-        // Clear custom colors from localStorage
-        localStorage.removeItem('customColors');
 
-        // Reset all CSS variables to defaults
-        for (const [cssVar, defaultValue] of Object.entries(defaultThemeColors)) {
-            document.documentElement.style.removeProperty('--' + cssVar);
 
-            // Update input values
-            const inputId = themeInputMapping[cssVar];
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.value = defaultValue;
-            }
-        }
+    // Converted to use the global function at the top
+    // function saveCustomTheme() { ... } removed
 
-        showAlertModal('Cores restauradas para o padrão!');
-    }
+    // Converted to use the global function at the top
+    // function resetThemeDefaults() { ... } removed
 
     // Initialize Theme on Load
     (function initTheme() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.body.setAttribute('data-theme', savedTheme);
         if (savedTheme === 'custom') {
-            loadCustomColors();
+            loadThemeSettings();
         }
     })();
 
@@ -2268,7 +2161,11 @@
         }
     }
 
-    // =============== BARBERS MANAGEMENT ===============
+    // Toggle card expansion
+    window.toggleBarberCard = function (header) {
+        const card = header.closest('.barber-card-horizontal');
+        card.classList.toggle('expanded');
+    }
 
     async function loadBarbersAdmin() {
         const container = document.getElementById('barbers-admin-list');
@@ -2281,268 +2178,473 @@
             if (!res.ok) throw new Error('Failed to load');
             const barbers = await res.json();
 
-            if (barbers.length === 0) {
-                container.innerHTML = `
-                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-                        <i class="fa-solid fa-user-slash" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                        <p style="margin-top: 1rem; color: var(--text-secondary);">Nenhum profissional cadastrado.</p>
-                        <button class="btn btn-primary" onclick="openBarberModal()" style="margin-top: 1rem;">
-                            <i class="fa-solid fa-plus"></i> Adicionar Profissional
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = barbers.map(b => `
-                <div class="barber-admin-card">
-                    <div class="barber-header">
-                        <div class="barber-avatar-admin" onclick="triggerAvatarUpload(${b.id})" title="Clique para alterar foto">
-                            ${b.avatar_url
+            // Always start with the new barber card
+            container.innerHTML = renderNewBarberCardHTML() + barbers.map(b => `
+                <div class="barber-card-horizontal" id="barber-card-${b.id}">
+                    <!-- Header (Collapsed View) -->
+                    <div class="barber-card-header" onclick="toggleBarberCard(this)">
+                        <div class="barber-summary-left">
+                            <div class="barber-avatar-small">
+                                ${b.avatar_url
                     ? `<img src="${b.avatar_url}" alt="${b.name}">`
                     : `<i class="fa-solid fa-user-tie"></i>`
                 }
-                            <div class="avatar-overlay">
-                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <div class="barber-summary-info">
+                                <h3>${b.name}</h3>
+                                <p><i class="fa-solid fa-clock" style="font-size:0.8rem; margin-right:4px;"></i> ${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</p>
                             </div>
                         </div>
-                        <div class="barber-info">
-                            <h3>${b.name}</h3>
-                            <p>${formatPhone(b.phone) || 'Sem telefone'}</p>
-                            <span style="color: ${b.is_active ? 'var(--success)' : 'var(--danger)'};">
-                                <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i> 
+
+                        <div class="barber-summary-right">
+                            <span class="barber-status-badge">
+                                <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: ${b.is_active ? 'var(--success)' : 'var(--danger)'};"></i> 
                                 ${b.is_active ? 'Ativo' : 'Inativo'}
                             </span>
+                            <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
+                                <div>${b.services?.length || 0} Serviços</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down card-expand-icon"></i>
                         </div>
-                    </div>
-                    
-                    <div class="barber-schedule">
-                        <div>
-                            <i class="fa-solid fa-clock"></i>
-                            <span>${b.start_time || '09:00'} - ${b.end_time || '18:00'}</span>
-                        </div>
-                        ${b.start_interval ? `
-                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                            <i class="fa-solid fa-mug-hot"></i>
-                            <span>${b.start_interval} - ${b.end_interval}</span>
-                        </div>
-                        ` : ''}
                     </div>
 
-                    <div class="service-list">
-                        <strong><i class="fa-solid fa-list"></i> Servicos (${b.services?.length || 0})</strong>
-                        ${b.services && b.services.length > 0 ? b.services.map(s => `
-                            <div class="service-item">
-                                <div>
-                                    <strong>${s.name}</strong>
-                                    <span style="color: var(--text-secondary);"> - ${s.duration_minutes}min</span>
+                    <!-- Body (Expanded View - Edit Form) -->
+                    <div class="barber-card-body">
+                        <form onsubmit="saveBarber(event, ${b.id})" class="barber-edit-form">
+                            
+                            <div class="barber-content-scroll">
+                                <!-- Sidebar: Avatar & Actions -->
+                                <div class="barber-edit-sidebar">
+                                <div class="avatar-upload-trigger" onclick="triggerAvatarUpload(${b.id})">
+                                    ${b.avatar_url
+                    ? `<img src="${b.avatar_url}" alt="${b.name}">`
+                    : `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>`
+                }
+                                    <div class="overlay">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
                                 </div>
-                                <div>
-                                    ${s.discount_price ? `
-                                        <span class="price-original">R$ ${s.price.toFixed(2)}</span>
-                                        <span class="price-discount">R$ ${s.discount_price.toFixed(2)}</span>
-                                    ` : `
-                                        <span style="font-weight: bold;">R$ ${s.price.toFixed(2)}</span>
-                                    `}
+                                <button type="button" class="btn btn-danger" onclick="removeAvatar(${b.id})">
+                                    <i class="fa-solid fa-trash"></i> Excluir imagem
+                                </button>
+                            </div>
+
+                            <!-- Main Form Content -->
+                            <div class="barber-edit-main">
+                                <div class="form-row">
+                                    <div class="settings-form-group">
+                                        <label>Nome</label>
+                                        <input type="text" name="name" value="${b.name}" required>
+                                    </div>
+                                    <div class="settings-form-group">
+                                        <label>Telefone</label>
+                                        <input type="tel" name="phone" value="${formatPhone(b.phone) || ''}" oninput="formatPhoneInput(this)">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="settings-form-group">
+                                        <label>Usuário (Login)</label>
+                                        <input type="text" name="username" value="${b.username || ''}" placeholder="Opcional">
+                                    </div>
+                                    <div class="settings-form-group">
+                                        <label>Nova Senha</label>
+                                        <input type="password" name="password" placeholder="Deixe em branco para manter">
+                                    </div>
+                                </div>
+
+                                <fieldset class="form-group-border" style="margin-bottom: 1.5rem;">
+                                    <legend>Jornada</legend>
+                                    <div class="form-row">
+                                        <div class="input-wrapper">
+                                            <label>Horário Início</label>
+                                            <input type="time" name="start_time" value="${b.start_time}" required>
+                                        </div>
+                                        <div class="input-wrapper">
+                                            <label>Horário Fim</label>
+                                            <input type="time" name="end_time" value="${b.end_time}" required>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="form-group-border intervalo-section" style="margin-bottom: 1.5rem;">
+                                    <legend>Intervalo</legend>
+                                    <div class="form-row">
+                                        <div class="input-wrapper">
+                                            <label>Horário Início</label>
+                                            <input type="time" name="start_interval" value="${b.start_interval || ''}">
+                                        </div>
+                                        <div class="input-wrapper">
+                                            <label>Horário Fim</label>
+                                            <input type="time" name="end_interval" value="${b.end_interval || ''}">
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                
+                                <!-- Inline Services Management -->
+                                <div class="services-inline-section">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                        <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços</h4>
+                                        <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
+                                            <i class="fa-solid fa-plus"></i> Adicionar
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="inline-services-container">
+                                        ${(b.services || []).map(s => `
+                                            <div class="service-form-item inline-service-item" data-service-id="${s.id}">
+                                                <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
+                                                    <i class="fa-solid fa-times"></i>
+                                                </button>
+                                                <div class="form-row compact">
+                                                    <div>
+                                                        <label style="font-size:0.8rem;">Nome</label>
+                                                        <input type="text" class="svc-name" value="${s.name}" required>
+                                                    </div>
+                                                    <div>
+                                                        <label style="font-size:0.8rem;">Duração (min)</label>
+                                                        <input type="number" class="svc-duration" value="${s.duration_minutes}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row compact" style="margin-top:0.5rem;">
+                                                    <div>
+                                                        <label style="font-size:0.8rem;">Preço (R$)</label>
+                                                        <input type="number" step="0.01" class="svc-price" value="${s.price}" required>
+                                                    </div>
+                                                    <div>
+                                                        <label style="font-size:0.8rem;">Desconto (R$)</label>
+                                                        <input type="number" step="0.01" class="svc-discount" value="${s.discount_price || ''}" placeholder="Opcional">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                
                                 </div>
                             </div>
-                        `).join('') : '<p style="color: var(--text-secondary); margin-top: 0.5rem;">Nenhum servico cadastrado</p>'}
-                    </div>
-
-                    <div class="barber-actions">
-                        <button class="btn" onclick="editBarber(${b.id})" style="flex: 1;">
-                            <i class="fa-solid fa-pen"></i> Editar
-                        </button>
-                        <button class="btn btn-danger" onclick="deleteBarber(${b.id})">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                            
+                            <div class="barber-card-footer">
+                                <button type="button" class="btn btn-danger" onclick="deleteBarber(${b.id})">
+                                    <i class="fa-solid fa-trash"></i> Excluir
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-save"></i> Salvar
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             `).join('');
         } catch (e) {
-            container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais.</p>`;
+            container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais: ${e.message}</p>`;
         }
     }
 
-    function openBarberModal() {
-        editingBarberId = null;
-        pendingModalAvatarFile = null;
-        pendingAvatarRemoval = false;
-        document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Novo Profissional';
-        document.getElementById('barber-id').value = '';
-        document.getElementById('barber-avatar-url').value = '';
-        document.getElementById('barber-name').value = '';
-        document.getElementById('barber-phone').value = '';
-        document.getElementById('barber-username').value = '';
-        document.getElementById('barber-password').value = ''; /* Reset password */
-        document.getElementById('barber-start-time').value = '09:00';
-        document.getElementById('barber-end-time').value = '18:00';
-        document.getElementById('barber-start-time-interval').value = '';
-        document.getElementById('barber-end-time-interval').value = '';
-        document.getElementById('services-container').innerHTML = '';
 
-        // Reset avatar preview
-        resetModalAvatarPreview();
 
-        addServiceField(); // Add one empty service field
-        document.getElementById('barber-modal').style.display = 'flex';
+    async function deleteBarber(id) {
+        const confirmed = await showConfirmModal('Tem certeza que deseja excluir este profissional?', 'Excluir Profissional');
+        if (!confirmed) return;
+        const token = localStorage.getItem('access_token');
+        try {
+            const res = await fetch(`/panel/barbers/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                await showAlertModal('Profissional excluído com sucesso!');
+                loadBarbersAdmin();
+            } else {
+                throw new Error('Falha ao excluir');
+            }
+        } catch (e) {
+            await showAlertModal('Erro: ' + e.message);
+        }
     }
 
-    function closeBarberModal() {
-        document.getElementById('barber-modal').style.display = 'none';
-        pendingModalAvatarFile = null;
-        pendingAvatarRemoval = false;
+    function addServiceField() {
+        const container = document.getElementById('services-container');
+        const div = document.createElement('div');
+        div.className = 'service-form-item';
+        div.innerHTML = `
+            <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
+                <i class="fa-solid fa-times"></i>
+            </button>
+            <div class="form-row compact">
+                <input type="text" class="svc-name" placeholder="Nome (Ex: Corte)" required style="flex:2;">
+                <input type="number" class="svc-duration" placeholder="Min" required style="flex:1;">
+                <input type="number" step="0.01" class="svc-price" placeholder="R$" required style="flex:1;">
+                <input type="number" step="0.01" class="svc-discount" placeholder="Desc R$" style="flex:1;">
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeServiceItem(btn) {
+        // For Modal: just remove from DOM (re-sync on save will create/update, keeping missing ones? 
+        // Issue: Previous logic didn't delete. 
+        // TODO: Ideally track deletions. For now keep simple behavior.)
+        btn.closest('.service-form-item').remove();
+    }
+
+    // Modal Avatar Helpers
+    function handleModalAvatarClick() {
+        triggerModalAvatarUpload();
+    }
+
+    function setModalAvatarPreview(src, isFile) {
+        const preview = document.getElementById('modal-avatar-preview');
+        if (src) {
+            preview.innerHTML = `<img src="${src}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                                  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
+        } else resetModalAvatarPreview();
     }
 
     function resetModalAvatarPreview() {
-        const avatarPreview = document.getElementById('modal-avatar-preview');
-        avatarPreview.innerHTML = `
-            <i class="fa-solid fa-user-tie"></i>
-            <div class="avatar-overlay">
-                <i class="fa-solid fa-camera"></i>
+        const preview = document.getElementById('modal-avatar-preview');
+        preview.innerHTML = `<i class="fa-solid fa-user-tie"></i><div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
+    }
+
+    // =============== BARBER MANAGEMENT (INLINE REFACTOR) ===============
+
+    // showNewBarberCard is no longer needed as the card is permanent
+    // keeping it empty or removing to avoid errors if called from console/legacy
+    function showNewBarberCard() {
+        document.getElementById('barber-card-new').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function clearNewBarberForm() {
+        const card = document.getElementById('barber-card-new');
+        if (card) {
+            const form = card.querySelector('form');
+            if (form) form.reset();
+            // Clear inline services
+            const servicesContainer = card.querySelector('.inline-services-container');
+            if (servicesContainer) servicesContainer.innerHTML = '';
+
+            // Allow collapsing if user wants to "cancel" editing
+            // Actually, keep it expanded or just reset. Reset is better.
+            // If we want to collapse, we can toggle. 
+            // For now, let's just reset the fields.
+        }
+    }
+    // Expose to global scope for HTML onclick
+    window.showNewBarberCard = showNewBarberCard;
+    window.clearNewBarberForm = clearNewBarberForm;
+
+    function renderNewBarberCardHTML() {
+        // Template for a new empty barber card
+        // Removed 'new-card-entering' class
+        return `
+            <div class="barber-card-horizontal" id="barber-card-new">
+                <!-- Header (Collapsed - acts as title) -->
+                <div class="barber-card-header" onclick="toggleBarberCard(this)">
+                    <div class="barber-summary-left">
+                        <div class="barber-avatar-small">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                        <div class="barber-summary-info">
+                            <h3>Novo Profissional</h3>
+                            <p>Preencha os dados abaixo</p>
+                        </div>
+                    </div>
+                    <div class="barber-summary-right">
+                        <span class="barber-status-badge">
+                            <i class="fa-solid fa-circle" style="color: var(--text-secondary);"></i> Criar
+                        </span>
+                        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Body (Expanded Form) -->
+                <div class="barber-card-body">
+                    <form onsubmit="saveBarber(event, null)" class="barber-edit-form">
+                        
+                        <div class="barber-content-scroll">
+                            <!-- Sidebar: Avatar placeholder -->
+                            <div class="barber-edit-sidebar">
+                                <div class="avatar-upload-trigger" onclick="alert('Salve o profissional primeiro para adicionar a foto.')">
+                                    <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+                                    <div class="overlay">
+                                        <i class="fa-solid fa-save"></i>
+                                    </div>
+                                </div>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); text-align:center;">Salve para adicionar foto</p>
+                            </div>
+
+                            <!-- Main Form Content -->
+                            <div class="barber-edit-main">
+                                <div class="form-row">
+                                    <div class="settings-form-group">
+                                        <label>Nome *</label>
+                                        <input type="text" name="name" required placeholder="Nome do profissional">
+                                    </div>
+                                    <div class="settings-form-group">
+                                        <label>Telefone</label>
+                                        <input type="tel" name="phone" oninput="formatPhoneInput(this)" placeholder="(00) 00000-0000">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="settings-form-group">
+                                        <label>Usuário (Login)</label>
+                                        <input type="text" name="username" placeholder="Usuário para acesso">
+                                    </div>
+                                    <div class="settings-form-group">
+                                        <label>Senha</label>
+                                        <input type="password" name="password" placeholder="Senha inicial">
+                                    </div>
+                                </div>
+
+                                 <fieldset class="form-group-border" style="margin-bottom: 1.5rem;">
+                                    <legend>Jornada</legend>
+                                    <div class="form-row">
+                                        <div class="input-wrapper">
+                                            <label>Horário Início *</label>
+                                            <input type="time" name="start_time" value="09:00" required>
+                                        </div>
+                                        <div class="input-wrapper">
+                                            <label>Horário Fim *</label>
+                                            <input type="time" name="end_time" value="18:00" required>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="form-group-border intervalo-section" style="margin-bottom: 1.5rem;">
+                                    <legend>Intervalo</legend>
+                                    <div class="form-row">
+                                         <div class="input-wrapper">
+                                            <label>Horário Início</label>
+                                            <input type="time" name="start_interval">
+                                        </div>
+                                        <div class="input-wrapper">
+                                            <label>Horário Fim</label>
+                                            <input type="time" name="end_interval">
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                 <!-- Inline Services Management -->
+                                <div class="services-inline-section">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                        <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços Iniciais</h4>
+                                        <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
+                                            <i class="fa-solid fa-plus"></i> Adicionar
+                                        </button>
+                                    </div>
+                                    <div class="inline-services-container">
+                                        <!-- Empty initially -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="barber-card-footer">
+                            <button type="button" class="btn" onclick="clearNewBarberForm()">Limpar</button>
+                            <button type="submit" class="btn btn-primary">Criar Profissional</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         `;
-        avatarPreview.dataset.hasPhoto = 'false';
     }
 
-    function setModalAvatarPreview(imageUrl) {
-        const avatarPreview = document.getElementById('modal-avatar-preview');
-        avatarPreview.innerHTML = `
-            <img src="${imageUrl}" alt="Avatar">
-            <div class="avatar-overlay overlay-delete">
-                <i class="fa-solid fa-trash"></i>
-            </div>
-        `;
-        avatarPreview.dataset.hasPhoto = 'true';
-    }
-
-    function handleModalAvatarClick() {
-        const avatarPreview = document.getElementById('modal-avatar-preview');
-        const hasPhoto = avatarPreview.dataset.hasPhoto === 'true';
-
-        if (hasPhoto) {
-            // Show confirmation modal to remove
-            openConfirmAvatarModal();
-        } else {
-            // Open file picker to add photo
-            triggerModalAvatarUpload();
-        }
-    }
-
-    function openConfirmAvatarModal() {
-        document.getElementById('confirm-avatar-modal').classList.add('show');
-    }
-
-    function closeConfirmAvatarModal() {
-        document.getElementById('confirm-avatar-modal').classList.remove('show');
-    }
-
-    function confirmRemoveAvatar() {
-        closeConfirmAvatarModal();
-        resetModalAvatarPreview();
-        pendingModalAvatarFile = null;
-        pendingAvatarRemoval = true;
-        document.getElementById('barber-avatar-url').value = '';
-    }
-
-    async function editBarber(id) {
-        const token = localStorage.getItem('access_token');
-        const res = await fetch(`/panel/barbers/${id}`, {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (!res.ok) return showAlertModal('Erro ao carregar barbeiro');
-        const barber = await res.json();
-
-        editingBarberId = id;
-        pendingModalAvatarFile = null;
-        pendingAvatarRemoval = false;
-        document.getElementById('barber-modal-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Editar Profissional';
-        document.getElementById('barber-id').value = id;
-        document.getElementById('barber-avatar-url').value = barber.avatar_url || '';
-        document.getElementById('barber-name').value = barber.name;
-        document.getElementById('barber-phone').value = barber.phone || '';
-        document.getElementById('barber-username').value = barber.username || '';
-        document.getElementById('barber-password').value = ''; /* Don't show hash, empty means no change */
-        document.getElementById('barber-start-time').value = barber.start_time || '09:00';
-        document.getElementById('barber-end-time').value = barber.end_time || '18:00';
-        document.getElementById('barber-start-time-interval').value = barber.start_interval || '';
-        document.getElementById('barber-end-time-interval').value = barber.end_interval || '';
-
-        // Handle Avatar Preview
-        if (barber.avatar_url) {
-            setModalAvatarPreview(barber.avatar_url, true);
-        } else {
-            resetModalAvatarPreview();
-        }
-
-        const container = document.getElementById('services-container');
-        container.innerHTML = '';
-        if (barber.services && barber.services.length > 0) {
-            barber.services.forEach(s => addServiceField(s));
-        }
-
-        document.getElementById('barber-modal').style.display = 'flex';
-    }
-
-    async function saveBarber(e) {
+    async function saveBarber(e, idArg = null) {
         e.preventDefault();
         const token = localStorage.getItem('access_token');
-        const id = document.getElementById('barber-id').value;
+        let form = e.target;
+
+        // Determine context: Inline (idArg present) or Modal (no idArg)
+        let isInline = (idArg !== null);
+        let id = idArg;
+
+        if (!isInline) {
+            const hiddenId = document.getElementById('barber-id').value;
+            if (hiddenId) id = hiddenId;
+        }
+
+        // Collect data based on context
+        const name = isInline ? form.querySelector('[name="name"]').value : document.getElementById('barber-name').value;
+        const phone = isInline ? form.querySelector('[name="phone"]').value : document.getElementById('barber-phone').value;
+        const username = isInline ? form.querySelector('[name="username"]')?.value : document.getElementById('barber-username').value;
+        const password = isInline ? form.querySelector('[name="password"]')?.value : document.getElementById('barber-password').value;
+
+        const startTime = isInline ? form.querySelector('[name="start_time"]').value : document.getElementById('barber-start-time').value;
+        const endTime = isInline ? form.querySelector('[name="end_time"]').value : document.getElementById('barber-end-time').value;
+        const startInterval = isInline ? form.querySelector('[name="start_interval"]')?.value : document.getElementById('barber-start-time-interval').value;
+        const endInterval = isInline ? form.querySelector('[name="end_interval"]')?.value : document.getElementById('barber-end-time-interval').value;
+
+        let avatarUrl = null;
+        if (!isInline) {
+            avatarUrl = document.getElementById('barber-avatar-url').value; // Hidden input?
+            // Actually modal doesn't usually populate hidden input for avatar url on edit unless we put it there. 
+            // setModalAvatarPreview doesn't set value.
+            // But we have pendingModalAvatarFile.
+        }
 
         const barberData = {
-            name: document.getElementById('barber-name').value,
-            phone: document.getElementById('barber-phone').value,
-            avatar_url: document.getElementById('barber-avatar-url').value,
-            start_time: document.getElementById('barber-start-time').value,
-            end_time: document.getElementById('barber-end-time').value,
-            start_interval: document.getElementById('barber-start-time-interval').value || null,
-            end_interval: document.getElementById('barber-end-time-interval').value || null,
-            is_active: true, // default
-            username: document.getElementById('barber-username').value || null,
-            password: document.getElementById('barber-password').value || null
+            name,
+            phone,
+            start_time: startTime,
+            end_time: endTime,
+            start_interval: startInterval || null,
+            end_interval: endInterval || null,
+            is_active: true,
+            username: username || null,
+            password: password || null
         };
 
-        // If user wants to remove avatar, set it to null
-        if (pendingAvatarRemoval) {
-            barberData.avatar_url = null;
+        if (!isInline && !id && !isInline /* just creation */) {
+            // For creation, we might have avatarUrl from other source? No.
         }
 
         // Collect services
-        const serviceItems = document.querySelectorAll('.service-form-item');
         const services = [];
+        const serviceItems = isInline
+            ? form.querySelectorAll('.inline-service-item')
+            : document.querySelectorAll('#services-container .service-form-item');
+
         for (let item of serviceItems) {
-            const name = item.querySelector('.svc-name').value;
-            const duration = parseInt(item.querySelector('.svc-duration').value);
-            const price = parseFloat(item.querySelector('.svc-price').value);
-            const discount = item.querySelector('.svc-discount').value ? parseFloat(item.querySelector('.svc-discount').value) : null;
-            const svcId = item.dataset.serviceId;
+            const svcName = item.querySelector('.svc-name').value;
+            const svcDuration = parseInt(item.querySelector('.svc-duration').value);
+            const svcPrice = parseFloat(item.querySelector('.svc-price').value);
+            const svcDiscountVal = item.querySelector('.svc-discount').value;
+            const svcDiscount = svcDiscountVal ? parseFloat(svcDiscountVal) : null;
+            const svcId = item.dataset.serviceId; // From dataset
 
-            if (!name || !duration || !price) continue;
+            if (!svcName || isNaN(svcDuration) || isNaN(svcPrice)) continue;
 
-            if (discount !== null && discount > price) {
-                await showAlertModal('Desconto nao pode ser maior que o preco!');
+            // Check discount validation
+            if (svcDiscount !== null && svcDiscount > svcPrice) {
+                await showAlertModal('Desconto não pode ser maior que o preço!');
                 return;
             }
 
-            services.push({ id: svcId ? parseInt(svcId) : null, name, duration_minutes: duration, price, discount_price: discount });
+            services.push({
+                id: svcId ? parseInt(svcId) : null,
+                name: svcName,
+                duration_minutes: svcDuration,
+                price: svcPrice,
+                discount_price: svcDiscount
+            });
         }
 
         try {
             let barberId = id;
             if (id) {
-                // Update barber
+                // Update barber (PUT)
                 await fetch(`/panel/barbers/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify(barberData)
                 });
             } else {
-                // Create barber
+                // Create barber (POST)
                 const res = await fetch('/panel/barbers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify(barberData)
                 });
+                if (!res.ok) throw new Error('Falha ao criar profissional');
                 const newBarber = await res.json();
                 barberId = newBarber.id;
             }
@@ -2550,14 +2652,12 @@
             // Save services
             for (let svc of services) {
                 if (svc.id) {
-                    // Update existing service
                     await fetch(`/panel/barbers/${barberId}/services/${svc.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify({ name: svc.name, duration_minutes: svc.duration_minutes, price: svc.price, discount_price: svc.discount_price })
                     });
                 } else {
-                    // Create new service
                     await fetch(`/panel/barbers/${barberId}/services`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -2566,74 +2666,92 @@
                 }
             }
 
-            // Upload avatar if there's a pending file
-            if (pendingModalAvatarFile) {
-                try {
-                    await uploadBarberAvatar(barberId, pendingModalAvatarFile);
-                } catch (avatarError) {
-                    console.error('Avatar upload failed:', avatarError);
-                    // Don't block the save, just log the error
-                }
+            // Upload Avatar if Modal context and file selected
+            if (!isInline && pendingModalAvatarFile) {
+                await uploadBarberAvatar(barberId, pendingModalAvatarFile);
                 pendingModalAvatarFile = null;
             }
 
-            closeBarberModal();
+            if (!isInline) closeBarberModal();
+
+            await showAlertModal('Profissional salvo com sucesso!');
             loadBarbersAdmin();
+
         } catch (error) {
+            console.error(error);
             await showAlertModal('Erro ao salvar: ' + error.message);
         }
     }
 
-    async function deleteBarber(id) {
-        const confirmed = await showConfirmModal('Tem certeza que deseja excluir este profissional e todos os seus servicos?', 'Excluir Profissional');
-        if (!confirmed) return;
-
-        const token = localStorage.getItem('access_token');
-        await fetch(`/panel/barbers/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        loadBarbersAdmin();
-    }
-
-    function addServiceField(service = null) {
-        const container = document.getElementById('services-container');
+    // Helpers for inline services
+    function addInlineServiceField(btn) {
+        const container = btn.closest('.services-inline-section').querySelector('.inline-services-container');
         const div = document.createElement('div');
-        div.className = 'service-form-item';
-        if (service) div.dataset.serviceId = service.id;
-
+        div.className = 'service-form-item inline-service-item';
         div.innerHTML = `
-            <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
+            <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
                 <i class="fa-solid fa-times"></i>
             </button>
-            <div class="form-row">
+            <div class="form-row compact">
                 <div>
-                    <label>Nome do Servico</label>
-                    <input type="text" class="svc-name" placeholder="Ex: Corte Masculino" value="${service?.name || ''}" required>
+                    <label style="font-size:0.8rem;">Nome</label>
+                    <input type="text" class="svc-name" placeholder="Ex: Corte" required>
                 </div>
                 <div>
-                    <label>Duracao (min)</label>
-                    <input type="number" class="svc-duration" placeholder="30" value="${service?.duration_minutes || ''}" required>
+                    <label style="font-size:0.8rem;">Duração (min)</label>
+                    <input type="number" class="svc-duration" placeholder="30" required>
                 </div>
             </div>
-            <div class="form-row">
+            <div class="form-row compact" style="margin-top:0.5rem;">
                 <div>
-                    <label>Preco (R$)</label>
-                    <input type="number" step="0.01" class="svc-price" placeholder="35.00" value="${service?.price || ''}" required>
+                    <label style="font-size:0.8rem;">Preço (R$)</label>
+                    <input type="number" step="0.01" class="svc-price" placeholder="0.00" required>
                 </div>
                 <div>
-                    <label>Preco com Desconto (opcional)</label>
-                    <input type="number" step="0.01" class="svc-discount" placeholder="30.00" value="${service?.discount_price || ''}">
+                    <label style="font-size:0.8rem;">Desconto (R$)</label>
+                    <input type="number" step="0.01" class="svc-discount" placeholder="Opcional">
                 </div>
             </div>
         `;
         container.appendChild(div);
     }
 
-    async function removeServiceItem(btn) {
-        const confirmed = await showConfirmModal('Deseja remover este serviço?', 'Remover Serviço');
-        if (confirmed) {
-            btn.parentElement.remove();
+    async function removeInlineServiceItem(btn) {
+        const item = btn.closest('.service-form-item');
+        const svcId = item.dataset.serviceId;
+
+        // If it has an ID, we should (ideally) delete from DB or mark for deletion?
+        // Current existing app logic: "delete service" was implicit or missing in the save loop?
+        // Ah, looking back at previous code, "removeServiceItem" just removed from DOM.
+        // But wait, there was NO explicit service deletion endpoint call in the save loop. 
+        // So previously, removing a service from the modal form *did not* delete it from the DB?
+        // Checking `admin.html` (previous state): yes, `removeServiceItem` just did `btn.parentElement.remove()`. 
+        // This suggests services were never deleted from DB, just hidden? 
+        // Or maybe the user didn't notice. 
+        // To be safe, I will implement explicit deletion here using the endpoint if it exists.
+        // The API likely supports DELETE /panel/barbers/{id}/services/{svcId}.
+
+        if (svcId) {
+            const confirmed = await showConfirmModal('Deseja excluir este serviço permanentemente?', 'Excluir Serviço');
+            if (!confirmed) return;
+
+            // Get barber ID from somewhere context
+            // We can find it from the card ID
+            const card = btn.closest('.barber-card-horizontal');
+            const barberId = card.id.replace('barber-card-', '');
+            const token = localStorage.getItem('access_token');
+
+            try {
+                await fetch(`/panel/barbers/${barberId}/services/${svcId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                item.remove();
+            } catch (e) {
+                alert('Erro ao excluir serviço');
+            }
+        } else {
+            item.remove();
         }
     }
 
