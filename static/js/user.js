@@ -667,14 +667,17 @@ let storyRemainingTime = 0;
 
 async function fetchStories() {
     try {
-        const res = await fetch('/stories');
+        const token = getCustomerToken();
+        const url = token ? `/stories?token=${token}` : '/stories';
+        const res = await fetch(url);
+
         if (res.ok) {
             const data = await res.json();
             // Process stories
             data.forEach(group => {
                 storiesData[group.barber_id] = {
                     ...group,
-                    viewed: false // simplified viewed state (in-memory)
+                    viewed: false
                 };
             });
         }
@@ -706,6 +709,9 @@ function closeStoryViewer() {
     if (video) video.pause();
     currentStoryBarberId = null;
     isStoryPaused = false;
+
+    // Refresh stories to update counts if we reopen
+    fetchStories();
 }
 
 function toggleStoryPause() {
@@ -768,13 +774,11 @@ function showStory(index) {
         return;
     }
     if (index < 0) {
-        // Option: go to previous barber? For now just stay at 0
         currentStoryIndex = 0;
         return;
     }
 
     currentStoryIndex = index;
-    // Reset pause state on new story
     isStoryPaused = false;
     updatePauseButtonIcon();
 
@@ -790,6 +794,12 @@ function showStory(index) {
     timeLabel.textContent = date.toLocaleDateString();
 
     container.innerHTML = '';
+
+    // Render Stats and Reactions
+    renderStoryStats(story);
+
+    // Mark as viewed
+    markStoryAsViewed(story.id);
 
     // Add Feedback Overlay if data exists
     if (story.customer_name && (story.feedback || story.rating)) {
@@ -828,11 +838,9 @@ function showStory(index) {
         video.style.maxHeight = '100%';
 
         video.onended = () => nextStory();
-        // Handle video metadata for precise progress
         video.onloadedmetadata = () => {
             startProgress(video.duration * 1000);
         };
-        // Fallback if metadata already loaded or oncanplay
         if (video.readyState >= 1) {
             startProgress(video.duration * 1000);
         }
@@ -847,6 +855,164 @@ function showStory(index) {
         storyStartTime = Date.now();
         startProgress(STORY_DURATION);
         storyTimer = setTimeout(nextStory, STORY_DURATION);
+    }
+}
+
+function renderStoryStats(story) {
+    const viewCountEl = document.getElementById('story-view-count');
+    if (viewCountEl) viewCountEl.innerText = story.view_count || 0;
+
+    // Update buttons
+    const reactions = ['like', 'dislike', 'love'];
+    const emojis = { 'like': '👍', 'dislike': '👎', 'love': '❤️' };
+    const icons = { 'like': 'fa-thumbs-up', 'dislike': 'fa-thumbs-down', 'love': 'fa-heart' };
+
+    reactions.forEach(type => {
+        const btn = document.getElementById(`btn-react-${type}`);
+        if (!btn) return;
+
+        const countSpan = btn.querySelector('.count');
+        const count = story.reaction_counts ? (story.reaction_counts[type] || 0) : 0;
+        countSpan.innerText = count;
+
+        // Active state
+        if (story.user_reaction === type) {
+            btn.classList.add('active', type);
+            // Replace icon with solid if needed, but fontawesome handles it
+        } else {
+            btn.classList.remove('active', 'like', 'dislike', 'love'); // remove all specific active classes
+        }
+
+        // Bind click with closure to capture story
+        btn.onclick = (e) => {
+            e.stopPropagation(); // prevent pause toggle
+            reactToStory(story.id, type, e);
+        };
+    });
+}
+
+// Debounce view tracking
+// Debounce view tracking
+let viewTimeout = null;
+function markStoryAsViewed(storyId) {
+    const token = getCustomerToken();
+
+    // Optimistic Update: Increment view count immediately
+    const story = storiesData[currentStoryBarberId].stories.find(s => s.id === storyId);
+    if (story) {
+        // Increment local data
+        story.view_count = (story.view_count || 0) + 1;
+        // Update UI
+        const viewCountEl = document.getElementById('story-view-count');
+        if (viewCountEl) viewCountEl.innerText = story.view_count;
+    }
+
+    // Use token if available, else standard IP tracking backend logic works.
+
+    // Avoid double counting in same session ideally, but backend handles inserts.
+    // Frontend optimization: check if we just sent it.
+
+    setTimeout(async () => {
+        try {
+            let url = `/stories/${storyId}/view`;
+            if (token) url += `?token=${token}`;
+            await fetch(url, { method: 'POST' });
+        } catch (e) { }
+    }, 500);
+}
+
+async function reactToStory(storyId, type) {
+    if (!isCustomerLoggedIn()) {
+        alert("Você precisa estar logado para reagir!");
+        return;
+    }
+
+    const story = storiesData[currentStoryBarberId].stories[currentStoryIndex];
+    if (story.id !== storyId) return; // Safety check
+
+    // Optimistic Update
+    const oldReaction = story.user_reaction;
+    let newReaction = type;
+
+    if (oldReaction === type) {
+        // Toggle OFF
+        newReaction = null;
+        story.reaction_counts[type]--;
+    } else {
+        // Switch or Add
+        if (oldReaction) {
+            story.reaction_counts[oldReaction]--;
+        }
+        story.reaction_counts[type] = (story.reaction_counts[type] || 0) + 1;
+    }
+    story.user_reaction = newReaction;
+
+    renderStoryStats(story);
+
+    if (newReaction) {
+        showFloatingReaction(type);
+    }
+
+    // Send to API
+    const token = getCustomerToken();
+    try {
+        const res = await fetch(`/stories/${storyId}/react?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reaction: type })
+        });
+        if (!res.ok) {
+            // Revert on error
+            // (Simplified: just alert or silent fail)
+        }
+    } catch (e) { }
+}
+
+function showFloatingReaction(type, event) {
+    const container = document.getElementById('reaction-animation-container');
+    if (!container) return;
+
+    const emojis = { 'like': '👍', 'dislike': '👎', 'love': '❤️' };
+    const emojiChar = emojis[type] || '👍';
+
+    // Spawn Burst
+    const count = 8; // Number of particles
+
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'floating-reaction';
+        el.innerText = emojiChar;
+
+        // Randomize
+        const duration = 1000 + Math.random() * 800; // 1s to 1.8s
+        const scale = 0.5 + Math.random() * 1.0; // 0.5 to 1.5
+
+        el.style.animationDuration = `${duration}ms`;
+        el.style.fontSize = `${1.5 + Math.random()}rem`;
+        el.style.zIndex = Math.floor(2020 + i);
+
+        if (event) {
+            const rect = container.getBoundingClientRect();
+            // Origin
+            const baseX = event.clientX - rect.left;
+            const baseY = event.clientY - rect.top;
+
+            // Random Spread (-40px to +40px)
+            const spreadX = (Math.random() - 0.5) * 60;
+            const spreadY = (Math.random() - 0.5) * 60;
+
+            el.style.left = `${baseX + spreadX}px`;
+            el.style.top = `${baseY + spreadY}px`;
+        } else {
+            // Fallback
+            const randomX = Math.random() * 80 + 10;
+            el.style.left = `${randomX}%`;
+            el.style.bottom = '100px';
+        }
+
+        container.appendChild(el);
+
+        setTimeout(() => el.remove(), duration);
     }
 }
 

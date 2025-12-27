@@ -147,3 +147,27 @@ class ThemeConfig(Base):
     # For full Customization, we store the base RGB values or Opacities if user wants deep control.
     # For now, let's store the main Hex codes.
 
+class StoryView(Base):
+    """Track views on stories"""
+    __tablename__ = "story_views"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    media_id = Column(Integer, ForeignKey("appointment_media.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("customers.id"), nullable=True) # Null for guests
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    media = relationship("AppointmentMedia")
+
+class StoryReaction(Base):
+    """Track reactions on stories"""
+    __tablename__ = "story_reactions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    media_id = Column(Integer, ForeignKey("appointment_media.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("customers.id"), nullable=False) # Only logged users can react
+    reaction_type = Column(String, nullable=False) # like, dislike, love
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    media = relationship("AppointmentMedia")
+    user = relationship("Customer")

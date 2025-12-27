@@ -236,6 +236,27 @@
             <!-- Media injected here -->
         </div>
         <button class="story-nav right" onclick="nextStory()"></button>
+
+        <!-- Story Footer Interaction -->
+        <div class="story-footer-interaction">
+            <div class="story-views">
+                <i class="fa-regular fa-eye"></i> <span id="story-view-count">0</span>
+            </div>
+
+            <div class="story-reactions">
+                <button class="reaction-btn" onclick="reactToStory('like')" id="btn-react-like">
+                    <i class="fa-solid fa-thumbs-up"></i> <span class="count">0</span>
+                </button>
+                <button class="reaction-btn" onclick="reactToStory('dislike')" id="btn-react-dislike">
+                    <i class="fa-solid fa-thumbs-down"></i> <span class="count">0</span>
+                </button>
+                <button class="reaction-btn" onclick="reactToStory('love')" id="btn-react-love">
+                    <i class="fa-solid fa-heart"></i> <span class="count">0</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="reaction-animation-container"></div>
     </div>
 </div>
 

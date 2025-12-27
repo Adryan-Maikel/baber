@@ -490,7 +490,8 @@
 /* Feedback Overlay - Message Notification Style */
 .story-feedback-overlay {
     position: absolute;
-    bottom: 2rem;
+    bottom: 80px;
+    /* Moved up to clear footer (was 2rem) */
     left: 50%;
     transform: translateX(-50%);
     background: rgba(25, 25, 25, 0.85);
@@ -727,4 +728,135 @@
 
 .privacy-checkbox:checked+.privacy-label .privacy-text {
     color: var(--success);
+}
+
+/* =========================================
+   STORY INTERACTIONS
+   ========================================= */
+
+/* =========================================
+   STORY INTERACTIONS
+   ========================================= */
+
+.story-footer-interaction {
+    position: absolute;
+    bottom: 20px;
+    /* Above bottom edge */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2005;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    animation: slideUpFade 0.5s ease-out 0.2s backwards;
+}
+
+.story-views {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.story-reactions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.reaction-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
+    /* Emoji size */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    position: relative;
+    padding: 0.25rem;
+}
+
+.reaction-btn:hover {
+    transform: scale(1.2);
+    color: #fff;
+}
+
+.reaction-btn:active {
+    transform: scale(0.9);
+}
+
+.reaction-btn .count {
+    font-size: 0.75rem;
+    /* Tiny count */
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+/* Active States */
+.reaction-btn.active.like {
+    color: #3b82f6;
+    /* Blue 500 */
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.reaction-btn.active.dislike {
+    color: #ef4444;
+    /* Red 500 */
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.reaction-btn.active.love {
+    color: #ec4899;
+    /* Pink 500 */
+    text-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+/* Floating Animation Container */
+#reaction-animation-container {
+    position: absolute;
+    inset: 0;
+    /* Full screen overlay to match clientX/Y */
+    pointer-events: none;
+    /* Let clicks pass through */
+    overflow: hidden;
+    z-index: 2020;
+    /* Above footer */
+}
+
+.floating-reaction {
+    position: absolute;
+    font-size: 2rem;
+    animation: floatDriftUp 1.2s ease-out forwards;
+    opacity: 0;
+    --drift-x: 0px;
+    /* Default */
+}
+
+@keyframes floatDriftUp {
+    0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(calc(var(--drift-x) * 0.2), -30px) scale(1.2);
+    }
+
+    100% {
+        transform: translate(var(--drift-x), -180px) scale(1.2);
+        opacity: 0;
+    }
 }
