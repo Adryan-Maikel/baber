@@ -317,20 +317,87 @@ function renderHistory(list) {
             `;
         }
 
-        // Build rating display HTML
-        let ratingDisplayHtml = '';
-        if (h.rating) {
-            ratingDisplayHtml = `
-                <div class="history-rating-display">
-                    <div class="history-rating-stars">${ratingStarsHtml}</div>
-                    ${h.feedback_notes ? `<div class="history-rating-text">"${h.feedback_notes}"</div>` : ''}
+        // Build rating/feedback section (always visible for completed appointments)
+        let ratingFeedbackHtml = '';
+        if (h.status === 'completed') {
+            // Small media thumbnail
+            let mediaThumbnailHtml = '';
+            if (h.media_url) {
+                const mediaTag = h.media_type === 'video'
+                    ? `<video src="${h.media_url}"></video>`
+                    : `<img src="${h.media_url}" alt="Foto do corte">`;
+
+                mediaThumbnailHtml = `
+                    <div class="thumb-image" onclick="openSingleStoryViewer('${h.media_url}', '${h.media_type}', '${h.barber_name}', '${h.start_time}', '${h.barber_avatar || ''}')" title="Clique para ver em tela cheia">
+                        ${mediaTag}
+                        <div class="thumb-overlay">
+                            <i class="fa-solid fa-expand"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            ratingFeedbackHtml = `
+                <div class="card-section">
+                    <div class="row-start gap-lg">
+                        ${mediaThumbnailHtml}
+                        
+                        <div class="column gap-md" style="flex: 1; min-width: 0;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Avaliação</label>
+                                <div class="star-rating-input" style="justify-content: flex-start;">
+                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 1)" id="inline-star-${h.id}-1"></i>
+                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 2)" id="inline-star-${h.id}-2"></i>
+                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 3)" id="inline-star-${h.id}-3"></i>
+                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 4)" id="inline-star-${h.id}-4"></i>
+                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 5)" id="inline-star-${h.id}-5"></i>
+                                </div>
+                            </div>
+
+                            ${h.media_url ? `
+                            <div class="privacy-toggle-wrapper" onclick="document.getElementById('inline-feedback-public-${h.id}').click()" style="margin: 0; justify-content: flex-start;">
+                                <input type="checkbox" id="inline-feedback-public-${h.id}" class="privacy-checkbox" ${h.story_is_public !== false ? 'checked' : ''} onchange="updateInlinePrivacyEmote(${h.id})">
+                                <label class="privacy-label" for="inline-feedback-public-${h.id}">
+                                    <i id="inline-privacy-emote-${h.id}" class="privacy-emote fa-solid fa-earth-americas"></i>
+                                    <span id="inline-privacy-text-${h.id}" class="privacy-text" style="font-size: 0.8rem;">Visível para todos</span>
+                                </label>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${canCancel ? `
+                        <div class="actions-column">
+                            <button class="btn btn-primary" onclick="rescheduleAppointment(${h.id})">
+                                <i class="fa-solid fa-calendar-days"></i> Reagendar
+                            </button>
+                            <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment(${h.id})">
+                                <i class="fa-solid fa-xmark"></i> Cancelar
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inline-feedback-notes-${h.id}">Comentário</label>
+                        <textarea 
+                            id="inline-feedback-notes-${h.id}" 
+                            placeholder="Deixe um comentário sobre o atendimento (opcional)..." 
+                            rows="2"
+                        >${h.feedback_notes || ''}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="submitInlineFeedback(${h.id})" style="min-width: 120px;">
+                            <i class="fa-solid fa-check"></i> Salvar
+                        </button>
+                    </div>
                 </div>
             `;
         }
 
-        // Build actions HTML
+        // Build actions HTML for non-completed appointments
         let actionsHtml = '';
-        if (canCancel) {
+        if (canCancel && h.status !== 'completed') {
             actionsHtml = `
                 <div class="history-actions">
                     <button class="btn btn-primary" onclick="rescheduleAppointment(${h.id})">
@@ -338,14 +405,6 @@ function renderHistory(list) {
                     </button>
                     <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment(${h.id})">
                         <i class="fa-solid fa-xmark"></i> Cancelar
-                    </button>
-                </div>
-            `;
-        } else if (h.status === 'completed') {
-            actionsHtml = `
-                <div class="history-actions">
-                    <button class="btn btn-primary" onclick="openFeedbackModal(${h.id}, ${h.rating || 0}, '${(h.feedback_notes || '').replace(/'/g, "\\'")}', ${h.story_is_public !== undefined ? h.story_is_public : true}, '${h.media_url || ''}', '${h.media_type || ''}', '${h.barber_name || ''}', '${h.start_time || ''}', '${h.barber_avatar || ''}')">
-                        <i class="fa-regular fa-star"></i> ${h.rating ? 'Editar Avaliação' : 'Avaliar Atendimento'}
                     </button>
                 </div>
             `;
@@ -378,46 +437,54 @@ function renderHistory(list) {
                 </div>
                 
                 <div class="history-card-body">
-                    ${mediaPreviewHtml}
+                    ${ratingFeedbackHtml}
                     
-                    <div class="history-details-grid">
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Data</span>
-                            <span class="history-detail-value">${dateStr}</span>
-                        </div>
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Horário</span>
-                            <span class="history-detail-value">${timeStr}</span>
-                        </div>
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Dia da Semana</span>
-                            <span class="history-detail-value" style="text-transform: capitalize;">${weekDay}</span>
-                        </div>
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Profissional</span>
-                            <span class="history-detail-value">${h.barber_name || 'Barbeiro'}</span>
-                        </div>
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Serviço</span>
-                            <span class="history-detail-value">${h.service_name || 'Serviço'}</span>
-                        </div>
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Duração</span>
-                            <span class="history-detail-value">${h.duration_minutes || 30} min</span>
-                        </div>
-                        ${h.price ? `
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Valor</span>
-                            <span class="history-detail-value">R$ ${parseFloat(h.price).toFixed(2)}</span>
-                        </div>
-                        ` : ''}
-                        <div class="history-detail-item">
-                            <span class="history-detail-label">Status</span>
-                            <span class="history-detail-value" style="color: ${st.color};">${st.label}</span>
+                    <!-- Toggle Details Button -->
+                    <div class="details-toggle-btn" onclick="toggleHistoryDetails(${h.id})">
+                        <span>Mais detalhes</span>
+                        <i class="fa-solid fa-chevron-down" id="details-arrow-${h.id}"></i>
+                    </div>
+                    
+                    <!-- Collapsible Details Section -->
+                    <div class="history-details-section" id="details-section-${h.id}">
+                        <div class="history-details-grid">
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Data</span>
+                                <span class="history-detail-value">${dateStr}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Horário</span>
+                                <span class="history-detail-value">${timeStr}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Dia da Semana</span>
+                                <span class="history-detail-value" style="text-transform: capitalize;">${weekDay}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Profissional</span>
+                                <span class="history-detail-value">${h.barber_name || 'Barbeiro'}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Serviço</span>
+                                <span class="history-detail-value">${h.service_name || 'Serviço'}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Duração</span>
+                                <span class="history-detail-value">${h.duration_minutes || 30} min</span>
+                            </div>
+                            ${h.price ? `
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Valor</span>
+                                <span class="history-detail-value">R$ ${parseFloat(h.price).toFixed(2)}</span>
+                            </div>
+                            ` : ''}
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Status</span>
+                                <span class="history-detail-value" style="color: ${st.color};">${st.label}</span>
+                            </div>
                         </div>
                     </div>
                     
-                    ${ratingDisplayHtml}
                     ${actionsHtml}
                 </div>
             </div>
@@ -430,7 +497,151 @@ function toggleHistoryCard(id) {
     const card = document.getElementById(`history-card-${id}`);
     if (!card) return;
 
+    const wasExpanded = card.classList.contains('expanded');
     card.classList.toggle('expanded');
+
+    // Initialize rating when expanding for the first time
+    if (!wasExpanded && card.classList.contains('expanded')) {
+        const appointment = currentHistory.find(h => h.id === id);
+        if (appointment && appointment.status === 'completed') {
+            // Set existing rating
+            setInlineRating(id, appointment.rating || 0);
+
+            // Update privacy toggle if media exists
+            if (appointment.media_url) {
+                updateInlinePrivacyEmote(id);
+            }
+        }
+    }
+}
+
+// Toggle history details section
+function toggleHistoryDetails(id) {
+    const detailsSection = document.getElementById(`details-section-${id}`);
+    const arrow = document.getElementById(`details-arrow-${id}`);
+
+    if (!detailsSection || !arrow) return;
+
+    detailsSection.classList.toggle('expanded');
+    arrow.classList.toggle('rotated');
+}
+
+// Toggle inline feedback form
+function toggleFeedbackForm(apptId, show) {
+    const feedbackSection = document.getElementById(`feedback-section-${apptId}`);
+    const ratingDisplay = document.getElementById(`rating-display-${apptId}`);
+    const actionsDiv = document.getElementById(`rating-actions-${apptId}`);
+
+    if (!feedbackSection) return;
+
+    if (show) {
+        // Show form, hide display and actions
+        feedbackSection.style.display = 'block';
+        if (ratingDisplay) ratingDisplay.style.display = 'none';
+        if (actionsDiv) actionsDiv.style.display = 'none';
+
+        // Get current appointment data
+        const appointment = currentHistory.find(h => h.id === apptId);
+        if (appointment) {
+            // Set existing rating
+            setInlineRating(apptId, appointment.rating || 0);
+
+            // Update privacy toggle if media exists
+            if (appointment.media_url) {
+                updateInlinePrivacyEmote(apptId);
+            }
+        }
+    } else {
+        // Hide form, show display and actions
+        feedbackSection.style.display = 'none';
+        if (ratingDisplay) ratingDisplay.style.display = 'flex';
+        if (actionsDiv) actionsDiv.style.display = 'flex';
+    }
+}
+
+// Set inline rating stars
+let inlineRatings = {}; // Store ratings per appointment
+
+function setInlineRating(apptId, rating) {
+    inlineRatings[apptId] = rating;
+
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById(`inline-star-${apptId}-${i}`);
+        if (star) {
+            if (i <= rating) {
+                star.className = 'fa-solid fa-star active';
+            } else {
+                star.className = 'fa-regular fa-star';
+            }
+        }
+    }
+}
+
+// Update inline privacy emote
+function updateInlinePrivacyEmote(apptId) {
+    const checkbox = document.getElementById(`inline-feedback-public-${apptId}`);
+    const emoteSpan = document.getElementById(`inline-privacy-emote-${apptId}`);
+    const textSpan = document.getElementById(`inline-privacy-text-${apptId}`);
+
+    if (!checkbox || !emoteSpan || !textSpan) return;
+
+    if (checkbox.checked) {
+        emoteSpan.className = 'privacy-emote fa-solid fa-earth-americas';
+        textSpan.textContent = 'Visível para todos';
+        textSpan.style.color = 'var(--success)';
+    } else {
+        emoteSpan.className = 'privacy-emote fa-solid fa-lock';
+        textSpan.textContent = 'Oculto (somente para você)';
+        textSpan.style.color = 'var(--text-secondary)';
+    }
+}
+
+// Submit inline feedback
+async function submitInlineFeedback(apptId) {
+    const rating = inlineRatings[apptId] || 0;
+
+    if (rating === 0) {
+        await showAlertModal('Por favor, selecione uma nota de 1 a 5 estrelas.');
+        return;
+    }
+
+    const notesTextarea = document.getElementById(`inline-feedback-notes-${apptId}`);
+    const notes = notesTextarea ? notesTextarea.value : '';
+
+    // Check if media exists for privacy toggle
+    const publicCheckbox = document.getElementById(`inline-feedback-public-${apptId}`);
+    const isPublic = publicCheckbox ? publicCheckbox.checked : true;
+
+    const token = getCustomerToken();
+    if (!token) {
+        await showAlertModal('Você precisa estar logado para avaliar.');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/customer/feedback?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                appointment_id: apptId,
+                rating: rating,
+                notes: notes,
+                is_public: isPublic
+            })
+        });
+
+        if (res.ok) {
+            await showAlertModal('Avaliação salva com sucesso!');
+            // Refresh history to show updated rating
+            openHistoryModal();
+        } else {
+            const error = await res.json();
+            await showAlertModal('Erro ao salvar avaliação: ' + (error.detail || 'Erro desconhecido'));
+        }
+    } catch (e) {
+        console.error('Error submitting feedback:', e);
+        await showAlertModal('Erro de conexão ao salvar avaliação.');
+    }
 }
 
 function filterHistory() {

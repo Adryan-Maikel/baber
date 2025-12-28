@@ -116,6 +116,16 @@ body {
     background: var(--card-hover);
 }
 
+.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
 /* Top Buttons Container */
 .top-buttons {
     position: fixed;
