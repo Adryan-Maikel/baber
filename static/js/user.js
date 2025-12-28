@@ -263,70 +263,174 @@ function renderHistory(list) {
     if (!historyList) return;
 
     if (!list || list.length === 0) {
-        historyList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">Nenhum agendamento encontrado para esta data.</p>';
+        historyList.innerHTML = `
+            <div class="history-empty-state">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <h3>Nenhum agendamento encontrado</h3>
+                <p>Você ainda não possui agendamentos para esta data.</p>
+            </div>
+        `;
         return;
     }
 
-    historyList.innerHTML = list.map(h => {
+    historyList.innerHTML = list.map((h, index) => {
         const isFuture = new Date(h.start_time) > new Date();
         const canCancel = isFuture && h.status === 'scheduled';
         const statusMap = {
-            'scheduled': { label: 'Agendado', color: 'var(--success)' },
-            'completed': { label: 'Concluído', color: 'var(--accent)' },
-            'no_show': { label: 'Não Compareceu', color: 'var(--danger)' },
-            'cancelled': { label: 'Cancelado', color: 'var(--text-secondary)' }
+            'scheduled': { label: 'Agendado', color: 'var(--success)', bg: 'rgba(34, 197, 94, 0.1)' },
+            'completed': { label: 'Concluído', color: 'var(--accent)', bg: 'var(--accent-light)' },
+            'no_show': { label: 'Não Compareceu', color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.1)' },
+            'cancelled': { label: 'Cancelado', color: 'var(--text-secondary)', bg: 'rgba(128, 128, 128, 0.1)' }
         };
-        const st = statusMap[h.status] || { label: h.status, color: 'var(--text-secondary)' };
+        const st = statusMap[h.status] || { label: h.status, color: 'var(--text-secondary)', bg: 'var(--bg-secondary)' };
 
-        // Show existing rating
-        let existingRatingHtml = '';
+        // Format date and time
+        const date = new Date(h.start_time);
+        const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const weekDay = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+        // Build rating stars HTML
+        let ratingStarsHtml = '';
         if (h.rating) {
-            existingRatingHtml += '<div style="margin-top:0.25rem; color: #fbbf24;">';
             for (let i = 1; i <= 5; i++) {
-                existingRatingHtml += i <= h.rating ? '<i class="fa-solid fa-star" style="font-size:0.8rem"></i>' : '<i class="fa-regular fa-star" style="font-size:0.8rem"></i>';
+                ratingStarsHtml += i <= h.rating
+                    ? '<i class="fa-solid fa-star"></i>'
+                    : '<i class="fa-regular fa-star"></i>';
             }
-            if (h.feedback_notes) {
-                existingRatingHtml += `<span style="color:var(--text-secondary); margin-left:0.5rem; font-size:0.8rem;">"${h.feedback_notes}"</span>`;
-            }
-            existingRatingHtml += '</div>';
         }
 
-        // Check for story logic - make card clickable if media exists
-        const storyOnClick = h.media_url ? `openSingleStoryViewer('${h.media_url}', '${h.media_type}', '${h.barber_name}', '${h.start_time}', '${h.barber_avatar || ''}')` : '';
+        // Build media preview HTML
+        let mediaPreviewHtml = '';
+        if (h.media_url) {
+            const mediaTag = h.media_type === 'video'
+                ? `<video src="${h.media_url}" style="width: 100%; height: auto; display: block;"></video>`
+                : `<img src="${h.media_url}" alt="Foto do corte">`;
+
+            mediaPreviewHtml = `
+                <div class="history-media-preview" onclick="openSingleStoryViewer('${h.media_url}', '${h.media_type}', '${h.barber_name}', '${h.start_time}', '${h.barber_avatar || ''}')">
+                    ${mediaTag}
+                    <div class="history-media-overlay">
+                        <i class="fa-solid fa-expand"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Build rating display HTML
+        let ratingDisplayHtml = '';
+        if (h.rating) {
+            ratingDisplayHtml = `
+                <div class="history-rating-display">
+                    <div class="history-rating-stars">${ratingStarsHtml}</div>
+                    ${h.feedback_notes ? `<div class="history-rating-text">"${h.feedback_notes}"</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Build actions HTML
+        let actionsHtml = '';
+        if (canCancel) {
+            actionsHtml = `
+                <div class="history-actions">
+                    <button class="btn btn-primary" onclick="rescheduleAppointment(${h.id})">
+                        <i class="fa-solid fa-calendar-days"></i> Reagendar
+                    </button>
+                    <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment(${h.id})">
+                        <i class="fa-solid fa-xmark"></i> Cancelar
+                    </button>
+                </div>
+            `;
+        } else if (h.status === 'completed') {
+            actionsHtml = `
+                <div class="history-actions">
+                    <button class="btn btn-primary" onclick="openFeedbackModal(${h.id}, ${h.rating || 0}, '${(h.feedback_notes || '').replace(/'/g, "\\'")}', ${h.story_is_public !== undefined ? h.story_is_public : true}, '${h.media_url || ''}', '${h.media_type || ''}', '${h.barber_name || ''}', '${h.start_time || ''}', '${h.barber_avatar || ''}')">
+                        <i class="fa-regular fa-star"></i> ${h.rating ? 'Editar Avaliação' : 'Avaliar Atendimento'}
+                    </button>
+                </div>
+            `;
+        }
 
         return `
-    <div class="card" style="margin-bottom: 0.5rem; padding: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
-        <div style="flex: 1; min-width: 200px;">
-            <div style="display:flex; justify-content:space-between;">
-                 <strong>${new Date(h.start_time).toLocaleDateString('pt-BR')}</strong>
+            <div class="history-card" id="history-card-${h.id}">
+                <div class="history-card-header" onclick="toggleHistoryCard(${h.id})">
+                    <div class="history-summary-left">
+                        <div class="history-icon">
+                            <i class="fa-solid fa-scissors"></i>
+                        </div>
+                        <div class="history-summary-info">
+                            <h4>${dateStr} • ${timeStr}</h4>
+                            <p>
+                                <i class="fa-solid fa-user-tie"></i> ${h.barber_name || 'Barbeiro'}
+                                <span>•</span>
+                                <i class="fa-solid fa-cut"></i> ${h.service_name || 'Serviço'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="history-summary-right">
+                        <span class="history-status-badge" style="color: ${st.color}; background: ${st.bg};">
+                            ${st.label}
+                        </span>
+                        <div class="history-expand-icon">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="history-card-body">
+                    ${mediaPreviewHtml}
+                    
+                    <div class="history-details-grid">
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Data</span>
+                            <span class="history-detail-value">${dateStr}</span>
+                        </div>
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Horário</span>
+                            <span class="history-detail-value">${timeStr}</span>
+                        </div>
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Dia da Semana</span>
+                            <span class="history-detail-value" style="text-transform: capitalize;">${weekDay}</span>
+                        </div>
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Profissional</span>
+                            <span class="history-detail-value">${h.barber_name || 'Barbeiro'}</span>
+                        </div>
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Serviço</span>
+                            <span class="history-detail-value">${h.service_name || 'Serviço'}</span>
+                        </div>
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Duração</span>
+                            <span class="history-detail-value">${h.duration_minutes || 30} min</span>
+                        </div>
+                        ${h.price ? `
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Valor</span>
+                            <span class="history-detail-value">R$ ${parseFloat(h.price).toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="history-detail-item">
+                            <span class="history-detail-label">Status</span>
+                            <span class="history-detail-value" style="color: ${st.color};">${st.label}</span>
+                        </div>
+                    </div>
+                    
+                    ${ratingDisplayHtml}
+                    ${actionsHtml}
+                </div>
             </div>
-            <span style="color: var(--accent);">${new Date(h.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-            <p style="color: var(--text-secondary); margin-top: 0.25rem;">${h.service_name || 'Serviço'} - ${h.barber_name || 'Barbeiro'}</p>
-            <p style="font-size: 0.8rem; color: ${st.color}; margin-top: 0.25rem;">
-                Status: ${st.label}
-            </p>
-            ${existingRatingHtml}
-        </div>
-        ${canCancel ? `
-            <div style="display: flex; gap: 0.5rem;">
-                 <button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="rescheduleAppointment(${h.id})">
-                    <i class="fa-solid fa-calendar-days"></i> Alterar
-                </button>
-                <button class="btn" style="background:var(--danger); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="cancelMyAppointment(${h.id})">
-                    Cancelar
-                </button>
-            </div>` : ''}
-        
-        ${h.status === 'completed' ? `
-            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <button class="btn btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" 
-                        onclick="openFeedbackModal(${h.id}, ${h.rating || 0}, '${(h.feedback_notes || '').replace(/'/g, "\\'")}', ${h.story_is_public !== undefined ? h.story_is_public : true}, '${h.media_url || ''}', '${h.media_type || ''}', '${h.barber_name || ''}', '${h.start_time || ''}', '${h.barber_avatar || ''}')">
-                   <i class="fa-regular fa-star"></i> ${h.rating ? 'Editar Avaliação' : 'Avaliar / Ver Storie'}
-                </button>
-            </div>
-        ` : ''}
-        </div>
-    `}).join('');
+        `;
+    }).join('');
+}
+
+// Toggle history card expansion
+function toggleHistoryCard(id) {
+    const card = document.getElementById(`history-card-${id}`);
+    if (!card) return;
+
+    card.classList.toggle('expanded');
 }
 
 function filterHistory() {
