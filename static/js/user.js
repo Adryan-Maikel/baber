@@ -342,27 +342,38 @@ function renderHistory(list) {
                     <div class="row-start gap-lg">
                         ${mediaThumbnailHtml}
                         
-                        <div class="column gap-md" style="flex: 1; min-width: 0;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Avaliação</label>
-                                <div class="star-rating-input" style="justify-content: flex-start;">
-                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 1)" id="inline-star-${h.id}-1"></i>
-                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 2)" id="inline-star-${h.id}-2"></i>
-                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 3)" id="inline-star-${h.id}-3"></i>
-                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 4)" id="inline-star-${h.id}-4"></i>
-                                    <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 5)" id="inline-star-${h.id}-5"></i>
+                        <div class="row-start gap-md" style="flex: 1; min-width: 0;">
+                            <div class="column gap-md" style="flex: 0 0 auto;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Avaliação</label>
+                                    <div class="star-rating-input" style="justify-content: flex-start;">
+                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 1)" id="inline-star-${h.id}-1"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 2)" id="inline-star-${h.id}-2"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 3)" id="inline-star-${h.id}-3"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 4)" id="inline-star-${h.id}-4"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 5)" id="inline-star-${h.id}-5"></i>
+                                    </div>
                                 </div>
-                            </div>
 
-                            ${h.media_url ? `
-                            <div class="privacy-toggle-wrapper" onclick="document.getElementById('inline-feedback-public-${h.id}').click()" style="margin: 0; justify-content: flex-start;">
-                                <input type="checkbox" id="inline-feedback-public-${h.id}" class="privacy-checkbox" ${h.story_is_public !== false ? 'checked' : ''} onchange="updateInlinePrivacyEmote(${h.id})">
-                                <label class="privacy-label" for="inline-feedback-public-${h.id}">
-                                    <i id="inline-privacy-emote-${h.id}" class="privacy-emote fa-solid fa-earth-americas"></i>
-                                    <span id="inline-privacy-text-${h.id}" class="privacy-text" style="font-size: 0.8rem;">Visível para todos</span>
-                                </label>
+                                ${h.media_url ? `
+                                <div class="privacy-toggle-wrapper" onclick="document.getElementById('inline-feedback-public-${h.id}').click()" style="margin: 0; justify-content: flex-start;">
+                                    <input type="checkbox" id="inline-feedback-public-${h.id}" class="privacy-checkbox" ${h.story_is_public !== false ? 'checked' : ''} onchange="updateInlinePrivacyEmote(${h.id})">
+                                    <label class="privacy-label" for="inline-feedback-public-${h.id}">
+                                        <i id="inline-privacy-emote-${h.id}" class="privacy-emote fa-solid fa-earth-americas"></i>
+                                        <span id="inline-privacy-text-${h.id}" class="privacy-text" style="font-size: 0.8rem;">Visível para todos</span>
+                                    </label>
+                                </div>
+                                ` : ''}
                             </div>
-                            ` : ''}
+                            
+                            <div class="form-group textarea-column" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+                                <label for="inline-feedback-notes-${h.id}">Comentário</label>
+                                <textarea 
+                                    id="inline-feedback-notes-${h.id}" 
+                                    placeholder="Deixe um comentário sobre o atendimento (opcional)..." 
+                                    style="height: 100%; min-height: 80px;"
+                                >${h.feedback_notes || ''}</textarea>
+                            </div>
                         </div>
                         
                         ${canCancel ? `
@@ -376,17 +387,8 @@ function renderHistory(list) {
                         </div>
                         ` : ''}
                     </div>
-
-                    <div class="form-group">
-                        <label for="inline-feedback-notes-${h.id}">Comentário</label>
-                        <textarea 
-                            id="inline-feedback-notes-${h.id}" 
-                            placeholder="Deixe um comentário sobre o atendimento (opcional)..." 
-                            rows="2"
-                        >${h.feedback_notes || ''}</textarea>
-                    </div>
                     
-                    <div style="display: flex; justify-content: flex-end;">
+                    <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
                         <button class="btn btn-primary" onclick="submitInlineFeedback(${h.id})" style="min-width: 120px;">
                             <i class="fa-solid fa-check"></i> Salvar
                         </button>
@@ -522,8 +524,35 @@ function toggleHistoryDetails(id) {
 
     if (!detailsSection || !arrow) return;
 
+    const isExpanding = !detailsSection.classList.contains('expanded');
+
     detailsSection.classList.toggle('expanded');
     arrow.classList.toggle('rotated');
+
+    // Scroll suave para mostrar o conteúdo expandido
+    if (isExpanding) {
+        // Aguarda animação de 400ms + 50ms de margem
+        setTimeout(() => {
+            const card = document.getElementById(`history-card-${id}`);
+            if (card) {
+                const cardBody = card.querySelector('.history-card-body');
+
+                if (cardBody && detailsSection) {
+                    // Scroll para a seção de detalhes dentro do card-body
+                    const detailsRect = detailsSection.getBoundingClientRect();
+                    const bodyRect = cardBody.getBoundingClientRect();
+
+                    // Calcula o offset relativo ao card-body
+                    const scrollOffset = detailsRect.top - bodyRect.top + cardBody.scrollTop - 20;
+
+                    cardBody.scrollTo({
+                        top: scrollOffset,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        }, 100); // Aguarda animação de 400ms + 50ms de margem
+    }
 }
 
 // Toggle inline feedback form

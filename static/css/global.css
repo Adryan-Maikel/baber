@@ -331,14 +331,72 @@ body {
     white-space: nowrap;
 }
 
+/* Responsive - Card Section */
+/* Mantém layout horizontal se houver espaço para 300px+ de comentário */
 @media (max-width: 768px) {
+    .card-section .row-start {
+        flex-wrap: wrap;
+    }
+
     .actions-column {
         width: 100%;
         min-width: auto;
+        order: 3;
+        /* Move botões para baixo */
     }
 
     .actions-column .btn {
         width: 100%;
+    }
+}
+
+/* Quebra para vertical em telas muito pequenas (< 500px) */
+@media (max-width: 500px) {
+    .card-section .row-start {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .thumb-image {
+        width: 100%;
+        height: 200px;
+        max-width: 100%;
+    }
+
+    .card-section .column {
+        width: 100%;
+    }
+
+    .textarea-column {
+        min-width: 100% !important;
+    }
+}
+
+/* Textarea Column - Ocupa 100% da altura */
+.textarea-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.textarea-column textarea {
+    flex: 1;
+    resize: vertical;
+}
+
+/* Quando o textarea quebra, ocupa 100% da largura total */
+@media (max-width: 650px) {
+    .card-section .row-start .row-start {
+        flex-direction: column;
+    }
+
+    .textarea-column {
+        width: 100%;
+        order: 2;
+        /* Move textarea para depois das estrelas */
+    }
+
+    .textarea-column textarea {
+        min-height: 80px;
     }
 }
 
@@ -350,57 +408,55 @@ body {
     width: 100%;
 }
 
-/* Buttons */
+/* Buttons - Minimalist Design */
 .btn {
-    padding: 0.875rem 1.75rem;
-    border-radius: 2rem;
-    /* Pill shape */
-    border: none;
-    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     text-decoration: none;
-    font-size: 1rem;
+    font-size: 0.9rem;
     background-color: var(--card-bg);
     color: var(--text-primary);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
+    box-shadow: none;
 }
 
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    background-color: var(--card-hover);
+    border-color: var(--accent);
+    transform: none;
 }
 
 .btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    background: var(--accent);
     color: #ffffff;
-    box-shadow: 0 4px 15px var(--accent-light);
+    border-color: var(--accent);
 }
 
 .btn-primary:hover {
-    box-shadow: 0 8px 25px var(--accent-light);
-    filter: brightness(1.1);
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
 }
 
 .btn-danger {
-    background: linear-gradient(135deg, var(--danger), var(--danger-hover));
+    background: var(--danger);
     color: #ffffff;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    border-color: var(--danger);
 }
 
 .btn-danger:hover {
-    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
-    filter: brightness(1.1);
+    background: var(--danger-hover);
+    border-color: var(--danger-hover);
 }
 
 /* Cards */
