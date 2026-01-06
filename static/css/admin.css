@@ -2,38 +2,32 @@
    ADMIN PANEL STYLES
    ============================================ */
 
-/* Admin Layout */
-.admin-container {
-    display: flex;
-    min-height: 100vh;
+:root {
+    --bg-color: #111827;
+    --bg-secondary: #1f2937;
+    --card-bg: #1f2937;
+    --card-hover: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: rgba(59, 130, 246, 0.1);
+    --danger: #ef4444;
+    --success: #10b981;
+    --border: #374151;
+    --star-color: #f59e0b;
+    --whatsapp-color: #25d366;
 }
 
 /* Sidebar */
 .sidebar {
     width: 250px;
     background: var(--card-bg);
-    padding: 1.5rem;
+    padding-top: 2rem;
     border-right: 1px solid var(--border);
     position: fixed;
     height: 100vh;
     overflow-y: auto;
-}
-
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.sidebar-header h1 {
-    font-size: 1.25rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 
 .sidebar-menu {
@@ -65,51 +59,6 @@
 .sidebar-menu i {
     width: 20px;
     text-align: center;
-}
-
-/* Main Content */
-.main-content {
-    margin-left: 250px;
-    flex: 1;
-    padding: 2rem;
-    background: var(--bg-color);
-}
-
-/* Dashboard Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.stat-card {
-    text-align: center;
-    padding: 1.5rem;
-}
-
-.stat-card .stat-value {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: var(--accent);
-}
-
-.stat-card .stat-label {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-
-/* Charts */
-.charts-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.chart-card {
-    padding: 1.5rem;
 }
 
 /* Filter Bar */
@@ -175,57 +124,6 @@
     min-width: 130px;
 }
 
-/* Barber Cards Grid */
-.barbers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-
-.barber-admin-card {
-    position: relative;
-}
-
-.barber-admin-card .barber-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.barber-admin-card .barber-avatar {
-    width: 60px;
-    height: 60px;
-    background: var(--accent-light);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: var(--accent);
-}
-
-.barber-admin-card .barber-avatar .avatar-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-color);
-    color: var(--text-secondary);
-    font-size: 3rem;
-}
-
-.barber-admin-card .services-list {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-}
-
-.barber-admin-card .service-item {
-    font-size: 0.875rem;
-}
-
 /* Appointment List */
 .appointment-list {
     list-style: none;
@@ -277,6 +175,14 @@
     background: var(--bg-secondary);
     border-radius: 0.5rem;
     margin-bottom: 1rem;
+    border: 1px solid transparent; /* Prepare for border transition */
+    transition: all 0.2s ease;
+}
+
+.service-form-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .remove-service-btn {
@@ -294,18 +200,6 @@
     align-items: center;
     justify-content: center;
     font-size: 0.75rem;
-}
-
-/* Section Headers */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-    font-size: 1.5rem;
 }
 
 /* WhatsApp Button */
@@ -331,8 +225,6 @@
         width: 60px;
         padding: 1rem 0.5rem;
     }
-
-    .sidebar-header h1,
     .sidebar-menu span {
         display: none;
     }
@@ -342,43 +234,9 @@
         padding: 0.75rem;
     }
 
-    .main-content {
-        margin-left: 60px;
-        padding: 1rem;
-    }
-
-    .barbers-grid {
-        grid-template-columns: 1fr;
-    }
-
     .form-row {
         grid-template-columns: 1fr;
     }
-}
-
-/* Fieldset Styling */
-.form-group-border {
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    background: transparent;
-}
-
-.form-group-border legend {
-    padding: 0 0.5rem;
-    color: var(--text-primary);
-    /* Use accent color to make it look nicer */
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-/* Interval Section specific adjustments */
-.interval-section {
-    margin-bottom: 0;
-    padding: 1rem 1rem 0rem 1rem;
-    /* Tighter padding */
-    margin-top: -6px;
-    /* Visual alignment fix */
 }
 
 .form-row.compact {
@@ -489,8 +347,8 @@
    BARBER CARD STYLES (Migrated)
    ============================================ */
 
-/* Barber List Container */
-.barber-flex {
+/* Card List Container */
+.card-dropdown-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -501,55 +359,73 @@
     margin-right: auto;
 }
 
-/* Barber Horizontal Card */
-.barber-card-horizontal {
+/* Dropdown Card */
+.card-dropdown {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 1rem;
-    overflow: visible;
+    overflow: hidden;
+    /* Clips content smoothly */
     transition: all 0.3s ease;
     position: relative;
     width: 100%;
     height: 100px;
-    transition: height 0.5s cubic-bezier(0.6, 0.04, 0.98, 0.335);
+    /* Collapsed height */
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smooth resizing */
     box-sizing: border-box;
     opacity: 1;
-    /* Ensure default visibility */
+    display: flex;
+    flex-direction: column;
 }
 
-/* New Barber Card (Hidden initially or animating in) */
-.barber-card-horizontal.new-card-entering {
+/* New Card (Hidden initially or animating in) */
+.card-dropdown.new-card-entering {
     height: 0;
     opacity: 0;
-    overflow: hidden;
     margin-top: 0;
     padding: 0;
     border: 0;
 }
 
-.barber-card-horizontal.expanded {
-    height: auto;
-    max-height: 500px;
-    display: flex;
-    flex-direction: column;
+.card-dropdown.expanded {
+    height: 550px;
+    min-height: 550px;
+    max-height: 550px;
+    /* overflow is still hidden */
 }
 
-.barber-card-horizontal:hover {
+.card-dropdown:hover {
     border-color: var(--accent);
     box-shadow: 0 4px 12px var(--shadow);
 }
 
 /* Header (Always Visible) */
-.barber-card-header {
+.card-dropdown-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
+    padding: 1.05rem 1.1rem;
     cursor: pointer;
     background: transparent;
-    height: 100px;
     box-sizing: border-box;
+    border-bottom: none;
+    transition: all 0.3s ease;
 }
+
+.expanded .card-dropdown-header {
+    border-bottom: 1px solid var(--border);
+}
+
+.card-dropdown-footer {
+    border-top: 1px solid var(--border);
+}
+
+.card-dropdown-footer:hover,
+.card-dropdown-header:hover {
+    border-color: var(--accent);
+}
+
 
 .barber-summary-left {
     display: flex;
@@ -637,60 +513,83 @@
     transition: all 0.3s ease;
 }
 
-.barber-card-horizontal:hover .card-expand-icon {
+.card-dropdown:hover .card-expand-icon {
     background: var(--accent);
     color: white;
 }
 
-.barber-card-horizontal.expanded .card-expand-icon {
+.card-dropdown.expanded .card-expand-icon {
     transform: rotate(180deg);
     background: var(--accent);
     color: white;
 }
 
 /* Card Body (Expanded Content) */
-.barber-card-body {
-    max-height: 0;
+.card-dropdown-body {
+    flex: 1;
     opacity: 0;
-    overflow: hidden;
-    transform-origin: top;
-    transition: opacity 0.3s ease, margin-top 0.3s ease;
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border);
+    /* Slide + Fade effect */
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
     padding: 0;
-}
-
-.barber-card-horizontal.expanded .barber-card-body {
-    max-height: none;
-    opacity: 1;
-    padding: 0;
-    margin-top: 0;
     overflow: hidden;
+    /* Ensure inner content doesn't spill during anim */
+    pointer-events: none;
+    /* Prevent interaction when collapsed */
+    min-height: 0;
+    /* Important for flex calculation */
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
+}
+
+.card-dropdown.expanded .card-dropdown-body {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 /* Edit Form Layout */
-.barber-edit-form {
+.card-dropdown-form {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
     gap: 0;
     padding: 0;
+    overflow: hidden;
+    /* Prevent form itself from scrolling */
 }
 
-/* Scrollable Content Container */
+/* Scrollable Content Container (Restored) */
+.card-dropdown-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Footer Actions */
+.card-dropdown-footer {
+    flex-shrink: 0;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--card-bg);
+    /* Ensure opacity */
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    z-index: 10;
+}
+
+/* Legacy class kept for safety if used elsewhere or cache, but mapped to new style */
 .barber-content-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
-    display: grid;
-    grid-template-columns: 180px 1fr;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
-    align-items: start;
 }
 
 .barber-edit-sidebar {
@@ -713,7 +612,7 @@
     position: relative;
     cursor: pointer;
     overflow: hidden;
-    border: 3px dashed var(--border);
+    border: 3px solid var(--border);
     background: var(--bg-color);
     transition: all 0.3s;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -749,12 +648,6 @@
     opacity: 1;
 }
 
-.barber-edit-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
 /* Compact Form Styles */
 .form-row {
     display: grid;
@@ -762,19 +655,16 @@
     grid-template-columns: 1fr 1fr;
 }
 
-.settings-form-group {
+.settings-form-group label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
 }
 
-.settings-form-group label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-}
-
 .settings-form-group input,
-.settings-form-group select {
+.settings-form-group select,
+.settings-form-group textarea {
     width: 100%;
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
@@ -782,18 +672,34 @@
     background: var(--bg-color);
     color: var(--text-primary);
     font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group-border {
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 1rem;
+/* Specific Focus Fix */
+.settings-form-group input:focus,
+.settings-form-group select:focus,
+.settings-form-group textarea:focus,
+.service-form-item input:focus {
+    outline: none;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-.form-group-border legend {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    padding: 0 0.5rem;
+.settings-form-group input:focus,
+.settings-form-group select:focus,
+.settings-form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+input[type="tel"],
+.time-input-component {
+    padding: 5px 8px;
+    border-color: var(--border);
+}
+.time-input-component {
+    width: 65px;
+    text-align: center;
 }
 
 /* Inline Services */
@@ -837,30 +743,79 @@
 
 /* Responsive Adjustments */
 @media (max-width: 900px) {
-    .barber-content-scroll {
-        grid-template-columns: 1fr;
-    }
-
-    .barber-edit-sidebar {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-
     .avatar-upload-trigger {
         width: 80px;
         height: 80px;
     }
 }
 
-.barber-card-footer {
+/* Icon Selector Styles */
+.icon-select-wrapper {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+}
+
+.icon-select-trigger {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding: 1rem;
-    border-top: 1px solid var(--border);
+    justify-content: center;
     background: var(--bg-secondary);
-    flex-shrink: 0;
-    /* Prevent shrinking */
-    margin-top: 0;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--accent);
+    transition: all 0.2s;
+}
+
+.icon-select-trigger:hover {
+    border-color: var(--accent);
+}
+
+.icon-select-dropdown {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    z-index: 100;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 120px;
+}
+
+.icon-select-dropdown.show {
+    display: grid;
+}
+
+.icon-option {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.icon-option:hover {
+    background: var(--bg-secondary);
+}
+
+.icon-option.selected {
+    background: var(--accent);
+    color: white;
+}
+
+.icon-option i {
+    pointer-events: none;
 }

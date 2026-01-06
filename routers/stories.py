@@ -28,12 +28,12 @@ def get_current_customer_optional(db: Session):
         sub = payload.get("sub")
         if not sub or not sub.startswith("customer:"):
             return None
-        customer_id = int(sub.split(":")[1])
+        customer_id = sub.split(":")[1]
         return db.query(models.Customer).filter(models.Customer.id == customer_id).first()
     except (JWTError, ValueError):
         return None
 
-def get_story_stats(db: Session, media_ids: List[int], current_user_id: Optional[int]):
+def get_story_stats(db: Session, media_ids: List[str], current_user_id: Optional[str]):
     """
     Get stats for a list of media IDs.
     Returns:
@@ -66,7 +66,7 @@ def get_story_stats(db: Session, media_ids: List[int], current_user_id: Optional
         models.StoryReaction.media_id.in_(media_ids)
     ).group_by(models.StoryReaction.media_id, models.StoryReaction.reaction_type).all()
     
-    reaction_map: Dict[int, Dict[str, int]] = {}
+    reaction_map: Dict[str, Dict[str, int]] = {}
     for m_id, r_type, count in reaction_rows:
         if m_id not in reaction_map:
             reaction_map[m_id] = {"like": 0, "dislike": 0, "love": 0}
@@ -151,7 +151,7 @@ def get_all_stories():
     return jsonify(list(barber_stories.values()))
 
 
-@stories_bp.route("/<int:story_id>/view", methods=["POST"])
+@stories_bp.route("/<string:story_id>/view", methods=["POST"])
 def view_story(story_id):
     """Record a view for a story"""
     db = get_db()
@@ -163,30 +163,6 @@ def view_story(story_id):
     media = db.query(models.AppointmentMedia).filter(models.AppointmentMedia.id == story_id).first()
     if not media:
         return jsonify({"error": "Story not found"}), 404
-        
-    # Check duplicate view
-    # Logic: 
-    # - If logged in: Check by user_id
-    # - If guest: Check by ip_address (and user_id is null)
-    # Allows a user to view again if they login/logout properly, but let's keep it simple.
-    # The requirement said "users can view multiple times" -> "uma pessoa também pode visualizar mais de uma vez"
-    # Wait, the user said "uma pessoa também pode visualizar mais de uma vez" but usually view COUNTING counts unique people or total views?
-    # Usually "views" counts distinct eyes, but some platforms count loops.
-    # Let's record EVERY view event but unique constraint?
-    # If I record EVERY view, table grows fast.
-    # User comment: "user se logado se não IP, uma pessoa também pode visualizar mais de uma vez."
-    # This implies we should ALLOW duplicate views? Or maybe just track them?
-    # Let's just INSERT always. Then Count is total views.
-    # But for "People saw", we do distinct count in query.
-    
-    # I will allow ONE view record per User/IP per Session? 
-    # Or just simpler: insert if not exists today?
-    # Let's just Insert. Total views.
-    
-    # However, to avoid SPAM abuse (refresh spam), I might want to limit it?
-    # Let's check if we already viewed RECENTLY (e.g. last 1 hour?) logic or just simple:
-    
-    # Going with: Insert always.
     
     new_view = models.StoryView(
         media_id=story_id,
@@ -199,7 +175,7 @@ def view_story(story_id):
     return jsonify({"success": True})
 
 
-@stories_bp.route("/<int:story_id>/react", methods=["POST"])
+@stories_bp.route("/<string:story_id>/react", methods=["POST"])
 def react_story(story_id):
     """React to a story (toggle)"""
     db = get_db()
@@ -245,4 +221,3 @@ def react_story(story_id):
     db.commit()
     
     return jsonify({"success": True, "action": action, "reaction": reaction_type})
-

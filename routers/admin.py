@@ -4,6 +4,7 @@ from sqlalchemy import func, desc
 from typing import List, Dict, Any, Optional
 from datetime import date, timedelta, datetime
 import models, schemas
+import os
 from models import ThemeConfig
 from routers.auth import get_current_admin_user, get_current_panel_user, get_password_hash, get_db, verify_password
 
@@ -53,7 +54,7 @@ def create_barber():
     db.refresh(db_barber)
     return jsonify_pydantic(db_barber, schemas.Barber)
 
-@admin_bp.route("/barbers/<int:barber_id>", methods=["GET"])
+@admin_bp.route("/barbers/<string:barber_id>", methods=["GET"])
 def get_barber(barber_id):
     """Get a specific barber with services"""
     current_user = get_current_panel_user()
@@ -71,7 +72,7 @@ def get_barber(barber_id):
         return jsonify({"detail": "Barbeiro não encontrado"}), 404
     return jsonify_pydantic(barber, schemas.Barber)
 
-@admin_bp.route("/barbers/<int:barber_id>", methods=["PUT"])
+@admin_bp.route("/barbers/<string:barber_id>", methods=["PUT"])
 def update_barber(barber_id):
     """Update a barber's info"""
     current_user = get_current_panel_user()
@@ -81,7 +82,7 @@ def update_barber(barber_id):
     # Check permissions: Admin OR the barber themselves
     if getattr(current_user, "role", "admin") == "barber":
         if current_user.id != barber_id:
-             return jsonify({"detail": "VocÃª sÃ³ pode editar seu prÃ³prio perfil"}), 403
+             return jsonify({"detail": "Você só pode editar seu próprio perfil"}), 403
     
     db = get_db()
     db_barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
@@ -105,6 +106,39 @@ def update_barber(barber_id):
     db.refresh(db_barber)
     return jsonify_pydantic(db_barber, schemas.Barber)
 
+@admin_bp.route("/barbers/<string:barber_id>/avatar", methods=["DELETE"])
+def delete_barber_avatar(barber_id):
+    """Remove barber avatar"""
+    current_user = get_current_panel_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated"}), 401
+    
+    # Check permissions
+    if getattr(current_user, "role", "admin") == "barber":
+        if current_user.id != barber_id:
+             return jsonify({"detail": "Acesso negado"}), 403
+
+    db = get_db()
+    barber = db.query(models.Barber).filter(models.Barber.id == barber_id).first()
+    if not barber:
+        return jsonify({"detail": "Barbeiro não encontrado"}), 404
+    
+    if barber.avatar_url:
+        # Delete file from disk
+        # avatar_url is like /static/uploads/barbers/xyz.png
+        try:
+            # Go up one level from routers to root
+            root_dir = os.path.dirname(os.path.dirname(__file__))
+            file_path = os.path.join(root_dir, barber.avatar_url.lstrip("/").lstrip("\\"))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting avatar file: {e}")
+
+    barber.avatar_url = None
+    db.commit()
+    return jsonify({"ok": True})
+
 @admin_bp.route("/admin/me", methods=["PUT"])
 def update_admin_me():
     """Update current admin credentials"""
@@ -113,7 +147,7 @@ def update_admin_me():
         return jsonify({"detail": "Not authenticated or not admin"}), 403
         
     try:
-        user_update = schemas.UserCreate(**request.json)
+        user_update = schemas.UserUpdate(**request.json)
     except Exception as e:
         return jsonify({"detail": str(e)}), 400
 
@@ -126,7 +160,7 @@ def update_admin_me():
         if user_update.username != user.username:
             existing = db.query(models.User).filter(models.User.username == user_update.username).first()
             if existing:
-                return jsonify({"detail": "Nome de usuÃ¡rio jÃ¡ existe"}), 400
+                return jsonify({"detail": "Nome de usuário já existe"}), 400
         user.username = user_update.username
         
     if user_update.password:
@@ -136,7 +170,7 @@ def update_admin_me():
     db.refresh(user)
     return jsonify({"message": "Admin updated successfully"})
 
-@admin_bp.route("/barbers/<int:barber_id>", methods=["DELETE"])
+@admin_bp.route("/barbers/<string:barber_id>", methods=["DELETE"])
 def delete_barber(barber_id):
     """Delete a barber and all their services"""
     current_user = get_current_admin_user()
@@ -153,7 +187,7 @@ def delete_barber(barber_id):
 
 # =============== BARBER SERVICES CRUD ===============
 
-@admin_bp.route("/barbers/<int:barber_id>/services", methods=["GET"])
+@admin_bp.route("/barbers/<string:barber_id>/services", methods=["GET"])
 def list_barber_services(barber_id):
     """Get all services for a barber"""
     current_user = get_current_admin_user()
@@ -166,7 +200,7 @@ def list_barber_services(barber_id):
         return jsonify({"detail": "Barbeiro não encontrado"}), 404
     return jsonify_pydantic(barber.services, schemas.BarberService)
 
-@admin_bp.route("/barbers/<int:barber_id>/services", methods=["POST"])
+@admin_bp.route("/barbers/<string:barber_id>/services", methods=["POST"])
 def create_barber_service(barber_id):
     """Add a service to a barber"""
     current_user = get_current_admin_user()
@@ -189,7 +223,7 @@ def create_barber_service(barber_id):
     db.refresh(db_service)
     return jsonify_pydantic(db_service, schemas.BarberService)
 
-@admin_bp.route("/barbers/<int:barber_id>/services/<int:service_id>", methods=["PUT"])
+@admin_bp.route("/barbers/<string:barber_id>/services/<string:service_id>", methods=["PUT"])
 def update_barber_service(barber_id, service_id):
     """Update a barber's service"""
     current_user = get_current_admin_user()
@@ -202,7 +236,7 @@ def update_barber_service(barber_id, service_id):
         models.BarberService.barber_id == barber_id
     ).first()
     if not db_service:
-        return jsonify({"detail": "ServiÃ§o não encontrado"}), 404
+        return jsonify({"detail": "Serviço não encontrado"}), 404
     
     try:
         service_update = schemas.BarberServiceUpdate(**request.json)
@@ -215,7 +249,7 @@ def update_barber_service(barber_id, service_id):
     new_price = update_data.get('price', db_service.price)
     new_discount = update_data.get('discount_price', db_service.discount_price)
     if new_discount is not None and new_discount > new_price:
-        return jsonify({"detail": "Desconto não pode ser maior que o preÃ§o"}), 400
+        return jsonify({"detail": "Desconto não pode ser maior que o preço"}), 400
     
     for key, value in update_data.items():
         setattr(db_service, key, value)
@@ -224,7 +258,7 @@ def update_barber_service(barber_id, service_id):
     db.refresh(db_service)
     return jsonify_pydantic(db_service, schemas.BarberService)
 
-@admin_bp.route("/barbers/<int:barber_id>/services/<int:service_id>", methods=["DELETE"])
+@admin_bp.route("/barbers/<string:barber_id>/services/<string:service_id>", methods=["DELETE"])
 def delete_barber_service(barber_id, service_id):
     """Delete a service from a barber"""
     current_user = get_current_admin_user()
@@ -237,7 +271,7 @@ def delete_barber_service(barber_id, service_id):
         models.BarberService.barber_id == barber_id
     ).first()
     if not db_service:
-        return jsonify({"detail": "ServiÃ§o não encontrado"}), 404
+        return jsonify({"detail": "Serviço não encontrado"}), 404
     db.delete(db_service)
     db.commit()
     return jsonify({"ok": True})
@@ -275,7 +309,7 @@ def read_services():
     services = db.query(models.Service).offset(skip).limit(limit).all()
     return jsonify_pydantic(services, schemas.Service)
 
-@admin_bp.route("/services/<int:service_id>", methods=["DELETE"])
+@admin_bp.route("/services/<string:service_id>", methods=["DELETE"])
 def delete_service(service_id):
     current_user = get_current_admin_user()
     if not current_user:
@@ -301,7 +335,7 @@ def read_appointments():
     db = get_db()
     
     date_filter = request.args.get('date_filter')
-    barber_id = request.args.get('barber_id', type=int)
+    barber_id = request.args.get('barber_id')
     skip = request.args.get('skip', default=0, type=int)
     limit = request.args.get('limit', default=100, type=int)
     
@@ -343,7 +377,7 @@ def get_dashboard_stats():
 
     db = get_db()
     
-    barber_id = request.args.get('barber_id', type=int)
+    barber_id = request.args.get('barber_id')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
@@ -465,7 +499,7 @@ def get_dashboard_stats():
 
 # =============== APPOINTMENT STATUS ===============
 
-@admin_bp.route("/appointments/<int:appointment_id>/complete", methods=["PUT"])
+@admin_bp.route("/appointments/<string:appointment_id>/complete", methods=["PUT"])
 def complete_appointment(appointment_id):
     """Mark appointment as completed"""
     current_user = get_current_admin_user()
@@ -482,7 +516,7 @@ def complete_appointment(appointment_id):
     return jsonify({"ok": True, "status": "completed"})
 
 
-@admin_bp.route("/appointments/<int:appointment_id>/no-show", methods=["PUT"])
+@admin_bp.route("/appointments/<string:appointment_id>/no-show", methods=["PUT"])
 def mark_no_show(appointment_id):
     """Mark appointment as no-show (customer didn't come)"""
     current_user = get_current_admin_user()
@@ -499,7 +533,7 @@ def mark_no_show(appointment_id):
     return jsonify({"ok": True, "status": "no_show"})
 
 
-@admin_bp.route("/appointments/<int:appointment_id>/media", methods=["GET"])
+@admin_bp.route("/appointments/<string:appointment_id>/media", methods=["GET"])
 def get_appointment_media(appointment_id):
     """Get all media for an appointment"""
     current_user = get_current_admin_user()
@@ -523,7 +557,7 @@ def get_appointment_media(appointment_id):
     return jsonify(media_list)
 
 
-@admin_bp.route("/appointments/<int:appointment_id>/feedback", methods=["POST"])
+@admin_bp.route("/appointments/<string:appointment_id>/feedback", methods=["POST"])
 def submit_feedback(appointment_id):
     """Submit feedback for an appointment (notes, no-show status)"""
     current_user = get_current_panel_user()
@@ -538,7 +572,7 @@ def submit_feedback(appointment_id):
     
     if getattr(current_user, "role", "admin") == "barber":
         if appointment.barber_id != current_user.id:
-            return jsonify({"detail": "VocÃª não tem permissÃ£o para alterar este agendamento"}), 403
+            return jsonify({"detail": "Você não tem permissão para alterar este agendamento"}), 403
     
     try:
         feedback = schemas.FeedbackCreate(**request.json)
@@ -561,71 +595,7 @@ def submit_feedback(appointment_id):
     db.commit()
     return jsonify({"ok": True, "appointment_id": appointment.id})
 
-    return jsonify({"ok": True, "appointment_id": appointment.id})
 
-
-# =============== THEME SETTINGS ===============
-
-@admin_bp.route("/theme", methods=["GET"])
-def get_theme_settings():
-    """Get current theme settings"""
-    current_user = get_current_panel_user()
-    if not current_user:
-        return jsonify({"detail": "Not authenticated"}), 401
-        
-    db = get_db()
-    config = db.query(ThemeConfig).first()
-    if not config:
-        config = ThemeConfig()
-        db.add(config)
-        db.commit()
-    
-    # Return as dict since we didn't make a Pydantic schema yet, or just direct
-    return jsonify({
-        "bg_color": config.bg_color,
-        "bg_secondary": config.bg_secondary,
-        "card_bg": config.card_bg,
-        "card_hover": config.card_hover,
-        "text_primary": config.text_primary,
-        "text_secondary": config.text_secondary, 
-        "accent_color": config.accent_color,
-        "accent_hover": config.accent_hover,
-        "danger_color": config.danger_color,
-        "success_color": config.success_color,
-        "border_color": config.border_color,
-        "star_color": config.star_color,
-        "whatsapp_color": config.whatsapp_color
-    })
-
-@admin_bp.route("/theme", methods=["POST"])
-def update_theme_settings():
-    """Update theme settings"""
-    current_user = get_current_admin_user()
-    if not current_user:
-        return jsonify({"detail": "Not authenticated or not admin"}), 403
-        
-    data = request.json
-    db = get_db()
-    config = db.query(ThemeConfig).first()
-    if not config:
-        config = ThemeConfig()
-        db.add(config)
-    
-    # Update fields if present
-    fields = [
-        "bg_color", "bg_secondary", "card_bg", "card_hover",
-        "text_primary", "text_secondary",
-        "accent_color", "accent_hover",
-        "danger_color", "success_color",
-        "border_color", "star_color", "whatsapp_color"
-    ]
-    
-    for field in fields:
-        if field in data:
-            setattr(config, field, data[field])
-            
-    db.commit()
-    return jsonify({"ok": True})
 
 
 # =============== PASSWORD CHANGE ===============
@@ -657,4 +627,3 @@ def change_password():
     db.commit()
     
     return jsonify({"ok": True, "message": "Senha alterada com sucesso"})
-

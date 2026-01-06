@@ -1412,6 +1412,7 @@ async function loadBarbers() {
 
     try {
         const barbers = await fetchAPI('/barbers');
+        window.allBarbers = barbers; // Store for lookup
         if (barbers.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary);">Nenhum profissional disponível no momento.</p>';
             return;
@@ -1425,24 +1426,35 @@ async function loadBarbers() {
             const ringClass = hasStories ? 'story-ring' : '';
 
             // New smaller avatar layout
+            const innerAvatar = b.avatar_url
+                ? `<img src="${b.avatar_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`
+                : `<div style="width: 100%; height: 100%; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-user-tie"></i>
+                   </div>`;
+
             const avatarHtml = `
                 <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer(${b.id})"` : ''} 
                      style="width: 100px; height: 100px; min-width: 100px;">
-                    <img src="${b.avatar_url || '/static/img/default-avatar.png'}" 
-                         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">
+                    ${innerAvatar}
                 </div>
              `;
 
             // Service list preview (first 3)
             const serviceList = b.services ? b.services.slice(0, 3).map(s => `
                 <span style="font-size: 0.75rem; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary);">
-                    ${s.name}
+                    <i class="fa-solid ${s.icon || 'fa-scissors'}"></i> ${s.name}
                 </span>
             `).join('') : '';
             const moreServices = b.services && b.services.length > 3 ? `<span style="font-size: 0.75rem; color: var(--text-secondary);">+${b.services.length - 3}</span>` : '';
 
+            const instaLink = b.instagram ? `https://instagram.com/${b.instagram.replace('@', '')}` : null;
+            const twitterLink = b.twitter ? `https://twitter.com/${b.twitter.replace('@', '')}` : null;
+            const emailLink = b.email ? `mailto:${b.email}` : null;
+            const phoneDigits = b.phone ? b.phone.replace(/\D/g, '') : '';
+            const whatsappLink = (phoneDigits.length >= 10) ? `https://wa.me/55${phoneDigits}` : null;
+
             return `
-            <div class="card barber-card" onclick="selectBarber(${b.id}, '${b.name}')" 
+            <div class="card barber-card" onclick="selectBarber('${b.id}')" 
                  style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; padding: 1.5rem; min-width: 100px; max-width: 300px;">
                  ${avatarHtml}
                 <div>
@@ -1450,9 +1462,25 @@ async function loadBarbers() {
                     <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem;">
                         ${serviceList} ${moreServices}
                     </div>
+                    
+                    <div class="social-links" onclick="event.stopPropagation()">
+                        <a href="${instaLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!instaLink ? 'disabled' : ''}">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                        <a href="${twitterLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!twitterLink ? 'disabled' : ''}">
+                            <i class="fa-brands fa-x-twitter"></i>
+                        </a>
+                        <a href="${emailLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!emailLink ? 'disabled' : ''}">
+                            <i class="fa-solid fa-envelope"></i>
+                        </a>
+                        <a href="${whatsappLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!whatsappLink ? 'disabled' : ''}">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        `}).join('');
+            `;
+        }).join('');
 
         // CSS Grid adjustment for the new card style (simulated via inline style logic or CSS update)
         // Ideally we update CSS, but we can rely on existing grid.
@@ -1461,8 +1489,11 @@ async function loadBarbers() {
     }
 }
 
-function selectBarber(id, name) {
-    selectedBarber = { id, name };
+function selectBarber(id) {
+    const barber = window.allBarbers.find(b => b.id === id);
+    if (!barber) return;
+
+    selectedBarber = { id: barber.id, name: barber.name };
     goToStep(2);
     loadServicesUser();
 }
@@ -1475,6 +1506,7 @@ async function loadServicesUser() {
 
     try {
         const services = await fetchAPI(`/barbers/${selectedBarber.id}/services`);
+        window.currentBarberServices = services; // Store for lookup
 
         if (services.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary);">Nenhum serviço disponível para este profissional.</p>';
@@ -1489,22 +1521,36 @@ async function loadServicesUser() {
             const priceValue = hasDiscount ? s.discount_price : s.price;
 
             return `
-            <div class="card service-card" onclick="selectService(${s.id}, '${s.name}', ${s.duration_minutes}, ${priceValue}, true)" 
+            <div class="card service-card" onclick="selectService('${s.id}')" 
                  style="cursor: pointer;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3>${s.name}</h3>
+                    <h3><i class="fa-solid ${s.icon || 'fa-scissors'}"></i> ${s.name}</h3>
                     <div>${displayPrice}</div>
                 </div>
                 <p style="color: var(--text-secondary); margin-top: 0.5rem;"><i class="fa-regular fa-clock"></i> ${s.duration_minutes} min</p>
             </div>
-        `}).join('');
+        `;
+        }).join('');
     } catch (e) {
         container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar serviços.</p>';
     }
 }
 
-function selectService(id, name, duration, price, isBarberService = false) {
-    selectedService = { id, name, duration, price, isBarberService };
+function selectService(id) {
+    const s = window.currentBarberServices.find(x => x.id === id);
+    if (!s) return;
+
+    // Determine price (check discount)
+    const hasDiscount = s.discount_price && s.discount_price < s.price;
+    const price = hasDiscount ? s.discount_price : s.price;
+
+    selectedService = {
+        id: s.id,
+        name: s.name,
+        duration: s.duration_minutes,
+        price: price,
+        isBarberService: true
+    };
     goToStep(3);
     loadSlots();
 }

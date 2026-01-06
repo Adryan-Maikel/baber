@@ -273,7 +273,7 @@ def register():
     db_user = models.User(
         username=user_data.username,
         hashed_password=hashed_password,
-        is_admin=user_data.is_admin
+        is_admin=False # Force non-admin for public registration
     )
     db.add(db_user)
     db.commit()
@@ -301,30 +301,10 @@ def read_users_me():
     })
 
 
-@auth_bp.route("/init-admin", methods=["POST"])
-def init_admin():
-    """Initialize default admin user (only if no users exist)"""
-    db = get_db()
-    user_count = db.query(models.User).count()
-    if user_count > 0:
-        return jsonify({"detail": "Admin user already exists"}), 400
-    
-    hashed_password = get_password_hash("admin123")
-    admin_user = models.User(
-        username="admin",
-        hashed_password=hashed_password,
-        is_admin=True
-    )
-    db.add(admin_user)
-    db.commit()
-    db.refresh(admin_user)
-    return jsonify({"message": "Admin user created successfully", "username": "admin", "password": "admin123"})
-
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
     """Logout endpoint to clear auth cookies"""
     response = make_response(jsonify({"message": "Logged out successfully"}))
     response.delete_cookie("access_token")
     return response
-
 

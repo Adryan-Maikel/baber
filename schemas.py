@@ -7,10 +7,13 @@ import re
 class UserCreate(BaseModel):
     username: str
     password: str
-    is_admin: bool = False
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
 
 class User(BaseModel):
-    id: int
+    id: str
     username: str
     is_admin: bool
     
@@ -25,7 +28,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     role: str = "admin"
-    role: str = "admin"
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -37,6 +39,7 @@ class BarberServiceBase(BaseModel):
     duration_minutes: int
     price: float
     discount_price: Optional[float] = None
+    icon: Optional[str] = "fa-scissors"
     
     @model_validator(mode='after')
     def validate_discount(self):
@@ -52,10 +55,11 @@ class BarberServiceUpdate(BaseModel):
     duration_minutes: Optional[int] = None
     price: Optional[float] = None
     discount_price: Optional[float] = None
+    icon: Optional[str] = None
 
 class BarberService(BarberServiceBase):
-    id: int
-    barber_id: int
+    id: str
+    barber_id: str
     
     class Config:
         from_attributes = True
@@ -72,6 +76,9 @@ class BarberBase(BaseModel):
     start_interval: Optional[str] = None
     end_interval: Optional[str] = None
     username: Optional[str] = None
+    instagram: Optional[str] = None
+    twitter: Optional[str] = None
+    email: Optional[str] = None
 
 class BarberCreate(BarberBase):
     password: Optional[str] = None
@@ -87,9 +94,12 @@ class BarberUpdate(BaseModel):
     end_time: Optional[str] = None
     start_interval: Optional[str] = None
     end_interval: Optional[str] = None
+    instagram: Optional[str] = None
+    twitter: Optional[str] = None
+    email: Optional[str] = None
 
 class Barber(BarberBase):
-    id: int
+    id: str
     services: List[BarberService] = []
     
     class Config:
@@ -97,7 +107,7 @@ class Barber(BarberBase):
 
 class BarberSimple(BarberBase):
     """Barber without services list (for listings)"""
-    id: int
+    id: str
     
     class Config:
         from_attributes = True
@@ -113,7 +123,7 @@ class ServiceCreate(ServiceBase):
     pass
 
 class Service(ServiceBase):
-    id: int
+    id: str
     class Config:
         from_attributes = True
 
@@ -153,7 +163,7 @@ class CustomerUpdate(BaseModel):
     email: Optional[str] = None
 
 class Customer(BaseModel):
-    id: int
+    id: str
     name: str
     phone: str
     email: Optional[str] = None
@@ -167,23 +177,20 @@ class CustomerToken(BaseModel):
     customer: Customer
 
 class AppointmentHistory(BaseModel):
-    id: int
+    id: str
     start_time: datetime
     end_time: datetime
     barber_name: Optional[str] = None
     service_name: Optional[str] = None
-    barber_id: Optional[int] = None
-    barber_service_id: Optional[int] = None
-    service_id: Optional[int] = None
-    duration_minutes: Optional[int] = None
-    service_id: Optional[int] = None
+    barber_id: Optional[str] = None
+    barber_service_id: Optional[str] = None
+    service_id: Optional[str] = None
     duration_minutes: Optional[int] = None
     price: Optional[float] = None
     status: str
     rating: Optional[int] = None
     feedback_notes: Optional[str] = None
     media_url: Optional[str] = None
-    media_type: Optional[str] = None
     media_type: Optional[str] = None
     barber_avatar: Optional[str] = None
     story_is_public: Optional[bool] = True
@@ -196,9 +203,9 @@ class AppointmentHistory(BaseModel):
 class AppointmentBase(BaseModel):
     customer_name: str
     customer_phone: str
-    barber_id: int
-    barber_service_id: Optional[int] = None
-    service_id: Optional[int] = None  # Legacy
+    barber_id: str
+    barber_service_id: Optional[str] = None
+    service_id: Optional[str] = None  # Legacy
     start_time: datetime
     
     @field_validator('customer_phone')
@@ -210,7 +217,7 @@ class AppointmentCreate(AppointmentBase):
     pass
 
 class Appointment(AppointmentBase):
-    id: int
+    id: str
     end_time: datetime
     status: str = "scheduled"
     feedback_notes: Optional[str] = None
@@ -229,7 +236,7 @@ class AppointmentMediaBase(BaseModel):
     media_type: str = "image"  # image or video
 
 class AppointmentMediaCreate(AppointmentMediaBase):
-    appointment_id: int
+    appointment_id: str
 
 class FeedbackCreate(BaseModel):
     status: Optional[str] = None
@@ -240,8 +247,8 @@ class FeedbackCreate(BaseModel):
     is_public: Optional[bool] = True
 
 class AppointmentMedia(AppointmentMediaBase):
-    id: int
-    appointment_id: int
+    id: str
+    appointment_id: str
     created_at: datetime
     
     class Config:

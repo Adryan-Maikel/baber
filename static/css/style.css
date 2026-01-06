@@ -278,22 +278,13 @@ textarea {
     border: 1px solid var(--border);
     background-color: var(--bg-secondary);
     color: var(--text-primary);
-    margin-bottom: 1rem;
     outline: none;
     transition: all 0.3s ease;
     font-size: 1rem;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-light);
-}
-
 label {
     display: block;
-    margin-bottom: 0.5rem;
     color: var(--text-secondary);
     font-weight: 500;
 }

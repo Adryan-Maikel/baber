@@ -36,7 +36,7 @@ def generate_unique_filename(original_filename: str) -> str:
     return f"{uuid.uuid4().hex}{ext}"
 
 
-@upload_bp.route("/barber/<int:barber_id>/avatar", methods=["POST"])
+@upload_bp.route("/barber/<string:barber_id>/avatar", methods=["POST"])
 def upload_barber_avatar(barber_id):
     """Upload avatar for a barber"""
     current_user = get_current_panel_user()
@@ -84,7 +84,7 @@ def upload_barber_avatar(barber_id):
     return jsonify({"avatar_url": barber.avatar_url})
 
 
-@upload_bp.route("/appointment/<int:appointment_id>/media", methods=["POST"])
+@upload_bp.route("/appointment/<string:appointment_id>/media", methods=["POST"])
 def upload_appointment_media(appointment_id):
     """Upload photo or video for an appointment (haircut result)"""
     current_user = get_current_panel_user()
@@ -149,7 +149,7 @@ def upload_appointment_media(appointment_id):
     })
 
 
-@upload_bp.route("/media/<int:media_id>", methods=["DELETE"])
+@upload_bp.route("/media/<string:media_id>", methods=["DELETE"])
 def delete_media(media_id):
     """Delete a media file"""
     current_user = get_current_admin_user()
@@ -159,7 +159,7 @@ def delete_media(media_id):
     db = get_db()
     media = db.query(models.AppointmentMedia).filter(models.AppointmentMedia.id == media_id).first()
     if not media:
-        return jsonify({"detail": "MÃ­dia não encontrada"}), 404
+        return jsonify({"detail": "Mídia não encontrada"}), 404
     
     # Delete file from disk
     file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), media.media_url.lstrip("/"))
@@ -171,4 +171,3 @@ def delete_media(media_id):
     db.commit()
     
     return jsonify({"ok": True})
-

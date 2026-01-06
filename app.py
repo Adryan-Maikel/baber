@@ -2,8 +2,11 @@ from flask import Flask, render_template, g, request, redirect, url_for
 from flask_cors import CORS
 from database import engine, Base, SessionLocal, init_db
 import os
+import models
+from dotenv import load_dotenv
 
-# Create tables
+load_dotenv()
+
 Base.metadata.create_all(bind=engine)
 
 app = Flask(__name__)
@@ -11,9 +14,6 @@ app = Flask(__name__)
 # Basic Config
 app.secret_key = os.getenv("SECRET_KEY", "INSECURE-DEFAULT-KEY-CHANGE-IN-PRODUCTION")
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024 # 100MB max upload
-
-# CORS
-# Example: ALLOWED_ORIGINS=https://mybarbershop.com,https://admin.mybarbershop.com
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 

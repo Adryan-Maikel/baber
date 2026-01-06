@@ -26,7 +26,7 @@ def get_barbers():
     barbers = db.query(models.Barber).filter(models.Barber.is_active == True).all()
     return jsonify_pydantic(barbers, schemas.Barber)
 
-@user_bp.route("/barbers/<int:barber_id>", methods=["GET"])
+@user_bp.route("/barbers/<string:barber_id>", methods=["GET"])
 def get_barber(barber_id):
     """Get a specific barber with their services"""
     db = get_db()
@@ -35,7 +35,7 @@ def get_barber(barber_id):
         return jsonify({"detail": "Barbeiro não encontrado"}), 404
     return jsonify_pydantic(barber, schemas.Barber)
 
-@user_bp.route("/barbers/<int:barber_id>/services", methods=["GET"])
+@user_bp.route("/barbers/<string:barber_id>/services", methods=["GET"])
 def get_barber_services(barber_id):
     """Get all services offered by a specific barber"""
     db = get_db()
@@ -62,9 +62,9 @@ def get_availability():
     db = get_db()
     
     date_str = request.args.get('date_str')
-    barber_id = request.args.get('barber_id', type=int)
-    barber_service_id = request.args.get('barber_service_id', type=int)
-    service_id = request.args.get('service_id', type=int)
+    barber_id = request.args.get('barber_id')
+    barber_service_id = request.args.get('barber_service_id')
+    service_id = request.args.get('service_id')
     
     if not date_str or not barber_id:
         return jsonify({"detail": "date_str and barber_id required"}), 400
@@ -179,7 +179,7 @@ def book_appointment():
     if not barber:
         return jsonify({"detail": "Barbeiro não encontrado"}), 404
     if not barber.is_active:
-        return jsonify({"detail": "Barbeiro não estÃ¡ disponÃ­vel"}), 400
+        return jsonify({"detail": "Barbeiro não está disponível"}), 400
     
     # Get duration from barber_service or service
     duration_minutes = 30  # Default
@@ -189,15 +189,15 @@ def book_appointment():
             models.BarberService.barber_id == appointment.barber_id
         ).first()
         if not barber_service:
-            return jsonify({"detail": "ServiÃ§o não encontrado para este barbeiro"}), 404
+            return jsonify({"detail": "Serviço não encontrado para este barbeiro"}), 404
         duration_minutes = barber_service.duration_minutes
     elif appointment.service_id:
         service = db.query(models.Service).filter(models.Service.id == appointment.service_id).first()
         if not service:
-            return jsonify({"detail": "ServiÃ§o não encontrado"}), 404
+            return jsonify({"detail": "Serviço não encontrado"}), 404
         duration_minutes = service.duration_minutes
     else:
-        return jsonify({"detail": "Ã‰ necessÃ¡rio informar um serviÃ§o"}), 400
+        return jsonify({"detail": "É necessário informar um serviço"}), 400
     
     # Try to get customer from token
     customer_id = None
@@ -232,7 +232,7 @@ def book_appointment():
     ).first()
 
     if existing_appointment:
-        return jsonify({"detail": "HorÃ¡rio jÃ¡ reservado por outro cliente"}), 409
+        return jsonify({"detail": "Horário já reservado por outro cliente"}), 409
     
     db_appointment = models.Appointment(
         **appointment.model_dump(),
@@ -243,4 +243,3 @@ def book_appointment():
     db.commit()
     db.refresh(db_appointment)
     return jsonify_pydantic(db_appointment, schemas.Appointment)
-

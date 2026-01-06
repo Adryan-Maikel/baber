@@ -124,7 +124,7 @@ def get_current_customer(token: str, db: Session):
         sub = payload.get("sub")
         if not sub or not sub.startswith("customer:"):
             return None
-        customer_id = int(sub.split(":")[1])
+        customer_id = sub.split(":")[1] # UUID string
         return db.query(models.Customer).filter(models.Customer.id == customer_id).first()
     except (JWTError, ValueError):
         return None
@@ -254,7 +254,7 @@ def get_appointment_history():
     
     return jsonify(result)
 
-@customer_bp.route("/appointments/<int:appointment_id>/cancel", methods=["POST"])
+@customer_bp.route("/appointments/<string:appointment_id>/cancel", methods=["POST"])
 def cancel_appointment(appointment_id):
     """Cancel a scheduled appointment for the current customer"""
     token = request.args.get('token')
@@ -280,7 +280,7 @@ def cancel_appointment(appointment_id):
     
     # Check if appointment is in the past
     if appointment.start_time < datetime.now():
-         return jsonify({"detail": "não Ã© possÃ­vel cancelar agendamentos passados"}), 400
+         return jsonify({"detail": "não é possível cancelar agendamentos passados"}), 400
 
     # Soft delete: update status to 'cancelled' so it stays in history
     appointment.status = "cancelled"
@@ -308,7 +308,7 @@ def submit_appointment_feedback():
         return jsonify({"detail": str(e)}), 400
     
     if not appointment_id:
-         return jsonify({"detail": "ID do agendamento obrigatÃ³rio"}), 400
+         return jsonify({"detail": "ID do agendamento obrigatório"}), 400
 
     db = get_db()
     
@@ -335,4 +335,3 @@ def submit_appointment_feedback():
     db.commit()
     
     return jsonify({"message": "Avaliação enviada com sucesso"})
-

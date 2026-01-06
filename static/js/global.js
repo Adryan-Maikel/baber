@@ -118,7 +118,7 @@ function showConfirmModal(message, title = 'Confirmação') {
                 <div class="card" style="width: 400px; max-width: 90%; text-align: center; padding: 2rem;">
                     <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
                     <h3 id="${modalId}-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;"></h3>
-                    <p id="${modalId}-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+                    <p id="${modalId}-message" style="color: var(--text-secondary)"></p>
                     <div style="display: flex; gap: 1rem; justify-content: center;">
                         <button id="${modalId}-cancel" class="btn">Cancelar</button>
                         <button id="${modalId}-confirm" class="btn btn-primary">Confirmar</button>
@@ -172,7 +172,7 @@ function showAlertModal(message, title = 'Aviso') {
             <div class="card" style="width: 350px; max-width: 90%; text-align: center; padding: 2rem;">
                 <i class="fa-solid fa-bell" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
                 <h3 id="${modalId}-title" style="margin-bottom: 0.5rem;"></h3>
-                <p id="${modalId}-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+                <p id="${modalId}-message" style="color: var(--text-secondary)"></p>
                 <div style="display: flex; justify-content: center;">
                     <button id="${modalId}-ok" class="btn btn-primary" style="width:100px;">OK</button>
                 </div>
