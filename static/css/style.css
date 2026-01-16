@@ -136,28 +136,6 @@ body {
     z-index: 1000;
 }
 
-/* Profile Button */
-.profile-btn {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 3rem;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px var(--shadow);
-    color: var(--accent);
-    font-size: 1.25rem;
-}
-
-.profile-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px var(--shadow);
-    background: var(--card-hover);
-}
 
 /* Barber Avatar */
 .barber-avatar {

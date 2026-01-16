@@ -175,7 +175,8 @@
     background: var(--bg-secondary);
     border-radius: 0.5rem;
     margin-bottom: 1rem;
-    border: 1px solid transparent; /* Prepare for border transition */
+    border: 1px solid transparent;
+    /* Prepare for border transition */
     transition: all 0.2s ease;
 }
 
@@ -209,9 +210,6 @@
     border: none;
 }
 
-.btn-whatsapp:hover {
-    background: var(--whatsapp-hover);
-}
 
 /* Responsive */
 @media (max-width: 1024px) {
@@ -225,6 +223,7 @@
         width: 60px;
         padding: 1rem 0.5rem;
     }
+
     .sidebar-menu span {
         display: none;
     }
@@ -697,6 +696,7 @@ input[type="tel"],
     padding: 5px 8px;
     border-color: var(--border);
 }
+
 .time-input-component {
     width: 65px;
     text-align: center;
@@ -788,7 +788,7 @@ input[type="tel"],
     display: none;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     min-width: 120px;
 }
 

@@ -1464,16 +1464,16 @@ async function loadBarbers() {
                     </div>
                     
                     <div class="social-links" onclick="event.stopPropagation()">
-                        <a href="${instaLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!instaLink ? 'disabled' : ''}">
+                        <a href="${instaLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!instaLink ? 'disabled' : ''}">
                             <i class="fa-brands fa-instagram"></i>
                         </a>
-                        <a href="${twitterLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!twitterLink ? 'disabled' : ''}">
+                        <a href="${twitterLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!twitterLink ? 'disabled' : ''}">
                             <i class="fa-brands fa-x-twitter"></i>
                         </a>
-                        <a href="${emailLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!emailLink ? 'disabled' : ''}">
+                        <a href="${emailLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!emailLink ? 'disabled' : ''}">
                             <i class="fa-solid fa-envelope"></i>
                         </a>
-                        <a href="${whatsappLink || 'javascript:void(0)'}" target="_blank" class="social-btn ${!whatsappLink ? 'disabled' : ''}">
+                        <a href="${whatsappLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!whatsappLink ? 'disabled' : ''}">
                             <i class="fa-brands fa-whatsapp"></i>
                         </a>
                     </div>
@@ -1559,20 +1559,17 @@ function selectService(id) {
 let currentStep = 1;
 
 function goToStep(step) {
-    currentStep = step; // Track current step
+    currentStep = step;
     document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
-
-    // Add fade-in animation reset (optional, but good for UX)
     const nextStep = document.getElementById(`step-${step}`);
     nextStep.style.display = 'block';
 
-    // Global Back Button Logic
     const backBtn = document.getElementById('global-back-btn');
     if (backBtn) {
         if (step > 1) {
-            backBtn.style.display = 'flex'; // Use flex to center icon
+            backBtn.style.visibility = 'visible';
         } else {
-            backBtn.style.display = 'none';
+            backBtn.style.visibility = 'hidden';
         }
     }
 

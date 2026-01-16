@@ -9,21 +9,27 @@
 {% block content %}
 <div class="container user-layout">
     <header class="main-header">
+
         <!-- Global Back Button (Top Left) -->
-        <button class="icon-btn back-btn" id="global-back-btn" onclick="goBack()" style="display: none;">
+        <button class="icon-btn" id="global-back-btn" onclick="goBack()" aria-label="Voltar">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
 
         <!-- Logo/Title -->
         <div class="header-brand">
-            <h1><img src="/static/img/icon.png" alt="Logo" style="width: 40px; height: 40px; vertical-align: middle;">
-                Barbearia Balhego</h1>
-            <p>Agende seu horário</p>
+            <div class="brand-logo-container">
+                <img src="/static/img/icon.png" alt="Barbearia Balhego Logo" class="brand-logo">
+            </div>
+            <div class="brand-text">
+                <h1>Barbearia Balhego</h1>
+                <p>Agende seu horário</p>
+            </div>
         </div>
 
         <!-- User Menu Button (Top Right) -->
         <div class="user-menu-container">
-            <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn">
+            <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn"
+                aria-label="Menu do Usuário">
                 <i class="fa-solid fa-user" id="user-menu-icon"></i>
             </button>
 
@@ -41,9 +47,9 @@
 
                 <!-- Logged In State -->
                 <div id="logged-menu-items" style="display: none;">
-                    <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);">
+                    <div class="menu-user-info">
                         <strong id="menu-customer-name">Usuário</strong>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary);" id="menu-customer-phone"></p>
+                        <p id="menu-customer-phone"></p>
                     </div>
                     <button class="dropdown-item" onclick="openHistoryModal()">
                         <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
@@ -53,7 +59,9 @@
                     </button>
                 </div>
 
-                <div style="border-top: 1px solid var(--border); padding: 0.5rem;">
+                <div class="menu-divider"></div>
+
+                <div class="menu-actions">
                     <button class="dropdown-item" onclick="toggleTheme()">
                         <i class="fa-solid fa-moon" id="theme-icon"></i> Alternar Tema
                     </button>
@@ -79,8 +87,7 @@
         <h2>3. Escolha o horário</h2>
         <label for="booking-date">Data</label>
         <input type="date" id="booking-date" onchange="loadSlots()">
-        <div id="slots-container"
-            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem;"></div>
+        <div id="slots-container"></div>
     </div>
 
     <!-- Step 4: Confirm -->

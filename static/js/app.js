@@ -94,6 +94,11 @@ function isCustomerLoggedIn() {
     return !!getCustomerToken() && !!currentCustomer;
 }
 
+function closeUserMenu() {
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+}
+
 function logoutCustomer() {
     localStorage.removeItem(CUSTOMER_TOKEN_KEY);
     currentCustomer = null;
@@ -107,11 +112,6 @@ function toggleUserMenu() {
     if (dropdown) {
         dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
     }
-}
-
-function closeUserMenu() {
-    const dropdown = document.getElementById('user-menu-dropdown');
-    if (dropdown) dropdown.style.display = 'none';
 }
 
 // Close dropdown when clicking outside
