@@ -222,27 +222,65 @@
   }
 }
 
-.user-menu-container {
+#user-menu-container {
   position: relative;
   z-index: 60;
 }
 
 /* Revised Dropdown Menu - Cleaner */
 .dropdown-menu {
-  display: none;
+  min-width: 220px;
+  padding: 0.5rem;
+  border-radius: 16px;
   position: absolute;
   right: 0;
-  top: 50px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  min-width: 220px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+  display: block;
+  background: var(--bg-secondary);
   z-index: 100;
   overflow: hidden;
-  padding: 0.5rem;
-  animation: slideDown 0.2s ease-out;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: top right;
+  scale: 0;
+  opacity: 0;
+
+  &.show {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  scale: 1;
+  transform-origin: left;
+  background: transparent;
+  border: none;
+
+  &>* {
+    color: var(--text-primary);
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    scale: 1.05;
+  }
+
+  &:active {
+    scale: 0.95;
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
 }
 
 /* Menu User Info Block */
@@ -272,50 +310,6 @@
   background: var(--border);
   margin: 0.5rem 0.5rem;
   opacity: 0.5;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.875rem 1.25rem;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-  text-align: left;
-  font-size: 0.95rem;
-  transition: background 0.2s;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.dropdown-item:hover {
-  background: var(--bg-secondary);
-  color: var(--accent);
-}
-
-.dropdown-item i {
-  width: 20px;
-  text-align: center;
-  color: var(--accent);
-  /* Icons always accent colored */
 }
 
 /* Service cards */
@@ -538,10 +532,6 @@
     right: -10px;
   }
 
-  .dropdown-item {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
-  }
 }
 
 /* Barber Card Responsive Improvements */

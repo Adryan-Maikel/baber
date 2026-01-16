@@ -96,7 +96,7 @@ function isCustomerLoggedIn() {
 
 function closeUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
-    if (dropdown) dropdown.style.display = 'none';
+    if (dropdown) dropdown.classList.remove('show');
 }
 
 function logoutCustomer() {
@@ -110,13 +110,13 @@ function logoutCustomer() {
 function toggleUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
     if (dropdown) {
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        dropdown.classList.toggle('show');
     }
 }
 
 // Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
-    const container = document.querySelector('.user-menu-container');
+    const container = document.getElementById('user-menu-container');
     if (container && !container.contains(e.target)) {
         closeUserMenu();
     }

@@ -26,36 +26,37 @@
             </div>
         </div>
 
-        <!-- User Menu Button (Top Right) -->
-        <div class="user-menu-container">
+        <div id="user-menu-container">
             <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn"
                 aria-label="Menu do Usuário">
                 <i class="fa-solid fa-user" id="user-menu-icon"></i>
             </button>
 
-            <!-- Dropdown Menu -->
             <div id="user-menu-dropdown" class="dropdown-menu">
-                <!-- Guest State -->
+
                 <div id="guest-menu-items">
                     <button class="dropdown-item" onclick="openAuthModal('login')">
-                        <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span class="label">Entrar</span>
                     </button>
                     <button class="dropdown-item" onclick="openAuthModal('register')">
-                        <i class="fa-solid fa-user-plus"></i> Cadastrar
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span class="label">Cadastrar</span>
                     </button>
                 </div>
 
-                <!-- Logged In State -->
                 <div id="logged-menu-items" style="display: none;">
                     <div class="menu-user-info">
                         <strong id="menu-customer-name">Usuário</strong>
                         <p id="menu-customer-phone"></p>
                     </div>
                     <button class="dropdown-item" onclick="openHistoryModal()">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span class="label">Meu Histórico</span>
                     </button>
                     <button class="dropdown-item" onclick="logoutCustomer()">
-                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span class="label">Sair</span>
                     </button>
                 </div>
 
@@ -63,7 +64,8 @@
 
                 <div class="menu-actions">
                     <button class="dropdown-item" onclick="toggleTheme()">
-                        <i class="fa-solid fa-moon" id="theme-icon"></i> Alternar Tema
+                        <i class="fa-solid fa-moon" id="theme-icon"></i>
+                        <span class="label">Alternar Tema</span>
                     </button>
                 </div>
             </div>

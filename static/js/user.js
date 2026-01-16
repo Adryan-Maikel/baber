@@ -28,21 +28,17 @@ function logoutCustomer() {
 // Toggle user menu dropdown
 function toggleUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
-    if (dropdown) {
-        const style = window.getComputedStyle(dropdown);
-        const isHidden = style.display === 'none';
-        dropdown.style.display = isHidden ? 'block' : 'none';
-    }
+    if (dropdown) dropdown.classList.toggle('show');
 }
 
 function closeUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
-    if (dropdown) dropdown.style.display = 'none';
+    if (dropdown) dropdown.classList.remove('show');
 }
 
 // Close dropdown when clicking outside
 document.addEventListener('click', function (e) {
-    const container = document.querySelector('.user-menu-container');
+    const container = document.getElementById('user-menu-container');
     if (container && !container.contains(e.target)) {
         closeUserMenu();
     }
@@ -1506,7 +1502,7 @@ async function loadServicesUser() {
 
     try {
         const services = await fetchAPI(`/barbers/${selectedBarber.id}/services`);
-        window.currentBarberServices = services; // Store for lookup
+        window.currentBarberServices = services;
 
         if (services.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary);">Nenhum serviço disponível para este profissional.</p>';
