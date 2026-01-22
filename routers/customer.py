@@ -3,9 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import models, schemas
-from routers.auth import get_password_hash, verify_password, create_access_token, get_db, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from routers.auth import (
+    get_password_hash, verify_password, create_access_token, get_db, 
+    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES,
+    check_rate_limit, record_failed_attempt, clear_failed_attempts
+)
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
+import re
 
 customer_bp = Blueprint('customer', __name__, url_prefix='/customer')
 
@@ -19,50 +24,69 @@ def jsonify_pydantic(obj, schema=None):
         return jsonify([item.model_dump() for item in obj])
     return jsonify(obj.model_dump())
 
-# =============== PHONE CHECK ===============
+# =============== USERNAME CHECK ===============
 
-@customer_bp.route("/check-phone", methods=["GET"])
-def check_phone_exists():
-    """Check if a phone number is already registered"""
+@customer_bp.route("/check-username", methods=["GET"])
+def check_username_exists():
+    """Check if a username is already registered"""
     db = get_db()
-    phone = request.args.get('phone')
-    if not phone:
-        return jsonify({"exists": False})
-
-    try:
-        normalized_phone = schemas.validate_brazilian_phone(phone)
-    except ValueError:
+    username = request.args.get('username')
+    if not username:
         return jsonify({"exists": False})
     
-    exists = db.query(models.Customer).filter(models.Customer.phone == normalized_phone).first() is not None
+    exists = db.query(models.Customer).filter(models.Customer.username == username).first() is not None
     return jsonify({"exists": exists})
 
 # =============== CUSTOMER AUTHENTICATION ===============
 
 @customer_bp.route("/register", methods=["POST"])
 def register_customer():
-    """Register a new customer account"""
+    """Register a new customer account with rate limiting"""
     db = get_db()
+    
+    # Rate limiting by IP
+    client_ip = request.remote_addr or "unknown"
+    identifier = f"register:{client_ip}"
+    
+    wait_time = check_rate_limit(db, identifier)
+    if wait_time:
+        return jsonify({"detail": f"Muitas tentativas. Aguarde {wait_time} segundos."}), 429
+    
+    # Manual validation before Pydantic
+    data = request.json or {}
+    
+    if not data.get('username') or len(data.get('username', '').strip()) < 3:
+        return jsonify({"detail": "Username deve ter pelo menos 3 caracteres"}), 400
+    
+    if not re.match(r'^[a-zA-Z0-9_]+$', data.get('username', '')):
+        return jsonify({"detail": "Username deve conter apenas letras, números e underscore"}), 400
+    
+    if not data.get('password') or len(data.get('password', '')) < 6:
+        return jsonify({"detail": "Senha deve ter pelo menos 6 caracteres"}), 400
+    
     try:
-        customer = schemas.CustomerCreate(**request.json)
+        customer = schemas.CustomerCreate(**data)
     except Exception as e:
+        record_failed_attempt(db, identifier)
         return jsonify({"detail": str(e)}), 400
 
-    # Check if phone already exists
-    existing = db.query(models.Customer).filter(models.Customer.phone == customer.phone).first()
+    # Check if username already exists
+    existing = db.query(models.Customer).filter(models.Customer.username == customer.username).first()
     if existing:
-        return jsonify({"detail": "Telefone já cadastrado"}), 400
+        record_failed_attempt(db, identifier)
+        return jsonify({"detail": "Username já cadastrado"}), 400
     
     # Check email if provided
     if customer.email:
         existing_email = db.query(models.Customer).filter(models.Customer.email == customer.email).first()
         if existing_email:
+            record_failed_attempt(db, identifier)
             return jsonify({"detail": "Email já cadastrado"}), 400
     
     # Create customer
     hashed_password = get_password_hash(customer.password)
     db_customer = models.Customer(
-        name=customer.name,
+        username=customer.username,
         phone=customer.phone,
         email=customer.email,
         hashed_password=hashed_password
@@ -70,6 +94,9 @@ def register_customer():
     db.add(db_customer)
     db.commit()
     db.refresh(db_customer)
+    
+    # Clear rate limit on success
+    clear_failed_attempts(db, identifier)
     
     # Generate token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -86,22 +113,41 @@ def register_customer():
 
 @customer_bp.route("/login", methods=["POST"])
 def login_customer():
-    """Login customer with phone and password"""
+    """Login customer with username and password with rate limiting"""
     db = get_db()
+    
+    # Rate limiting by IP + username
+    client_ip = request.remote_addr or "unknown"
+    data = request.json or {}
+    username = data.get('username', '')
+    identifier = f"customer:{client_ip}:{username}"
+    
+    wait_time = check_rate_limit(db, identifier)
+    if wait_time:
+        return jsonify({"detail": f"Muitas tentativas. Aguarde {wait_time} segundos."}), 429
+    
+    # Manual validation
+    if not username:
+        return jsonify({"detail": "Username é obrigatório"}), 400
+    
+    if not data.get('password'):
+        return jsonify({"detail": "Senha é obrigatória"}), 400
+    
     try:
-        credentials = schemas.CustomerLogin(**request.json)
+        credentials = schemas.CustomerLogin(**data)
     except Exception as e:
         return jsonify({"detail": str(e)}), 400
-
-    # Normalize phone
-    try:
-        normalized_phone = schemas.validate_brazilian_phone(credentials.phone)
-    except ValueError:
-        return jsonify({"detail": "Telefone inválido"}), 400
     
-    customer = db.query(models.Customer).filter(models.Customer.phone == normalized_phone).first()
+    customer = db.query(models.Customer).filter(models.Customer.username == credentials.username).first()
     if not customer or not verify_password(credentials.password, customer.hashed_password):
-        return jsonify({"detail": "Telefone ou senha incorretos"}), 401
+        delay = record_failed_attempt(db, identifier)
+        detail = "Username ou senha incorretos"
+        if delay > 0:
+            detail += f". Aguarde {delay} segundos para tentar novamente."
+        return jsonify({"detail": detail}), 401
+    
+    # Clear rate limit on success
+    clear_failed_attempts(db, identifier)
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -174,8 +220,10 @@ def update_profile():
     except:
         return jsonify({"detail": "Invalid data"}), 400
     
-    if update.name:
-        customer.name = update.name
+    if update.username:
+        customer.username = update.username
+    if update.phone is not None:
+        customer.phone = update.phone
     if update.email:
         customer.email = update.email
     

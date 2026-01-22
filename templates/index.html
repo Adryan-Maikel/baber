@@ -7,10 +7,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="container user-layout">
+<div class="container">
     <header class="main-header">
 
-        <!-- Global Back Button (Top Left) -->
+        <!-- Global Back Button (Top Left) - Hidden by CSS, shown via .show class -->
         <button class="icon-btn" id="global-back-btn" onclick="goBack()" aria-label="Voltar">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
@@ -33,24 +33,18 @@
             </button>
 
             <div id="user-menu-dropdown" class="dropdown-menu">
-
                 <div id="guest-menu-items">
-                    <button class="dropdown-item" onclick="openAuthModal('login')">
+                    <button class="dropdown-item" onclick="showAuthStep()">
                         <i class="fa-solid fa-right-to-bracket"></i>
                         <span class="label">Entrar</span>
-                    </button>
-                    <button class="dropdown-item" onclick="openAuthModal('register')">
-                        <i class="fa-solid fa-user-plus"></i>
-                        <span class="label">Cadastrar</span>
                     </button>
                 </div>
 
                 <div id="logged-menu-items" style="display: none;">
                     <div class="menu-user-info">
-                        <strong id="menu-customer-name">Usuário</strong>
-                        <p id="menu-customer-phone"></p>
+                        <strong id="menu-customer-username">Usuário</strong>
                     </div>
-                    <button class="dropdown-item" onclick="openHistoryModal()">
+                    <button class="dropdown-item" onclick="showHistoryStep()">
                         <i class="fa-solid fa-clock-rotate-left"></i>
                         <span class="label">Meu Histórico</span>
                     </button>
@@ -105,40 +99,86 @@
             <div id="customer-logged-info"
                 style="display: none; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 1rem;">
                 <p style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Agendando como:</p>
-                <strong id="logged-customer-name"></strong>
-                <p style="color: var(--text-secondary);" id="logged-customer-phone"></p>
+                <strong id="logged-customer-username"></strong>
             </div>
 
             <!-- Guest booking form -->
             <form onsubmit="confirmBooking(event)" id="guest-booking-form">
                 <div id="guest-fields">
                     <label for="customer-name">Seu Nome</label>
-                    <input type="text" id="customer-name" required>
+                    <input type="text" id="customer-name">
                     <label for="customer-phone">Telefone</label>
-                    <input type="tel" id="customer-phone" placeholder="(11) 99999-1234" required
-                        oninput="formatPhoneInput(this); checkPhoneExists()">
-
-                    <p id="phone-check-msg" style="display: none; font-size: 0.875rem; margin-top: 0.5rem;"></p>
-
-                    <div id="password-section"
-                        style="display: none; margin-top: 1rem; padding: 1rem; background: var(--accent-light); border-radius: 0.5rem;">
-                        <p style="color: var(--accent); margin-bottom: 0.5rem;"><i class="fa-solid fa-user-plus"></i>
-                            Crie sua conta!</p>
-                        <label for="customer-password">Senha (6+ caracteres)</label>
-                        <input type="password" id="customer-password" placeholder="Sua senha" minlength="6">
-                    </div>
-
-                    <div id="login-section"
-                        style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem;">
-                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><i class="fa-solid fa-user"></i>
-                            Telefone cadastrado:</p>
-                        <label for="existing-password">Sua Senha</label>
-                        <input type="password" id="existing-password" placeholder="Digite sua senha">
-                    </div>
+                    <input type="tel" id="customer-phone" placeholder="(11) 99999-1234"
+                        oninput="formatPhoneInput(this)">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Confirmar
                     Agendamento</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Step Auth - Login/Register -->
+    <div id="step-auth" class="step fade-in" style="display: none;">
+        <h2 id="auth-title"><i class="fa-solid fa-user"></i> Entrar</h2>
+        
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+            <!-- Error message container -->
+            <div id="auth-error" class="auth-error" style="display: none;"></div>
+            
+            <!-- Username -->
+            <div class="input-group">
+                <label for="auth-username">Username</label>
+                <input type="text" id="auth-username" placeholder="Seu username" autocomplete="username">
+                <span class="input-error-text" id="auth-username-error"></span>
+            </div>
+            
+            <!-- Password -->
+            <div class="input-group">
+                <label for="auth-password">Senha</label>
+                <input type="password" id="auth-password" placeholder="Sua senha" autocomplete="current-password">
+                <span class="input-error-text" id="auth-password-error"></span>
+            </div>
+            
+            <!-- Register checkbox -->
+            <label class="auth-checkbox-label" for="auth-is-register">
+                <input type="checkbox" id="auth-is-register" onchange="toggleRegisterMode(this)" hidden>
+                <i class="fa-solid fa-check"></i>
+                <i class="fa-solid fa-xmark"></i>
+                <span>Não tenho uma conta</span>
+            </label>
+            
+            <!-- Register fields (hidden by default) -->
+            <div id="register-fields" class="register-fields">
+                <div class="input-group">
+                    <label for="auth-phone">Telefone <span class="optional-label">(opcional)</span></label>
+                    <input type="tel" id="auth-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                    <span class="input-error-text" id="auth-phone-error"></span>
+                </div>
+            </div>
+
+            <!-- Submit button -->
+            <button type="submit" class="btn btn-primary auth-submit-btn" id="auth-submit-btn">
+                <span id="auth-btn-text">Entrar</span>
+                <i class="fa-solid fa-spinner fa-spin-pulse" id="auth-btn-spinner" style="display: none;"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Step History -->
+    <div id="step-history" class="step fade-in" style="display: none;">
+        <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+        
+        <div class="history-content">
+            <!-- Filter Section -->
+            <div class="history-filter-section">
+                <label for="history-date-filter">
+                    <i class="fa-solid fa-filter"></i> Filtrar por data
+                </label>
+                <input type="date" id="history-date-filter" onchange="filterHistory()">
+            </div>
+
+            <!-- History List -->
+            <div id="history-list"></div>
         </div>
     </div>
 
@@ -153,51 +193,35 @@
         <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
     </div>
 </div>
-
-<!-- Auth Modal -->
-<div id="auth-modal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index: 100;">
-    <div class="card" style="width: 400px; max-width: 90%;">
-        <div id="auth-login-form">
-            <h2><i class="fa-solid fa-user"></i> Entrar</h2>
-            <form onsubmit="customerLogin(event)">
-                <label for="login-phone">Telefone</label>
-                <input type="tel" id="login-phone" placeholder="(11) 99999-1234" required
-                    oninput="formatPhoneInput(this)">
-                <label for="login-password">Senha</label>
-                <input type="password" id="login-password" required>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Entrar</button>
-            </form>
-            <p style="margin-top: 1rem; text-align: center;">
-                Não tem conta? <a href="#" onclick="showAuthForm('register')"
-                    style="color: var(--accent);">Cadastre-se</a>
-            </p>
-        </div>
-
-        <div id="auth-register-form" style="display: none;">
-            <h2><i class="fa-solid fa-user-plus"></i> Cadastro</h2>
-            <form onsubmit="customerRegister(event)">
-                <label for="register-name">Nome</label>
-                <input type="text" id="register-name" placeholder="Seu nome" required>
-                <label for="register-phone">Telefone</label>
-                <input type="tel" id="register-phone" placeholder="(11) 99999-1234" required
-                    oninput="formatPhoneInput(this)">
-                <label for="register-password">Senha</label>
-                <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required minlength="6">
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar
-                    Conta</button>
-            </form>
-            <p style="margin-top: 1rem; text-align: center;">
-                Já tem conta? <a href="#" onclick="showAuthForm('login')" style="color: var(--accent);">Entrar</a>
-            </p>
-        </div>
-
-        <button class="btn" onclick="closeAuthModal()" style="width: 100%; margin-top: 1rem;">Cancelar</button>
-    </div>
 </div>
 
-<!-- History Modal -->
-<div id="history-modal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+            <button class="custom-modal-close" onclick="closeHistoryModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="custom-modal-body">
+            <div class="custom-modal-content">
+                <!-- Filter Section -->
+                <div class="history-filter-section">
+                    <label for="history-date-filter">
+                        <i class="fa-solid fa-filter"></i> Filtrar por data
+                    </label>
+                    <input type="date" id="history-date-filter" onchange="filterHistory()">
+                </div>
+
+                <!-- History List -->
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
     <div class="custom-modal">
         <div class="custom-modal-header">
             <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>

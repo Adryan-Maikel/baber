@@ -50,20 +50,17 @@ function updateCustomerUI() {
     const loggedInfo = document.getElementById('customer-logged-info');
     const guestFields = document.getElementById('guest-fields');
     const menuIcon = document.getElementById('user-menu-icon');
-    const menuCustomerName = document.getElementById('menu-customer-name');
-    const menuCustomerPhone = document.getElementById('menu-customer-phone');
+    const menuCustomerUsername = document.getElementById('menu-customer-username');
 
     if (isCustomerLoggedIn() && currentCustomer) {
         if (guestMenu) guestMenu.style.display = 'none';
         if (loggedMenu) loggedMenu.style.display = 'block';
         if (menuIcon) menuIcon.className = 'fa-solid fa-user-check';
-        if (menuCustomerName) menuCustomerName.textContent = currentCustomer.name;
-        if (menuCustomerPhone) menuCustomerPhone.textContent = currentCustomer.phone;
+        if (menuCustomerUsername) menuCustomerUsername.textContent = currentCustomer.username;
 
         if (loggedInfo) {
             loggedInfo.style.display = 'block';
-            document.getElementById('logged-customer-name').textContent = currentCustomer.name;
-            document.getElementById('logged-customer-phone').textContent = currentCustomer.phone;
+            document.getElementById('logged-customer-username').textContent = currentCustomer.username;
         }
         if (guestFields) {
             guestFields.style.display = 'none';
@@ -133,86 +130,204 @@ async function checkPhoneExists() {
     }, 500);
 }
 
-// Auth Modal Functions
-function openAuthModal(type) {
-    showAuthForm(type || 'login');
-    document.getElementById('auth-modal').style.display = 'flex';
+// =========== Auth Step Functions ===========
+
+let previousStep = null; // Track which step we came from
+
+function showAuthStep() {
+    // Hide all other steps including history
+    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-history'];
+    allSteps.forEach(id => {
+        const step = document.getElementById(id);
+        if (step && step.style.display !== 'none') {
+            previousStep = id;
+        }
+        if (step) step.style.display = 'none';
+    });
+    
+    // Show auth step
+    const authStep = document.getElementById('step-auth');
+    if (authStep) {
+        authStep.style.display = 'block';
+        // Reset form
+        document.getElementById('auth-form').reset();
+        document.getElementById('register-fields').classList.remove('show');
+        document.getElementById('auth-btn-text').textContent = 'Entrar';
+        document.getElementById('auth-title').innerHTML = '<i class="fa-solid fa-user"></i> Entrar';
+        clearAuthErrors();
+    }
+    // Show back button
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) backBtn.classList.add('show');
     closeUserMenu();
 }
 
-function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
+function hideAuthStep() {
+    const authStep = document.getElementById('step-auth');
+    if (authStep) authStep.style.display = 'none';
+    
+    // Return to previous step or step 1
+    const targetId = previousStep || 'step-1';
+    const targetStep = document.getElementById(targetId);
+    if (targetStep) targetStep.style.display = 'block';
+    previousStep = null;
+    
+    // Hide back button
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) backBtn.classList.remove('show');
 }
 
-function showAuthForm(type) {
-    const loginForm = document.getElementById('auth-login-form');
-    const registerForm = document.getElementById('auth-register-form');
-    if (type === 'login') {
-        if (loginForm) loginForm.style.display = 'block';
-        if (registerForm) registerForm.style.display = 'none';
+function toggleRegisterMode(checkbox) {
+    const registerFields = document.getElementById('register-fields');
+    const btnText = document.getElementById('auth-btn-text');
+    const title = document.getElementById('auth-title');
+    
+    if (checkbox.checked) {
+        registerFields.classList.add('show');
+        btnText.textContent = 'Criar Conta';
+        title.innerHTML = '<i class="fa-solid fa-user-plus"></i> Criar Conta';
     } else {
-        if (loginForm) loginForm.style.display = 'none';
-        if (registerForm) registerForm.style.display = 'block';
+        registerFields.classList.remove('show');
+        btnText.textContent = 'Entrar';
+        title.innerHTML = '<i class="fa-solid fa-user"></i> Entrar';
     }
 }
 
-async function customerLogin(e) {
-    e.preventDefault();
-    const phone = document.getElementById('login-phone').value;
-    const password = document.getElementById('login-password').value;
+// =========== Validation Functions ===========
 
+function showFieldError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+    if (input) {
+        input.classList.add('has-error');
+    }
+    if (errorSpan) {
+        errorSpan.textContent = message;
+    }
+}
+
+function clearFieldError(inputId) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+    if (input) {
+        input.classList.remove('has-error');
+    }
+    if (errorSpan) {
+        errorSpan.textContent = '';
+    }
+}
+
+function clearAuthErrors() {
+    ['auth-username', 'auth-password', 'auth-phone'].forEach(id => clearFieldError(id));
+    const errorDiv = document.getElementById('auth-error');
+    if (errorDiv) errorDiv.style.display = 'none';
+}
+
+function showAuthError(message) {
+    const errorDiv = document.getElementById('auth-error');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'flex';
+    }
+}
+
+function validateAuthForm(isRegister) {
+    clearAuthErrors();
+    let isValid = true;
+    
+    const username = document.getElementById('auth-username').value.trim();
+    const password = document.getElementById('auth-password').value;
+    
+    // Username validation
+    if (!username) {
+        showFieldError('auth-username', 'Username é obrigatório');
+        isValid = false;
+    } else if (username.length < 3) {
+        showFieldError('auth-username', 'Username deve ter pelo menos 3 caracteres');
+        isValid = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        showFieldError('auth-username', 'Apenas letras, números e _');
+        isValid = false;
+    }
+    
+    // Password validation
+    if (!password) {
+        showFieldError('auth-password', 'Senha é obrigatória');
+        isValid = false;
+    } else if (isRegister && password.length < 6) {
+        showFieldError('auth-password', 'Mínimo 6 caracteres');
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+// =========== Auth Submit Handler ===========
+
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    
+    const isRegister = document.getElementById('auth-is-register').checked;
+    
+    if (!validateAuthForm(isRegister)) {
+        return;
+    }
+    
+    const username = document.getElementById('auth-username').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const phone = document.getElementById('auth-phone').value || null;
+    
+    const btn = document.getElementById('auth-submit-btn');
+    const btnText = document.getElementById('auth-btn-text');
+    const spinner = document.getElementById('auth-btn-spinner');
+    
+    // Show loading state
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'inline-block';
+    
     try {
-        const res = await fetch('/customer/login', {
+        const endpoint = isRegister ? '/customer/register' : '/customer/login';
+        const body = isRegister 
+            ? { username, password, phone }
+            : { username, password };
+        
+        const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone, password })
+            body: JSON.stringify(body)
         });
-
+        
         if (!res.ok) {
             const error = await res.json();
-            alert(error.detail || 'Erro ao fazer login');
+            if (res.status === 429) {
+                showAuthError(error.detail || 'Muitas tentativas. Aguarde um momento.');
+            } else {
+                showAuthError(error.detail || 'Erro ao processar requisição');
+            }
             return;
         }
-
+        
         const data = await res.json();
         localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
         currentCustomer = data.customer;
-        closeAuthModal();
+        
+        // Success - hide auth step and return
+        hideAuthStep();
         updateCustomerUI();
+        
     } catch (e) {
-        alert('Erro de conexão');
+        showAuthError('Erro de conexão. Tente novamente.');
+    } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        spinner.style.display = 'none';
     }
 }
 
-async function customerRegister(e) {
-    e.preventDefault();
-    const name = document.getElementById('register-name').value;
-    const phone = document.getElementById('register-phone').value;
-    const password = document.getElementById('register-password').value;
-
-    try {
-        const res = await fetch('/customer/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, password })
-        });
-
-        if (!res.ok) {
-            const error = await res.json();
-            alert(error.detail || 'Erro ao cadastrar');
-            return;
-        }
-
-        const data = await res.json();
-        localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
-        currentCustomer = data.customer;
-        closeAuthModal();
-        updateCustomerUI();
-        alert('Cadastro realizado com sucesso!');
-    } catch (e) {
-        alert('Erro de conexão');
-    }
-}
+// Legacy compatibility
+function openAuthModal() { showAuthStep(); }
+function closeAuthModal() { hideAuthStep(); }
 
 async function loadCustomerProfile() {
     const token = getCustomerToken();
@@ -227,15 +342,32 @@ async function loadCustomerProfile() {
     } catch (e) { }
 }
 
-async function openHistoryModal() {
+let previousHistoryStep = null; // Track which step we came from for history
+
+async function showHistoryStep() {
     const token = getCustomerToken();
     if (!token) return;
 
+    // Hide all other steps and track previous
+    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-auth'];
+    allSteps.forEach(id => {
+        const step = document.getElementById(id);
+        if (step && step.style.display !== 'none') {
+            previousHistoryStep = id;
+        }
+        if (step) step.style.display = 'none';
+    });
+
+    // Show history step
+    const historyStep = document.getElementById('step-history');
+    if (historyStep) historyStep.style.display = 'block';
+    
     const historyList = document.getElementById('history-list');
     historyList.innerHTML = '<p style="color: var(--text-secondary);">Carregando...</p>';
 
-    // Use new standard class toggle
-    document.getElementById('history-modal').classList.add('active');
+    // Show back button
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) backBtn.classList.add('show');
 
     closeUserMenu();
 
@@ -253,6 +385,27 @@ async function openHistoryModal() {
         historyList.innerHTML = '<p style="color: var(--danger);">Erro ao carregar histórico.</p>';
     }
 }
+
+function hideHistoryStep() {
+    const historyStep = document.getElementById('step-history');
+    if (historyStep) historyStep.style.display = 'none';
+    
+    // Return to previous step or step 1
+    const targetId = previousHistoryStep || 'step-1';
+    const targetStep = document.getElementById(targetId);
+    if (targetStep) targetStep.style.display = 'block';
+    previousHistoryStep = null;
+    
+    // Hide back button
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) backBtn.classList.remove('show');
+}
+
+// Backwards compatibility
+window.openHistoryModal = showHistoryStep;
+window.closeHistoryModal = hideHistoryStep;
+window.showHistoryStep = showHistoryStep;
+window.hideHistoryStep = hideHistoryStep;
 
 function renderHistory(list) {
     const historyList = document.getElementById('history-list');
@@ -681,12 +834,10 @@ function filterHistory() {
     renderHistory(filtered);
 }
 
-// Close History Modal Standard
+// Close History Step (legacy compatibility)
 function closeHistoryModal() {
-    document.getElementById('history-modal').classList.remove('active');
+    hideHistoryStep();
 }
-
-// Ensure global scope access if needed by onclick in HTML
 window.closeHistoryModal = closeHistoryModal;
 
 // Feedback Functions
@@ -1563,9 +1714,9 @@ function goToStep(step) {
     const backBtn = document.getElementById('global-back-btn');
     if (backBtn) {
         if (step > 1) {
-            backBtn.style.visibility = 'visible';
+            backBtn.classList.add('show');
         } else {
-            backBtn.style.visibility = 'hidden';
+            backBtn.classList.remove('show');
         }
     }
 
@@ -1578,6 +1729,20 @@ function goToStep(step) {
 }
 
 function goBack() {
+    // Check if we're on auth step
+    const authStep = document.getElementById('step-auth');
+    if (authStep && authStep.style.display !== 'none') {
+        hideAuthStep();
+        return;
+    }
+    
+    // Check if we're on history step
+    const historyStep = document.getElementById('step-history');
+    if (historyStep && historyStep.style.display !== 'none') {
+        hideHistoryStep();
+        return;
+    }
+    
     // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection
     if (currentStep === 4) {
         selectedSlot = null;
@@ -1599,9 +1764,12 @@ let slotsPollInterval = null;
 let lastLoadedSlotsJSON = '';
 let lastSelectedSlot = null;
 
-// Helper to get formatted date string (YYYY-MM-DD)
+// Helper to get formatted date string (YYYY-MM-DD) in local time
 function getFormattedDate(date) {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 async function loadSlots() {
@@ -1615,12 +1783,33 @@ async function loadSlots() {
         dateInput.value = today;
         dateStr = today;
     }
+    
+    // Block past dates - only allow today or future dates
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0); // Start of today
+    const selectedDateObj = new Date(dateStr + 'T00:00:00'); // Parse as local time
+    
+    if (selectedDateObj < todayDate) {
+        const container = document.getElementById("slots-container");
+        container.innerHTML = `
+            <div class="history-empty-state">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <h3>Não é possível agendar em datas passadas</h3>
+                <p>Por favor, selecione a data de hoje ou uma data futura.</p>
+            </div>
+        `;
+        // Clear any polling
+        if (slotsPollInterval) clearInterval(slotsPollInterval);
+        lastLoadedSlotsJSON = ''; // Reset cache to force reload on next valid date
+        return;
+    }
+    
     selectedDate = dateStr;
 
     const container = document.getElementById("slots-container");
     // Show loading only if container is empty (first load)
     if (!container.innerHTML.trim() || container.innerHTML.includes('Carregando')) {
-        container.innerHTML = '<p>Carregando...</p>';
+        container.innerHTML = '<i class="fa-solid fa-spinner fa-spin-pulse"></i>';
     }
 
     // Clear previous poll
@@ -1680,7 +1869,12 @@ async function loadSlots() {
 
             let newHTML = '';
             if (data.slots.length === 0) {
-                newHTML = '<p style="grid-column: 1/-1; text-align: center;">Nenhum horário disponível para esta data.</p>';
+                newHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary); grid-column: 1/-1;">
+                        <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <p>Nenhum horário disponível para esta data.</p>
+                    </div>
+                `;
             } else {
                 newHTML = data.slots.map(slot => `
                     <button class="btn slot-btn ${slot === selectedSlot ? 'selected-slot' : ''}" 

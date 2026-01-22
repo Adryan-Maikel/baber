@@ -382,7 +382,7 @@ body {
 /* Container */
 .container {
     padding: 1rem;
-    max-width: 1200px;
+    max-width: 700px;
     margin: 0 auto;
     width: 100%;
 }
@@ -417,14 +417,14 @@ body {
 }
 
 .btn-primary {
-    background: var(--accent);
+    background: var(--accent) !important;
     color: #ffffff;
-    border-color: var(--accent);
+    border-color: var(--accent) !important;
 }
 
 .btn-primary:hover {
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
+    background: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
 }
 
 .btn-danger {

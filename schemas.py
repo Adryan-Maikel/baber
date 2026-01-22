@@ -144,28 +144,38 @@ def validate_brazilian_phone(phone: str) -> str:
 # =============== Customer Schemas ===============
 
 class CustomerCreate(BaseModel):
-    name: str
-    phone: str
+    username: str
+    phone: Optional[str] = None
     email: Optional[str] = None
     password: str
     
     @field_validator('phone')
     @classmethod
     def validate_phone(cls, v):
-        return validate_brazilian_phone(v)
+        if v is not None and v.strip():
+            return validate_brazilian_phone(v)
+        return None
 
 class CustomerLogin(BaseModel):
-    phone: str
+    username: str
     password: str
 
 class CustomerUpdate(BaseModel):
-    name: Optional[str] = None
+    username: Optional[str] = None
+    phone: Optional[str] = None
     email: Optional[str] = None
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v.strip():
+            return validate_brazilian_phone(v)
+        return None
 
 class Customer(BaseModel):
     id: str
-    name: str
-    phone: str
+    username: str
+    phone: Optional[str] = None
     email: Optional[str] = None
     
     class Config:

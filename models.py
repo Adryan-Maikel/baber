@@ -76,8 +76,8 @@ class Customer(Base):
     __tablename__ = "customers"
     
     id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
-    name = Column(String(100), index=True, nullable=False)
-    phone = Column(String(20), unique=True, index=True, nullable=False)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    phone = Column(String(20), index=True, nullable=True)  # Optional phone
     email = Column(String(100), unique=True, index=True, nullable=True)
     hashed_password = Column(String(255), nullable=False)
     avatar_url = Column(String(255), nullable=True)
