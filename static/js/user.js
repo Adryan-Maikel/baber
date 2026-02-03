@@ -165,16 +165,6 @@ function showAuthStep() {
 function hideAuthStep() {
     const authStep = document.getElementById('step-auth');
     if (authStep) authStep.style.display = 'none';
-    
-    // Return to previous step or step 1
-    const targetId = previousStep || 'step-1';
-    const targetStep = document.getElementById(targetId);
-    if (targetStep) targetStep.style.display = 'block';
-    previousStep = null;
-    
-    // Hide back button
-    const backBtn = document.getElementById('global-back-btn');
-    if (backBtn) backBtn.classList.remove('show');
 }
 
 function toggleRegisterMode(checkbox) {
@@ -311,8 +301,7 @@ async function handleAuthSubmit(e) {
         const data = await res.json();
         localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
         currentCustomer = data.customer;
-        
-        // Success - hide auth step and return
+
         hideAuthStep();
         updateCustomerUI();
         
@@ -324,10 +313,6 @@ async function handleAuthSubmit(e) {
         spinner.style.display = 'none';
     }
 }
-
-// Legacy compatibility
-function openAuthModal() { showAuthStep(); }
-function closeAuthModal() { hideAuthStep(); }
 
 async function loadCustomerProfile() {
     const token = getCustomerToken();
@@ -342,7 +327,7 @@ async function loadCustomerProfile() {
     } catch (e) { }
 }
 
-let previousHistoryStep = null; // Track which step we came from for history
+let previousHistoryStep = null;
 
 async function showHistoryStep() {
     const token = getCustomerToken();
@@ -385,27 +370,6 @@ async function showHistoryStep() {
         historyList.innerHTML = '<p style="color: var(--danger);">Erro ao carregar histórico.</p>';
     }
 }
-
-function hideHistoryStep() {
-    const historyStep = document.getElementById('step-history');
-    if (historyStep) historyStep.style.display = 'none';
-    
-    // Return to previous step or step 1
-    const targetId = previousHistoryStep || 'step-1';
-    const targetStep = document.getElementById(targetId);
-    if (targetStep) targetStep.style.display = 'block';
-    previousHistoryStep = null;
-    
-    // Hide back button
-    const backBtn = document.getElementById('global-back-btn');
-    if (backBtn) backBtn.classList.remove('show');
-}
-
-// Backwards compatibility
-window.openHistoryModal = showHistoryStep;
-window.closeHistoryModal = hideHistoryStep;
-window.showHistoryStep = showHistoryStep;
-window.hideHistoryStep = hideHistoryStep;
 
 function renderHistory(list) {
     const historyList = document.getElementById('history-list');
@@ -833,12 +797,6 @@ function filterHistory() {
     const filtered = currentHistory.filter(h => h.start_time.startsWith(selectedDate));
     renderHistory(filtered);
 }
-
-// Close History Step (legacy compatibility)
-function closeHistoryModal() {
-    hideHistoryStep();
-}
-window.closeHistoryModal = closeHistoryModal;
 
 // Feedback Functions
 let currentFeedbackApptId = null;
@@ -1720,6 +1678,11 @@ function goToStep(step) {
         }
     }
 
+    if (step === 3) {
+        // Initialize date label when entering step 3
+        initializeDateLabel();
+    }
+
     if (step === 4) {
         updateCustomerUI();
         document.getElementById("confirm-barber-name").innerText = selectedBarber ? `✂️ ${selectedBarber.name}` : '';
@@ -1733,14 +1696,15 @@ function goBack() {
     const authStep = document.getElementById('step-auth');
     if (authStep && authStep.style.display !== 'none') {
         hideAuthStep();
+        document.getElementById(previousStep).style.display = 'block';
         return;
     }
     
     // Check if we're on history step
     const historyStep = document.getElementById('step-history');
     if (historyStep && historyStep.style.display !== 'none') {
-        hideHistoryStep();
-        return;
+        const historyStep = document.getElementById('step-history');
+        if (historyStep) historyStep.style.display = 'none';
     }
     
     // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection
@@ -1752,7 +1716,10 @@ function goBack() {
 
     if (currentStep > 1) {
         goToStep(currentStep - 1);
+        return;
     }
+
+    goToStep(1)
 }
 
 function formatDateBR(dateStr) {
@@ -2022,16 +1989,79 @@ async function confirmBooking(e) {
 
         updateCustomerUI();
     } catch (e) {
-        // Handle specific modal alert if we want consistency, but here sticking to what was there or upgrading
-        // The user.js seems to use alert() in this function predominantly, let's switch to proper modal if possible or stick to alert
-        // The catch block uses alert('Erro: ' + e.message), I will stick to that to minimize diff risk or upgrade it?
-        // Let's stick to alert for now as per this function's style, or better:
-        // Use showAlertModal if available (global.js)
         if (typeof showAlertModal === 'function') {
             await showAlertModal('Erro: ' + e.message);
         } else {
             alert('Erro: ' + e.message);
         }
+    }
+}
+
+// =========== Date Picker Functions ===========
+
+function toggleDatePicker() {
+    const dropdown = document.getElementById('date-picker-dropdown');
+    if (dropdown.classList.contains('show')) {
+        closeDatePicker();
+    } else {
+        dropdown.classList.add('show');
+    }
+}
+
+function closeDatePicker() {
+    const dropdown = document.getElementById('date-picker-dropdown');
+    dropdown.classList.remove('show');
+}
+
+function onDateInputChange() {
+    const dateInput = document.getElementById('booking-date');
+    if (!dateInput || !dateInput.value) return;
+    
+    const selectedDate = new Date(dateInput.value + 'T00:00:00');
+    updateDateRelativeLabel(selectedDate);
+    loadSlots();
+}
+
+function updateDateRelativeLabel(selectedDate) {
+    const label = document.getElementById('date-relative-label');
+    if (!label) return;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.round((selected - today) / (1000 * 60 * 60 * 24));
+    
+    let labelText = '';
+    let showLabel = true;
+    
+    if (diffDays === 0) {
+        labelText = 'Hoje';
+    } else if (diffDays === 1) {
+        labelText = 'Amanhã';
+    } else if (diffDays >= 2) {
+        labelText = `Em ${diffDays} dias`;
+    } else {
+        // More than a month - hide label
+        showLabel = false;
+    }
+    
+    if (showLabel && labelText) {
+        label.classList.remove('hidden');
+    } else {
+        label.classList.add('hidden');
+    }
+    label.textContent = labelText;
+}
+
+// Initialize date label on step 3 entry
+function initializeDateLabel() {
+    const dateInput = document.getElementById('booking-date');
+    if (dateInput && dateInput.value) {
+        const selectedDate = new Date(dateInput.value + 'T00:00:00');
+        updateDateRelativeLabel(selectedDate);
     }
 }
 

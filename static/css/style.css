@@ -22,8 +22,8 @@ body[data-theme="dark"] {
 body[data-theme="light"] {
     /* Light Theme - Blue/Sky Palette */
     --bg-color: #f8fafc;
-    --bg-secondary: #f1f5f9;
-    --card-bg: #ffffff;
+    --bg-secondary: #f1f1f1;
+    --card-bg: #f2f2f2;
     --card-hover: #f8fafc;
     --text-primary: #0f172a;
     --text-secondary: #64748b;

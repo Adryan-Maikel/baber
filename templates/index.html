@@ -80,9 +80,24 @@
 
     <!-- Step 3: Date & Time -->
     <div id="step-3" class="step fade-in" style="display: none;">
-        <h2>3. Escolha o horário</h2>
-        <label for="booking-date">Data</label>
-        <input type="date" id="booking-date" onchange="loadSlots()">
+        <div class="step-header-row">
+            <div class="step-header-left">
+                <h2>3. Escolha o horário</h2>
+                <span class="date-relative-label" id="date-relative-label">Hoje</span>
+            </div>
+
+            <div class="step-header-right">
+                <!-- Date Picker Dropdown -->
+                <div id="date-picker-dropdown" class="dropdown-menu">
+                    <input type="date" id="booking-date" onchange="onDateInputChange()">
+                </div>
+
+                <button type="button" class="icon-btn" onclick="toggleDatePicker()" aria-label="Selecionar data">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </button>
+            </div>
+        </div>
+
         <div id="slots-container"></div>
     </div>
 

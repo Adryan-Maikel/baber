@@ -12,11 +12,6 @@
   border-radius: 12px;
   background: var(--card-bg);
   cursor: pointer;
-  /* Smooth Float Transition */
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-  /* Subtle base shadow */
   transform: translateY(0);
 }
 
@@ -35,8 +30,6 @@
 .slot-btn.selected-slot {
   border-color: var(--accent);
   background: var(--accent-light);
-  box-shadow: 0 0 0 2px var(--accent-light);
-  /* Focus ring effect */
 }
 
 /* Barber Avatar */
@@ -128,10 +121,10 @@
   box-shadow: none;
 
   &#global-back-btn {
-    visibility: hidden;
+    scale: 0;
     
     &.show {
-      visibility: visible;
+      scale: 1;
     }
   }
 
@@ -144,10 +137,6 @@
   &:focus-visible,
   &:hover {
     transform: scale(1.10);
-
-    &>i.fa-whatsapp {
-      color: var(--whatsapp-color);
-    }
   }
 
   &:active {
@@ -167,26 +156,46 @@
   z-index: 100;
   overflow: visible;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  transform-origin: top right;
+  transform-origin: top;
   scale: 0;
   opacity: 0;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -7px;
-    right: 14px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--bg-secondary);
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
 
   &.show {
     scale: 1;
     opacity: 1;
+  }
+
+  &::before {
+    content: "";
+    width: 0;
+    height: 0;
+    position: absolute;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  
+  &#user-menu-dropdown {
+    transform-origin: top right;
+
+    &::before {
+      top: -7px;
+      right: 14px;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid var(--bg-secondary);
+    }
+  }
+
+  &#date-picker-dropdown {
+    transform-origin: right;
+    right: 50px;
+
+    &::before {
+      top: 50%;
+      right: -8px;
+      border-bottom: 8px solid transparent;
+      border-top: 8px solid transparent;
+      border-left: 8px solid var(--bg-secondary);
+    }
   }
 }
 
@@ -319,6 +328,114 @@
   color: var(--text-primary);
 }
 
+/* Step Header Row - Flexbox layout for h2 + label + button */
+.step-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.step-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.step-header-left h2 {
+  margin-bottom: 0;
+}
+
+.step-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Date Relative Label - Pill style */
+.date-relative-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 20px;
+  white-space: nowrap;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.date-relative-label.hidden {
+  display: none;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.icon-btn-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.icon-btn-sm:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .step-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .step-header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .step-header-right {
+    position: absolute;
+    right: 0.5rem;
+    top: 0;
+  }
+
+}
+
 /* Modal overlay */
 .modal-overlay {
   display: none;
@@ -351,8 +468,6 @@
   max-width: 90%;
   /* Ensure modal cards have glass effect on top of blur overlay */
   background: var(--card-bg);
-  /* Opaque or slightly transparent if global var allows */
-  box-shadow: 0 25px 50px -12px rgba(var(--shadow-rgb), 0.5);
 }
 
 .modal-overlay.active .card {
@@ -658,11 +773,13 @@
   }
 }
 
-.barber-card {
+.barber-card,
+.service-card,
+.slot-btn {
   cursor: pointer;
   transition: all 0.3s ease;
   /* Apply popIn animation */
-  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards !important;
 }
 
 /* Stagger animations for cards if possible (requires nth-child which works for grid items) */
@@ -1132,7 +1249,6 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border);
   transform: scale(0.9) translateY(20px);
   opacity: 0;
@@ -1230,7 +1346,6 @@
 
 .history-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
