@@ -2,23 +2,6 @@
    ADMIN PANEL STYLES
    ============================================ */
 
-:root {
-    --bg-color: #111827;
-    --bg-secondary: #1f2937;
-    --card-bg: #1f2937;
-    --card-hover: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --accent-light: rgba(59, 130, 246, 0.1);
-    --danger: #ef4444;
-    --success: #10b981;
-    --border: #374151;
-    --star-color: #f59e0b;
-    --whatsapp-color: #25d366;
-}
-
 /* Sidebar */
 .sidebar {
     width: 250px;
@@ -647,13 +630,6 @@
     opacity: 1;
 }
 
-/* Compact Form Styles */
-.form-row {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr 1fr;
-}
-
 .settings-form-group label {
     display: block;
     font-size: 0.9rem;
@@ -682,13 +658,6 @@
     outline: none;
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 3px var(--accent-light);
-}
-
-.settings-form-group input:focus,
-.settings-form-group select:focus,
-.settings-form-group textarea:focus {
-    outline: none;
-    border-color: var(--accent);
 }
 
 input[type="tel"],

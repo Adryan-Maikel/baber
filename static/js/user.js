@@ -785,6 +785,183 @@ async function submitInlineFeedback(apptId) {
         await showAlertModal('Erro de conexão ao salvar avaliação.');
     }
 }
+// =========== History Calendar Functions ===========
+
+let historyCalendarMonth = new Date().getMonth();
+let historyCalendarYear = new Date().getFullYear();
+let historySelectedDate = null;
+
+function toggleHistoryCalendarDropdown() {
+    const dropdown = document.getElementById('history-calendar-dropdown');
+    if (dropdown.classList.contains('show')) {
+        closeHistoryCalendarDropdown();
+    } else {
+        dropdown.classList.add('show');
+        renderHistoryCalendar();
+    }
+}
+
+function closeHistoryCalendarDropdown() {
+    const dropdown = document.getElementById('history-calendar-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+}
+
+// Close history calendar when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('history-calendar-dropdown');
+    const calendarBtn = e.target.closest('.icon-btn[onclick*="toggleHistoryCalendarDropdown"]');
+    const calendarDropdown = e.target.closest('#history-calendar-dropdown');
+    const quickBtn = e.target.closest('.quick-date-btn');
+    
+    if (dropdown && dropdown.classList.contains('show') && !calendarBtn && !calendarDropdown && !quickBtn) {
+        closeHistoryCalendarDropdown();
+    }
+});
+
+function getAppointmentDates() {
+    // Get unique dates from history that have appointments
+    if (!currentHistory || currentHistory.length === 0) return new Set();
+    
+    const dates = new Set();
+    currentHistory.forEach(h => {
+        const dateStr = h.start_time.split('T')[0];
+        dates.add(dateStr);
+    });
+    return dates;
+}
+
+function renderHistoryCalendar() {
+    const daysContainer = document.getElementById('history-calendar-days');
+    const monthYearLabel = document.getElementById('history-calendar-month-year');
+    
+    if (!daysContainer || !monthYearLabel) return;
+    
+    // Update month/year label
+    const monthNames = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    monthYearLabel.textContent = `${monthNames[historyCalendarMonth]} de ${historyCalendarYear}`;
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(historyCalendarYear, historyCalendarMonth, 1);
+    const lastDay = new Date(historyCalendarYear, historyCalendarMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    // Get today's date and appointment dates
+    const today = new Date();
+    const todayStr = getFormattedDate(today);
+    const appointmentDates = getAppointmentDates();
+    
+    // Build calendar HTML
+    let html = '';
+    
+    // Empty cells for days before the first day of month
+    for (let i = 0; i < startingDay; i++) {
+        html += '<div class="calendar-day other-month"></div>';
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(historyCalendarYear, historyCalendarMonth, day);
+        const dateStr = getFormattedDate(date);
+        const dayOfWeek = date.getDay();
+        
+        let classes = ['calendar-day'];
+        const hasAppointment = appointmentDates.has(dateStr);
+        
+        // Check if weekend
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            classes.push('weekend');
+        }
+        
+        // Check if today
+        if (dateStr === todayStr) {
+            classes.push('today');
+        }
+        
+        // Check if selected
+        if (dateStr === historySelectedDate) {
+            classes.push('selected');
+        }
+        
+        // Check if has appointment
+        if (hasAppointment) {
+            classes.push('has-appointment');
+        } else {
+            // Disable days without appointments
+            classes.push('disabled');
+        }
+        
+        const clickHandler = hasAppointment ? `onclick="selectHistoryDate('${dateStr}')"` : '';
+        
+        html += `<div class="${classes.join(' ')}" ${clickHandler}>${day}</div>`;
+    }
+    
+    daysContainer.innerHTML = html;
+}
+
+function navigateHistoryMonth(direction) {
+    historyCalendarMonth += direction;
+    
+    if (historyCalendarMonth > 11) {
+        historyCalendarMonth = 0;
+        historyCalendarYear++;
+    } else if (historyCalendarMonth < 0) {
+        historyCalendarMonth = 11;
+        historyCalendarYear--;
+    }
+    
+    renderHistoryCalendar();
+}
+
+function selectHistoryDate(dateStr) {
+    historySelectedDate = dateStr;
+    document.getElementById('history-date-filter').value = dateStr;
+    
+    renderHistoryCalendar();
+    closeHistoryCalendarDropdown();
+    filterHistory();
+}
+
+function filterHistoryToday() {
+    const today = new Date();
+    const dateStr = getFormattedDate(today);
+    
+    historyCalendarMonth = today.getMonth();
+    historyCalendarYear = today.getFullYear();
+    historySelectedDate = dateStr;
+    
+    document.getElementById('history-date-filter').value = dateStr;
+    renderHistoryCalendar();
+    filterHistory();
+}
+
+function filterHistoryTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = getFormattedDate(tomorrow);
+    
+    historyCalendarMonth = tomorrow.getMonth();
+    historyCalendarYear = tomorrow.getFullYear();
+    historySelectedDate = dateStr;
+    
+    document.getElementById('history-date-filter').value = dateStr;
+    renderHistoryCalendar();
+    filterHistory();
+}
+
+function clearHistoryFilter() {
+    historySelectedDate = null;
+    document.getElementById('history-date-filter').value = '';
+    
+    renderHistoryCalendar();
+    closeHistoryCalendarDropdown();
+    renderHistory(currentHistory);
+}
 
 function filterHistory() {
     const dateInput = document.getElementById('history-date-filter');
@@ -1997,27 +2174,230 @@ async function confirmBooking(e) {
     }
 }
 
-// =========== Date Picker Functions ===========
+// =========== Custom Calendar Functions ===========
 
-function toggleDatePicker() {
-    const dropdown = document.getElementById('date-picker-dropdown');
+let calendarCurrentMonth = new Date().getMonth();
+let calendarCurrentYear = new Date().getFullYear();
+let calendarSelectedDate = null;
+
+function toggleCalendarDropdown() {
+    const dropdown = document.getElementById('calendar-dropdown');
     if (dropdown.classList.contains('show')) {
-        closeDatePicker();
+        closeCalendarDropdown();
     } else {
         dropdown.classList.add('show');
+        renderCalendar(); // Ensure calendar is rendered when opened
     }
 }
 
-function closeDatePicker() {
-    const dropdown = document.getElementById('date-picker-dropdown');
-    dropdown.classList.remove('show');
+function closeCalendarDropdown() {
+    const dropdown = document.getElementById('calendar-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
 }
 
+// Close calendar when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('calendar-dropdown');
+    const calendarBtn = e.target.closest('.icon-btn[onclick*="toggleCalendarDropdown"]');
+    const calendarDropdown = e.target.closest('.calendar-dropdown');
+    
+    if (dropdown && dropdown.classList.contains('show') && !calendarBtn && !calendarDropdown) {
+        closeCalendarDropdown();
+    }
+});
+
+function initializeCalendar() {
+    const today = new Date();
+    calendarCurrentMonth = today.getMonth();
+    calendarCurrentYear = today.getFullYear();
+    
+    // Select today by default
+    calendarSelectedDate = getFormattedDate(today);
+    document.getElementById('booking-date').value = calendarSelectedDate;
+    
+    renderCalendar();
+    updateDateRelativeLabel(today);
+}
+
+function renderCalendar() {
+    const daysContainer = document.getElementById('calendar-days');
+    const monthYearLabel = document.getElementById('calendar-month-year');
+    const prevBtn = document.getElementById('prev-month-btn');
+    
+    if (!daysContainer || !monthYearLabel) return;
+    
+    // Update month/year label
+    const monthNames = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    monthYearLabel.textContent = `${monthNames[calendarCurrentMonth]} de ${calendarCurrentYear}`;
+    
+    // Disable prev button if we're at current month
+    const today = new Date();
+    if (calendarCurrentYear === today.getFullYear() && calendarCurrentMonth === today.getMonth()) {
+        prevBtn.disabled = true;
+    } else {
+        prevBtn.disabled = false;
+    }
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(calendarCurrentYear, calendarCurrentMonth, 1);
+    const lastDay = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay(); // 0 = Sunday
+    
+    // Get today's date for comparison
+    const todayStr = getFormattedDate(today);
+    today.setHours(0, 0, 0, 0);
+    
+    // Build calendar HTML
+    let html = '';
+    
+    // Empty cells for days before the first day of month
+    for (let i = 0; i < startingDay; i++) {
+        html += '<div class="calendar-day other-month"></div>';
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(calendarCurrentYear, calendarCurrentMonth, day);
+        const dateStr = getFormattedDate(date);
+        const dayOfWeek = date.getDay();
+        
+        let classes = ['calendar-day'];
+        
+        // Check if weekend (Sunday = 0, Saturday = 6)
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            classes.push('weekend');
+        }
+        
+        // Check if today
+        if (dateStr === todayStr) {
+            classes.push('today');
+        }
+        
+        // Check if selected
+        if (dateStr === calendarSelectedDate) {
+            classes.push('selected');
+        }
+        
+        // Check if past (disabled)
+        if (date < today) {
+            classes.push('disabled');
+        }
+        
+        const clickHandler = date >= today ? `onclick="selectCalendarDate('${dateStr}')"` : '';
+        
+        html += `<div class="${classes.join(' ')}" ${clickHandler}>${day}</div>`;
+    }
+    
+    daysContainer.innerHTML = html;
+}
+
+function navigateMonth(direction) {
+    const today = new Date();
+    const currentMonthYear = today.getFullYear() * 12 + today.getMonth();
+    const targetMonthYear = calendarCurrentYear * 12 + calendarCurrentMonth + direction;
+    
+    // Don't go before current month
+    if (targetMonthYear < currentMonthYear) {
+        return;
+    }
+    
+    calendarCurrentMonth += direction;
+    
+    if (calendarCurrentMonth > 11) {
+        calendarCurrentMonth = 0;
+        calendarCurrentYear++;
+    } else if (calendarCurrentMonth < 0) {
+        calendarCurrentMonth = 11;
+        calendarCurrentYear--;
+    }
+    
+    renderCalendar();
+}
+
+function selectCalendarDate(dateStr) {
+    // Validate date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(dateStr + 'T00:00:00');
+    
+    if (selectedDate < today) {
+        // Don't allow past dates - validation to prevent backend submission
+        return;
+    }
+    
+    calendarSelectedDate = dateStr;
+    document.getElementById('booking-date').value = dateStr;
+    
+    renderCalendar();
+    updateDateRelativeLabel(selectedDate);
+    closeCalendarDropdown(); // Close dropdown after selection
+    loadSlots();
+}
+
+function selectToday() {
+    const today = new Date();
+    const dateStr = getFormattedDate(today);
+    
+    // Navigate to current month if not there
+    calendarCurrentMonth = today.getMonth();
+    calendarCurrentYear = today.getFullYear();
+    
+    selectCalendarDate(dateStr);
+}
+
+function clearCalendarSelection() {
+    calendarSelectedDate = null;
+    document.getElementById('booking-date').value = '';
+    renderCalendar();
+    
+    // Clear slots container
+    const container = document.getElementById('slots-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="history-empty-state">
+                <i class="fa-solid fa-calendar"></i>
+                <h3>Selecione uma data</h3>
+                <p>Escolha uma data no calendário para ver os horários disponíveis.</p>
+            </div>
+        `;
+    }
+    
+    // Hide the relative label
+    const label = document.getElementById('date-relative-label');
+    if (label) label.classList.add('hidden');
+}
+
+// Keep for backward compatibility
 function onDateInputChange() {
     const dateInput = document.getElementById('booking-date');
     if (!dateInput || !dateInput.value) return;
     
     const selectedDate = new Date(dateInput.value + 'T00:00:00');
+    
+    // Validate: don't allow past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+        // Reset to today
+        const todayStr = getFormattedDate(today);
+        dateInput.value = todayStr;
+        calendarSelectedDate = todayStr;
+        renderCalendar();
+        return;
+    }
+    
+    calendarSelectedDate = dateInput.value;
+    calendarCurrentMonth = selectedDate.getMonth();
+    calendarCurrentYear = selectedDate.getFullYear();
+    
+    renderCalendar();
     updateDateRelativeLabel(selectedDate);
     loadSlots();
 }
@@ -2044,7 +2424,7 @@ function updateDateRelativeLabel(selectedDate) {
     } else if (diffDays >= 2) {
         labelText = `Em ${diffDays} dias`;
     } else {
-        // More than a month - hide label
+        // Past dates - hide label
         showLabel = false;
     }
     
@@ -2074,11 +2454,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load customer profile if logged in
     loadCustomerProfile();
 
-    // Set default date to today
-    const dateInput = document.getElementById("booking-date");
-    if (dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-        dateInput.min = today;
-    }
+    // Initialize custom calendar
+    initializeCalendar();
 });

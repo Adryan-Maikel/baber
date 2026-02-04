@@ -32,17 +32,6 @@
   background: var(--accent-light);
 }
 
-/* Barber Avatar */
-.barber-avatar {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent-light);
-  border-radius: 50%;
-}
-
 /* Removing old Barber Card block as it's redefined above */
 /* .barber-card styles handled in generic block */
 
@@ -1942,4 +1931,255 @@
 
 .history-content::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* =========================================
+   CUSTOM CALENDAR COMPONENT
+   ========================================= */
+
+.calendar-dropdown {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 0.5rem;
+  min-width: 250px;
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: top right;
+  scale: 0;
+  opacity: 0;
+}
+
+.calendar-dropdown.show {
+  scale: 1;
+  opacity: 1;
+}
+
+/* Arrow pointing up to button */
+.calendar-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 14px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid var(--bg-secondary);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0 0.25rem;
+}
+
+.calendar-month-year {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: lowercase;
+}
+
+.calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.calendar-nav-btn:active {
+  transform: scale(0.9);
+}
+
+.calendar-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-weekdays span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  background: transparent;
+}
+
+.calendar-day:hover:not(.disabled):not(.selected) {
+  background: var(--bg-secondary);
+  transform: scale(1.1);
+}
+
+.calendar-day:active:not(.disabled) {
+  transform: scale(0.9);
+}
+
+.calendar-day.today:not(.selected) {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-day.selected {
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4);
+}
+
+.calendar-day.disabled {
+  color: var(--text-secondary);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.calendar-day.disabled:hover {
+  background: transparent;
+  transform: none;
+}
+
+.calendar-day.other-month {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.calendar-day.weekend {
+  color: var(--danger);
+}
+
+.calendar-day.weekend.disabled {
+  color: var(--danger);
+  opacity: 0.25;
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-footer-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.calendar-footer-btn:hover {
+  background: var(--accent-light);
+  transform: scale(1.05);
+}
+
+.calendar-footer-btn:active {
+  transform: scale(0.95);
+}
+
+.calendar-today-btn {
+  color: var(--accent);
+}
+
+/* Quick date buttons for history */
+.quick-date-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-date-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.quick-date-btn:active {
+  transform: scale(0.95);
+}
+
+.quick-date-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Calendar day with appointments */
+.calendar-day.has-appointment {
+  font-weight: 700;
+  position: relative;
+}
+
+.calendar-day.has-appointment::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.calendar-day.has-appointment.selected::after {
+  background: white;
 }

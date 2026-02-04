@@ -87,16 +87,41 @@
             </div>
 
             <div class="step-header-right">
-                <!-- Date Picker Dropdown -->
-                <div id="date-picker-dropdown" class="dropdown-menu">
-                    <input type="date" id="booking-date" onchange="onDateInputChange()">
+                <!-- Calendar Dropdown -->
+                <div class="calendar-dropdown" id="calendar-dropdown">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav-btn" id="prev-month-btn" onclick="navigateMonth(-1)" aria-label="Mês anterior">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <span class="calendar-month-year" id="calendar-month-year">fevereiro de 2026</span>
+                        <button type="button" class="calendar-nav-btn" id="next-month-btn" onclick="navigateMonth(1)" aria-label="Próximo mês">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>D</span>
+                        <span>S</span>
+                        <span>T</span>
+                        <span>Q</span>
+                        <span>Q</span>
+                        <span>S</span>
+                        <span>S</span>
+                    </div>
+                    <div class="calendar-days" id="calendar-days"></div>
+                    <div class="calendar-footer">
+                        <button type="button" class="calendar-footer-btn" onclick="clearCalendarSelection()">Limpar</button>
+                        <button type="button" class="calendar-footer-btn calendar-today-btn" onclick="selectToday()">Hoje</button>
+                    </div>
                 </div>
 
-                <button type="button" class="icon-btn" onclick="toggleDatePicker()" aria-label="Selecionar data">
+                <button type="button" class="icon-btn" onclick="toggleCalendarDropdown()" aria-label="Selecionar data">
                     <i class="fa-solid fa-calendar-days"></i>
                 </button>
             </div>
         </div>
+
+        <!-- Hidden input to store the selected date -->
+        <input type="hidden" id="booking-date" value="">
 
         <div id="slots-container"></div>
     </div>
@@ -181,17 +206,51 @@
 
     <!-- Step History -->
     <div id="step-history" class="step fade-in" style="display: none;">
-        <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+        <div class="step-header-row">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
+            
+            <div class="step-header-right">
+                <!-- Quick date buttons -->
+                <button type="button" class="quick-date-btn" onclick="filterHistoryToday()">Hoje</button>
+                <button type="button" class="quick-date-btn" onclick="filterHistoryTomorrow()">Amanhã</button>
+                
+                <!-- History Calendar Dropdown -->
+                <div class="calendar-dropdown" id="history-calendar-dropdown">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav-btn" id="history-prev-month-btn" onclick="navigateHistoryMonth(-1)" aria-label="Mês anterior">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <span class="calendar-month-year" id="history-calendar-month-year">fevereiro de 2026</span>
+                        <button type="button" class="calendar-nav-btn" id="history-next-month-btn" onclick="navigateHistoryMonth(1)" aria-label="Próximo mês">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <span>D</span>
+                        <span>S</span>
+                        <span>T</span>
+                        <span>Q</span>
+                        <span>Q</span>
+                        <span>S</span>
+                        <span>S</span>
+                    </div>
+                    <div class="calendar-days" id="history-calendar-days"></div>
+                    <div class="calendar-footer">
+                        <button type="button" class="calendar-footer-btn" onclick="clearHistoryFilter()">Limpar</button>
+                        <button type="button" class="calendar-footer-btn calendar-today-btn" onclick="filterHistoryToday()">Hoje</button>
+                    </div>
+                </div>
+
+                <button type="button" class="icon-btn" onclick="toggleHistoryCalendarDropdown()" aria-label="Selecionar data">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Hidden input to store the selected date -->
+        <input type="hidden" id="history-date-filter" value="">
         
         <div class="history-content">
-            <!-- Filter Section -->
-            <div class="history-filter-section">
-                <label for="history-date-filter">
-                    <i class="fa-solid fa-filter"></i> Filtrar por data
-                </label>
-                <input type="date" id="history-date-filter" onchange="filterHistory()">
-            </div>
-
             <!-- History List -->
             <div id="history-list"></div>
         </div>
