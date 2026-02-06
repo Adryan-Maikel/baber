@@ -678,6 +678,23 @@
   }
 </style>
 {% endblock %} {% block content %}
+<!-- Mobile Header -->
+<div class="mobile-header">
+  <button class="hamburger-btn" onclick="toggleMobileSidebar()" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <div class="mobile-header-title">
+    <i class="fa-solid fa-scissors"></i>
+    BarberAdmin
+  </div>
+  <div style="width: 44px;"></div> <!-- Spacer for centering -->
+</div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
 <div class="admin-layout">
   <aside class="sidebar">
     <div style="padding: 0 1rem">
@@ -701,17 +718,21 @@
 
     <ul class="sidebar-menu">
       <li id="menu-dashboard">
-        <a href="#" class="active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-line"></i>
-          Dashboard</a>
+        <a href="#" class="active" onclick="showSection('dashboard'); closeMobileSidebar();"><i
+            class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span></a>
       </li>
       <li id="menu-appointments">
-        <a href="#" onclick="showSection('appointments')"><i class="fa-solid fa-calendar-check"></i> Agendamentos</a>
+        <a href="#" onclick="showSection('appointments'); closeMobileSidebar();"><i
+            class="fa-solid fa-calendar-check"></i> <span>Agendamentos</span></a>
       </li>
       <li id="menu-barbers">
-        <a href="#" onclick="showSection('barbers')"><i class="fa-solid fa-scissors"></i> Profissionais</a>
+        <a href="#" onclick="showSection('barbers'); closeMobileSidebar();"><i class="fa-solid fa-scissors"></i>
+          <span>Profissionais</span></a>
       </li>
       <li id="menu-settings">
-        <a href="#" onclick="showSection('settings')"><i class="fa-solid fa-cog"></i> Configurações</a>
+        <a href="#" onclick="showSection('settings'); closeMobileSidebar();"><i class="fa-solid fa-cog"></i>
+          <span>Configurações</span></a>
       </li>
     </ul>
 
@@ -734,7 +755,7 @@
           gap: 0.5rem;
           transition: all 0.2s;
         ">
-        <i class="fa-solid fa-sign-out-alt"></i> Sair
+        <i class="fa-solid fa-sign-out-alt"></i> <span>Sair</span>
       </button>
     </div>
   </aside>
@@ -1101,6 +1122,80 @@
 <script>
   // =============== ADMIN JS ===============
 
+  // =============== MOBILE SIDEBAR ===============
+  function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    const hamburger = document.querySelector('.hamburger-btn');
+
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+    hamburger.classList.toggle('active');
+
+    // Prevent body scroll when sidebar is open
+    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+  }
+
+  function closeMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    const hamburger = document.querySelector('.hamburger-btn');
+
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    hamburger.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function openMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    const hamburger = document.querySelector('.hamburger-btn');
+
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    hamburger.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Swipe gesture support for mobile
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  document.addEventListener('touchstart', function (e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function (e) {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+  }, { passive: true });
+
+  function handleSwipeGesture() {
+    const swipeThreshold = 80;
+    const sidebar = document.querySelector('.sidebar');
+    const isOpen = sidebar.classList.contains('open');
+
+    // Swipe right to open (only from left edge)
+    if (touchEndX - touchStartX > swipeThreshold && touchStartX < 50 && !isOpen) {
+      openMobileSidebar();
+    }
+
+    // Swipe left to close
+    if (touchStartX - touchEndX > swipeThreshold && isOpen) {
+      closeMobileSidebar();
+    }
+  }
+
+  // Close sidebar on escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeMobileSidebar();
+    }
+  });
+
+  // =============== END MOBILE SIDEBAR ===============
+
   let autoRefreshInterval = null;
   let barbersCache = [];
 
@@ -1145,8 +1240,7 @@
     if (text === null || text === undefined) return "";
     return String(text)
       .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
+      .replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
@@ -1644,238 +1738,246 @@
         barbers
           .map(
             (b) => `
-                <div class="card-dropdown" id="barber-card-${b.id}">
-                    <!-- Header (Collapsed View) -->
-                    <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
-                        <div class="barber-summary-left">
-                            <div class="barber-avatar-small">
-                                ${b.avatar_url
+  <div class="card-dropdown" id="barber-card-${b.id}">
+    <!-- Header (Collapsed View) -->
+    <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
+      <div class="barber-summary-left">
+        <div class="barber-avatar-small">
+          ${b.avatar_url
                 ? `<img src="${b.avatar_url
                 }" alt="${escapeHtml(b.name)}">`
                 : `<i class="fa-solid fa-user-tie"></i>`
               }
-                            </div>
-                            <div class="barber-summary-info">
-                                <h3>${escapeHtml(b.name)}</h3>
-                                <p><i class="fa-solid fa-clock" style="font-size:0.8rem; margin-right:4px;"></i> ${b.start_time.slice(
+        </div>
+        <div class="barber-summary-info">
+          <h3>${escapeHtml(b.name)}</h3>
+          <p><i class="fa-solid fa-clock" style="font-size:0.8rem; margin-right:4px;"></i> ${b.start_time.slice(
                 0,
                 5
               )} - ${b.end_time.slice(0, 5)}</p>
-                            </div>
-                        </div>
+        </div>
+      </div>
 
-                        <div class="barber-summary-right">
-                            <span class="barber-status-badge">
-                                <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: ${b.is_active
-                ? "var(--success)"
-                : "var(--danger)"
-              };"></i> 
-                                ${b.is_active ? "Ativo" : "Inativo"}
-                            </span>
-                            <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
-                                <div>${b.services?.length || 0} Serviços</div>
-                            </div>
-                            <i class="fa-solid fa-chevron-down card-expand-icon"></i>
-                        </div>
-                    </div>
+      <div class="barber-summary-right">
+        <span class="barber-status-badge">
+          <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: ${b.is_active
+                ? " var(--success)" : "var(--danger)"};"></i>
+          ${b.is_active ? "Ativo" : "Inativo"}
+        </span>
+        <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
+          <div>${b.services?.length || 0} Serviços</div>
+        </div>
+        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
+      </div>
+    </div>
 
-                    <!-- Body (Expanded View - Edit Form) -->
-                    <div class="card-dropdown-body">
-                        <form onsubmit="saveBarber(event, '${b.id
+    <!-- Body (Expanded View - Edit Form) -->
+    <div class="card-dropdown-body">
+      <form onsubmit="saveBarber(event, '${b.id
               }')" class="card-dropdown-form">
-                            
-                        <div class="card-dropdown-scroll-container">
-                                <!-- Row 1: Profile & Info -->
-                                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
-                                    
-                                    <!-- Avatar Column -->
-                                    <div style="width: 140px;heigth: 140px">
-                                        <div class="avatar-upload-trigger" onclick="triggerAvatarUpload('${b.id
+
+        <div class="card-dropdown-scroll-container">
+          <!-- Row 1: Profile & Info -->
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
+
+            <!-- Avatar Column -->
+            <div style="width: 140px;heigth: 140px">
+              <div class="avatar-upload-trigger" onclick="triggerAvatarUpload('${b.id
               }')" style="width: 140px; height: 140px;">
-                                            ${b.avatar_url
+                ${b.avatar_url
                 ? `<img src="${b.avatar_url
                 }" alt="${escapeHtml(
                   b.name
                 )}">`
                 : `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>`
               }
-                                            <div class="overlay">
-                                                <i class="fa-solid fa-pencil"></i>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-danger remove-avatar-btn ${b.avatar_url ? "fade-in" : ""
-              }" onclick="removeAvatar('${b.id
-              }')" style="${b.avatar_url ? "" : "display: none;"}">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </div>
+                <div class="overlay">
+                  <i class="fa-solid fa-pencil"></i>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger remove-avatar-btn ${b.avatar_url ? " fade-in" : ""}"
+                onclick="removeAvatar('${b.id
+              }')" style="${b.avatar_url ? "" : " display: none;"}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
 
-                                    <!-- Right Column: Info + Schedule -->
-                                    <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
-                                        
-                                        <!-- Inputs Grid -->
-                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
-                                            <div class="settings-form-group">
-                                                <label>Nome</label>
-                                                <input type="text" name="name" value="${escapeHtml(
+            <!-- Right Column: Info + Schedule -->
+            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
+
+              <!-- Inputs Grid -->
+              <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
+                <div class="settings-form-group">
+                  <label>Nome</label>
+                  <input type="text" name="name" value="${escapeHtml(
                 b.name
               )}" required>
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Telefone</label>
-                                                <input type="tel" name="phone" value="${formatPhone(b.phone) || ""
+                </div>
+                <div class="settings-form-group">
+                  <label>Telefone</label>
+                  <input type="tel" name="phone" value="${formatPhone(b.phone) || ""
               }" oninput="formatPhoneInput(this)">
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Usuário (Login)</label>
-                                                <input type="text" name="username" value="${escapeHtml(
+                </div>
+                <div class="settings-form-group">
+                  <label>Usuário (Login)</label>
+                  <input type="text" name="username" value="${escapeHtml(
                 b.username || ""
               )}" placeholder="Opcional">
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Instagram (@)</label>
-                                                <input type="text" name="instagram" value="${escapeHtml(
+                </div>
+                <div class="settings-form-group">
+                  <label>Instagram (@)</label>
+                  <input type="text" name="instagram" value="${escapeHtml(
                 b.instagram || ""
               )}" placeholder="sem o @">
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Twitter (@)</label>
-                                                <input type="text" name="twitter" value="${escapeHtml(
+                </div>
+                <div class="settings-form-group">
+                  <label>Twitter (@)</label>
+                  <input type="text" name="twitter" value="${escapeHtml(
                 b.twitter || ""
               )}" placeholder="sem o @">
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Email</label>
-                                                <input type="email" name="email" value="${escapeHtml(
+                </div>
+                <div class="settings-form-group">
+                  <label>Email</label>
+                  <input type="email" name="email" value="${escapeHtml(
                 b.email || ""
               )}" placeholder="email@exemplo.com">
-                                            </div>
-                                            <div class="settings-form-group">
-                                                <label>Nova Senha</label>
-                                                <input type="password" name="password" placeholder="Deixe em branco para manter">
-                                            </div>
-                                        </div>
+                </div>
+                <div class="settings-form-group">
+                  <label>Nova Senha</label>
+                  <input type="password" name="password" placeholder="Deixe em branco para manter">
+                </div>
+              </div>
 
-                                        <!-- Schedule Section (Merged) -->
-                                        <div class="column">
-                                            <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                                                <i class="fa-solid fa-clock"></i> Jornada de Trabalho
-                                            </h4>
-                                            <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
-                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
-                                                    ${createTimeInput({
+              <!-- Schedule Section (Merged) -->
+              <div class="column">
+                <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
+                  <i class="fa-solid fa-clock"></i> Jornada de Trabalho
+                </h4>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
+                    ${createTimeInput({
                 name: "start_time",
                 id: `start_time_${b.id}`,
                 value: b.start_time,
                 required: true,
               })}
-                                                    <span style="color: var(--text-secondary);">até</span>
-                                                    ${createTimeInput({
+                    <span style="color: var(--text-secondary);">até</span>
+                    ${createTimeInput({
                 name: "end_time",
                 id: `end_time_${b.id}`,
                 value: b.end_time,
                 required: true,
               })}
-                                                </div>
+                  </div>
 
-                                                <div style="width: 1px; height: 24px; background: var(--border);"></div>
+                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
 
-                                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
-                                                    ${createTimeInput({
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
+                    ${createTimeInput({
                 name: "start_interval",
                 id: `start_interval_${b.id}`,
                 value:
                   b.start_interval || "",
               })}
-                                                    <span style="color: var(--text-secondary);">até</span>
-                                                    ${createTimeInput({
+                    <span style="color: var(--text-secondary);">até</span>
+                    ${createTimeInput({
                 name: "end_interval",
                 id: `end_interval_${b.id}`,
                 value:
                   b.end_interval || "",
               })}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Row 3: Services -->
-                                <div class="services-inline-section">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                                        <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços</h4>
-                                        <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
-                                            <i class="fa-solid fa-plus"></i> Adicionar
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="inline-services-container">
-                                        ${(b.services || []).map(s => `
-                                            <div class="service-form-item" data-service-id="${s.id}">
-                                                <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
-                                                    <i class="fa-solid fa-times"></i>
-                                                </button>
-
-                                                <!-- Row 1: Icon + Name -->
-                                                <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
-                                                    <div style="width: auto;">
-                                                        <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
-                                                        <div class="icon-select-wrapper" onclick="event.stopPropagation()">
-                                                            <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
-                                                                <i class="fa-solid ${s.icon || 'fa-scissors'}"></i>
-                                                            </div>
-                                                            <input type="hidden" class="svc-icon" value="${s.icon || 'fa-scissors'}">
-                                                            <div class="icon-select-dropdown">
-                                                                <div class="icon-option ${s.icon == 'fa-scissors' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
-                                                                <div class="icon-option ${s.icon == 'fa-bolt' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
-                                                                <div class="icon-option ${s.icon == 'fa-leaf' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
-                                                                <div class="icon-option ${s.icon == 'fa-paint-roller' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
-                                                                <div class="icon-option ${s.icon == 'fa-seedling' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div style="flex: 1;">
-                                                        <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
-                                                        <input type="text" class="svc-name" value="${escapeHtml(s.name)}" required autocomplete="off">
-                                                    </div>
-                                                </div>
-
-                                                <!-- Row 2: Duration, Price, Discount (Compact) -->
-                                                <div class="form-row" style="gap: 0.5rem;">
-                                                    <div style="flex: 1;">
-                                                        <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
-                                                        <input type="tel" class="svc-duration" value="${s.duration_minutes}" required autocomplete="off" style="text-align:center;">
-                                                    </div>
-                                                    <div style="flex: 1;">
-                                                        <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
-                                                        <input type="tel" class="svc-price" value="${formatCurrency(s.price)}" required autocomplete="off" oninput="formatCurrencyInput(this)">
-                                                    </div>
-                                                    <div style="flex: 1;">
-                                                        <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
-                                                        <input type="tel" class="svc-discount" value="${s.discount_price ? formatCurrency(s.discount_price) : ''}" autocomplete="off" oninput="formatCurrencyInput(this)">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                                
-                            </div>
-                            
-                            <div class="card-dropdown-footer">
-                                <button type="button" class="btn btn-danger" onclick="deleteBarber('${b.id}')">
-                                    <i class="fa-solid fa-trash"></i> Excluir
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa-solid fa-save"></i> Salvar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                  </div>
                 </div>
-            `
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Services -->
+          <div class="services-inline-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços</h4>
+              <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
+                <i class="fa-solid fa-plus"></i> Adicionar
+              </button>
+            </div>
+
+            <div class="inline-services-container">
+              ${(b.services || []).map(s => `
+              <div class="service-form-item" data-service-id="${s.id}">
+                <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
+                  <i class="fa-solid fa-times"></i>
+                </button>
+
+                <!-- Row 1: Icon + Name -->
+                <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
+                  <div style="width: auto;">
+                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
+                    <div class="icon-select-wrapper" onclick="event.stopPropagation()">
+                      <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
+                        <i class="fa-solid ${s.icon || 'fa-scissors'}"></i>
+                      </div>
+                      <input type="hidden" class="svc-icon" value="${s.icon || 'fa-scissors'}">
+                      <div class="icon-select-dropdown">
+                        <div class="icon-option ${s.icon == 'fa-scissors' ? 'selected' : ''}"
+                          onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
+                        <div class="icon-option ${s.icon == 'fa-bolt' ? 'selected' : ''}"
+                          onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="icon-option ${s.icon == 'fa-leaf' ? 'selected' : ''}"
+                          onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
+                        <div class="icon-option ${s.icon == 'fa-paint-roller' ? 'selected' : ''}"
+                          onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
+                        <div class="icon-option ${s.icon == 'fa-seedling' ? 'selected' : ''}"
+                          onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
+                    <input type="text" class="svc-name" value="${escapeHtml(s.name)}" required autocomplete="off">
+                  </div>
+                </div>
+
+                <!-- Row 2: Duration, Price, Discount (Compact) -->
+                <div class="form-row" style="gap: 0.5rem;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
+                    <input type="tel" class="svc-duration" value="${s.duration_minutes}" required autocomplete="off"
+                      style="text-align:center;">
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
+                    <input type="tel" class="svc-price" value="${formatCurrency(s.price)}" required autocomplete="off"
+                      oninput="formatCurrencyInput(this)">
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
+                    <input type="tel" class="svc-discount"
+                      value="${s.discount_price ? formatCurrency(s.discount_price) : ''}" autocomplete="off"
+                      oninput="formatCurrencyInput(this)">
+                  </div>
+                </div>
+              </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-dropdown-footer">
+          <button type="button" class="btn btn-danger" onclick="deleteBarber('${b.id}')">
+            <i class="fa-solid fa-trash"></i> Excluir
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-save"></i> Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  `
           )
           .join("");
     } catch (e) {
@@ -1911,16 +2013,16 @@
     const div = document.createElement("div");
     div.className = "service-form-item";
     div.innerHTML = `
-            <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
-                <i class="fa-solid fa-times"></i>
-            </button>
-            <div class="form-row compact">
-                <input type="text" class="svc-name" placeholder="Nome (Ex: Corte)" required style="flex:2;">
-                <input type="number" class="svc-duration" placeholder="Min" required style="flex:1;">
-                <input type="number" step="0.01" class="svc-price" placeholder="R$" required style="flex:1;">
-                <input type="number" step="0.01" class="svc-discount" placeholder="Desc R$" style="flex:1;">
-            </div>
-        `;
+  <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
+    <i class="fa-solid fa-times"></i>
+  </button>
+  <div class="form-row compact">
+    <input type="text" class="svc-name" placeholder="Nome (Ex: Corte)" required style="flex:2;">
+    <input type="number" class="svc-duration" placeholder="Min" required style="flex:1;">
+    <input type="number" step="0.01" class="svc-price" placeholder="R$" required style="flex:1;">
+    <input type="number" step="0.01" class="svc-discount" placeholder="Desc R$" style="flex:1;">
+  </div>
+  `;
     container.appendChild(div);
   }
 
@@ -1940,13 +2042,14 @@
     const preview = document.getElementById("modal-avatar-preview");
     if (src) {
       preview.innerHTML = `<img src="${src}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
-                                  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
+  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
     } else resetModalAvatarPreview();
   }
 
   function resetModalAvatarPreview() {
     const preview = document.getElementById("modal-avatar-preview");
-    preview.innerHTML = `<i class="fa-solid fa-user-tie"></i><div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
+    preview.innerHTML = `<i class="fa-solid fa-user-tie"></i>
+  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
   }
 
   // =============== BARBER MANAGEMENT (INLINE REFACTOR) ===============
@@ -1974,7 +2077,8 @@
       pendingNewBarberFile = null;
       const previewContainer = card.querySelector(".avatar-upload-trigger");
       if (previewContainer) {
-        previewContainer.innerHTML = `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div><div class="overlay"><i class="fa-solid fa-camera"></i></div>`;
+        previewContainer.innerHTML = `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+  <div class="overlay"><i class="fa-solid fa-camera"></i></div>`;
       }
     }
   }
@@ -1994,9 +2098,9 @@
           "#barber-card-new .avatar-upload-trigger"
         );
         previewContainer.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
-                    <div class="overlay"><i class="fa-solid fa-camera"></i></div>
-                `;
+  <img src="${e.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+  <div class="overlay"><i class="fa-solid fa-camera"></i></div>
+  `;
       };
       reader.readAsDataURL(input.files[0]);
 
@@ -2017,11 +2121,11 @@
     );
     if (previewContainer) {
       previewContainer.innerHTML = `
-                <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-                <div class="overlay">
-                    <i class="fa-solid fa-pencil"></i>
-                </div>
-            `;
+  <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+  <div class="overlay">
+    <i class="fa-solid fa-pencil"></i>
+  </div>
+  `;
     }
 
     // Hide Remove Button
@@ -2031,132 +2135,136 @@
 
   function renderNewBarberCardHTML() {
     return `
-            <div class="card-dropdown" id="barber-card-new">
-                <!-- Header (Collapsed - acts as title) -->
-                <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
-                    <div class="barber-summary-left">
-                        <div class="barber-avatar-small">
-                            <i class="fa-solid fa-user-plus"></i>
-                        </div>
-                        <div class="barber-summary-info">
-                            <h3>Novo Profissional</h3>
-                            <p>Preencha os dados abaixo</p>
-                        </div>
-                    </div>
-                    <div class="barber-summary-right">
-                        <span class="barber-status-badge">
-                            <i class="fa-solid fa-circle" style="color: var(--text-secondary);"></i> Criar
-                        </span>
-                        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
-                    </div>
+  <div class="card-dropdown" id="barber-card-new">
+    <!-- Header (Collapsed - acts as title) -->
+    <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
+      <div class="barber-summary-left">
+        <div class="barber-avatar-small">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <div class="barber-summary-info">
+          <h3>Novo Profissional</h3>
+          <p>Preencha os dados abaixo</p>
+        </div>
+      </div>
+      <div class="barber-summary-right">
+        <span class="barber-status-badge">
+          <i class="fa-solid fa-circle" style="color: var(--text-secondary);"></i> Criar
+        </span>
+        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
+      </div>
+    </div>
+
+    <!--Body(Expanded Form) -->
+    <div class="card-dropdown-body">
+      <form onsubmit="saveBarber(event, null)" class="card-dropdown-form">
+
+        <div class="card-dropdown-scroll-container">
+          <!-- Row 1 & 2 Combined: Profile & Schedule -->
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
+
+            <!-- New Barber Avatar Column -->
+            <div style="width: 140px;heigth: 140px">
+              <input type="file" id="file-input-new" style="display:none" accept="image/*"
+                onchange="handleNewBarberAvatarSelect(this)">
+              <div class="avatar-upload-trigger" onclick="document.getElementById('file-input-new').click()"
+                style="width: 140px; height: 140px;">
+                <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="overlay">
+                  <i class="fa-solid fa-pencil"></i>
                 </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-danger remove-avatar-btn" onclick="removeNewBarberAvatar()"
+                style="display: none;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
 
-                <!--Body(Expanded Form) -->
-            <div class="card-dropdown-body">
-                <form onsubmit="saveBarber(event, null)" class="card-dropdown-form">
+            <!-- Right Column: Info + Schedule -->
+            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
 
-                    <div class="card-dropdown-scroll-container">
-                        <!-- Row 1 & 2 Combined: Profile & Schedule -->
-                        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
+              <!-- Inputs Grid -->
+              <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
+                <div class="settings-form-group">
+                  <label>Nome *</label>
+                  <input type="text" name="name" required placeholder="Nome do profissional">
+                </div>
+                <div class="settings-form-group">
+                  <label>Telefone</label>
+                  <input type="tel" name="phone" oninput="formatPhoneInput(this)" placeholder="(00) 00000-0000">
+                </div>
+                <div class="settings-form-group">
+                  <label>Usuário (Login)</label>
+                  <input type="text" name="username" placeholder="Usuário para acesso">
+                </div>
+                <div class="settings-form-group">
+                  <label>Senha</label>
+                  <input type="password" name="password" placeholder="Senha inicial">
+                </div>
+              </div>
 
-                            <!-- New Barber Avatar Column -->
-                            <div style="width: 140px;heigth: 140px">
-                                <input type="file" id="file-input-new" style="display:none" accept="image/*" onchange="handleNewBarberAvatarSelect(this)">
-                                    <div class="avatar-upload-trigger" onclick="document.getElementById('file-input-new').click()" style="width: 140px; height: 140px;">
-                                        <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-                                        <div class="overlay">
-                                            <i class="fa-solid fa-pencil"></i>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-danger remove-avatar-btn" onclick="removeNewBarberAvatar()" style="display: none;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                            </div>
-
-                            <!-- Right Column: Info + Schedule -->
-                            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
-
-                                <!-- Inputs Grid -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
-                                    <div class="settings-form-group">
-                                        <label>Nome *</label>
-                                        <input type="text" name="name" required placeholder="Nome do profissional">
-                                    </div>
-                                    <div class="settings-form-group">
-                                        <label>Telefone</label>
-                                        <input type="tel" name="phone" oninput="formatPhoneInput(this)" placeholder="(00) 00000-0000">
-                                    </div>
-                                    <div class="settings-form-group">
-                                        <label>Usuário (Login)</label>
-                                        <input type="text" name="username" placeholder="Usuário para acesso">
-                                    </div>
-                                    <div class="settings-form-group">
-                                        <label>Senha</label>
-                                        <input type="password" name="password" placeholder="Senha inicial">
-                                    </div>
-                                </div>
-
-                                <!-- Schedule Section (Merged) -->
-                                <div class="column">
-                                    <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                                        <i class="fa-solid fa-clock"></i> Jornada de Trabalho
-                                    </h4>
-                                    <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
-                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                            <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
-                                            ${createTimeInput({
+              <!-- Schedule Section (Merged) -->
+              <div class="column">
+                <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
+                  <i class="fa-solid fa-clock"></i> Jornada de Trabalho
+                </h4>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
+                    ${createTimeInput({
       name: "start_time",
       id: "start_time_new",
     })}
-                                            <span style="color: var(--text-secondary);">até</span>
-                                            ${createTimeInput({
+                    <span style="color: var(--text-secondary);">até</span>
+                    ${createTimeInput({
       name: "end_time",
       id: "end_time_new",
     })}
-                                        </div>
+                  </div>
 
-                                        <div style="width: 1px; height: 24px; background: var(--border);"></div>
+                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
 
-                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                            <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
-                                            ${createTimeInput({
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
+                    ${createTimeInput({
       name: "start_interval",
       id: "start_interval_new",
     })}
-                                            <span style="color: var(--text-secondary);">até</span>
-                                            ${createTimeInput({
+                    <span style="color: var(--text-secondary);">até</span>
+                    ${createTimeInput({
       name: "end_interval",
       id: "end_interval_new",
     })}
-                                        </div>
-                                    </div>
-                                </div>
+                  </div>
+                </div>
+              </div>
 
-                            </div>
-                        </div>
-
-                        <!-- Row 3: Services -->
-                        <div class="services-inline-section">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                                <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços Iniciais</h4>
-                                <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
-                                    <i class="fa-solid fa-plus"></i> Adicionar
-                                </button>
-                            </div>
-                            <div class="inline-services-container">
-                                <!-- Empty initially -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-dropdown-footer">
-                        <button type="button" class="btn" onclick="clearNewBarberForm()">Limpar</button>
-                        <button type="submit" class="btn btn-primary">Criar Profissional</button>
-                    </div>
-                </form>
             </div>
+          </div>
+
+          <!-- Row 3: Services -->
+          <div class="services-inline-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços Iniciais</h4>
+              <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
+                <i class="fa-solid fa-plus"></i> Adicionar
+              </button>
             </div>
-            `;
+            <div class="inline-services-container">
+              <!-- Empty initially -->
+            </div>
+          </div>
+        </div>
+
+        <div class="card-dropdown-footer">
+          <button type="button" class="btn" onclick="clearNewBarberForm()">Limpar</button>
+          <button type="submit" class="btn btn-primary">Criar Profissional</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  `;
   }
 
   async function saveBarber(e, idArg = null) {
@@ -2389,50 +2497,52 @@
     const div = document.createElement("div");
     div.className = "service-form-item";
     div.innerHTML = `
-            <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
-                <i class="fa-solid fa-times"></i>
-            </button>
-            
-            <!-- Row 1: Icon + Name -->
-            <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
-                <div style="width: auto;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
-                    <div class="icon-select-wrapper" onclick="event.stopPropagation()">
-                        <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
-                            <i class="fa-solid fa-scissors"></i>
-                        </div>
-                        <input type="hidden" class="svc-icon" value="fa-scissors">
-                        <div class="icon-select-dropdown">
-                            <div class="icon-option selected" onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
-                            <div class="icon-option" onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
-                            <div class="icon-option" onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
-                            <div class="icon-option" onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
-                            <div class="icon-option" onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
-                        </div>
-                    </div>
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
-                    <input type="text" class="svc-name" required autocomplete="off">
-                </div>
-            </div>
+  <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
+    <i class="fa-solid fa-times"></i>
+  </button>
 
-            <!-- Row 2: Duration, Price, Discount (Compact) -->
-            <div class="form-row" style="gap: 0.5rem;">
-                <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
-                    <input type="tel" class="svc-duration" required autocomplete="off" style="text-align:center;">
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
-                    <input type="tel" class="svc-price" required autocomplete="off" oninput="formatCurrencyInput(this)">
-                </div>
-                <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
-                    <input type="tel" class="svc-discount" autocomplete="off" oninput="formatCurrencyInput(this)">
-                </div>
-            </div>
-        `;
+  <!-- Row 1: Icon + Name -->
+  <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
+    <div style="width: auto;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
+      <div class="icon-select-wrapper" onclick="event.stopPropagation()">
+        <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
+          <i class="fa-solid fa-scissors"></i>
+        </div>
+        <input type="hidden" class="svc-icon" value="fa-scissors">
+        <div class="icon-select-dropdown">
+          <div class="icon-option selected" onclick="selectIcon(this, 'fa-scissors')"><i
+              class="fa-solid fa-scissors"></i></div>
+          <div class="icon-option" onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
+          <div class="icon-option" onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
+          <div class="icon-option" onclick="selectIcon(this, 'fa-paint-roller')"><i
+              class="fa-solid fa-paint-roller"></i></div>
+          <div class="icon-option" onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 1;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
+      <input type="text" class="svc-name" required autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Row 2: Duration, Price, Discount (Compact) -->
+  <div class="form-row" style="gap: 0.5rem;">
+    <div style="flex: 1;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
+      <input type="tel" class="svc-duration" required autocomplete="off" style="text-align:center;">
+    </div>
+    <div style="flex: 1;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
+      <input type="tel" class="svc-price" required autocomplete="off" oninput="formatCurrencyInput(this)">
+    </div>
+    <div style="flex: 1;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
+      <input type="tel" class="svc-discount" autocomplete="off" oninput="formatCurrencyInput(this)">
+    </div>
+  </div>
+  `;
     container.appendChild(div);
   }
 
@@ -2484,7 +2594,7 @@
 
     if (input) {
       input.value = iconClass;
-      // Trigger change event manually if needed (for React/other frameworks, but standard JS inputs don't usually need it unless listeners exist)
+      // Trigger change event manually if needed
     }
 
     if (triggerIcon) {
@@ -2580,10 +2690,10 @@
 
       if (apps.length === 0) {
         container.innerHTML = `
-                    <li style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                        <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <p>Nenhum agendamento encontrado para esta data.</p>
-                    </li>`;
+  <li style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+    <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+    <p>Nenhum agendamento encontrado para esta data.</p>
+  </li>`;
         return;
       }
 
@@ -2591,11 +2701,13 @@
         .map((a) => {
           const startTime = new Date(a.start_time);
           const isPast = startTime < new Date();
+
           const statusColors = {
             scheduled: "var(--accent)",
             completed: "var(--success)",
             no_show: "var(--danger)",
           };
+
           const statusLabels = {
             scheduled: "Agendado",
             completed: "Concluído",
@@ -2603,17 +2715,13 @@
           };
 
           // WhatsApp button
-          const phoneDigits = a.customer_phone
-            ? a.customer_phone.replace(/\D/g, "")
-            : "";
-          const hasValidPhone =
-            phoneDigits.length >= 10 && phoneDigits.length <= 11;
-          const whatsappUrl = hasValidPhone
-            ? `https://wa.me/55${phoneDigits}`
-            : null;
+          const phoneDigits = a.customer_phone ? a.customer_phone.replace(/\D/g, "") : "";
+          const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
+          const whatsappUrl = hasValidPhone ? `https://wa.me/55${phoneDigits}` : null;
 
           // Check if has media
           const hasMedia = a.media && a.media.length > 0;
+
           const noteIcon =
             a.feedback_notes || a.rating
               ? '<i class="fa-solid fa-comment-dots" style="margin-left:5px; color:var(--accent);"></i>'
@@ -2622,73 +2730,78 @@
           let actionBtn = "";
           if (a.status === "scheduled") {
             actionBtn = `
-                      <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
-                          <i class="fa-solid fa-check"></i> Feedback / Baixa
-                      </button>`;
+      <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})"
+        style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+        <i class="fa-solid fa-check"></i> Feedback / Baixa
+      </button>`;
           } else if (a.status === "completed") {
             actionBtn = `
-                      <button class="btn" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--success); color: var(--success);">
-                          <i class="fa-solid fa-check-double"></i> Ver / Editar ${noteIcon}
-                      </button>`;
+      <button class="btn" onclick="openFeedbackModal(${a.id})"
+        style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--success); color: var(--success);">
+        <i class="fa-solid fa-check-double"></i> Ver / Editar ${noteIcon}
+      </button>`;
           } else {
             actionBtn = `
-                      <button class="btn" onclick="openFeedbackModal(${a.id})" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
-                          <i class="fa-solid fa-user-xmark"></i> Ver / Editar ${noteIcon}
-                      </button>`;
+      <button class="btn" onclick="openFeedbackModal(${a.id})"
+        style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
+        <i class="fa-solid fa-user-xmark"></i> Ver / Editar ${noteIcon}
+      </button>`;
           }
 
           return `
-                <li style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border);">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 0.5rem; text-align: center; min-width: 60px;">
-                            <div style="font-weight: bold; color: var(--accent);">${startTime.toLocaleTimeString(
+      <li
+        style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border);">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div
+            style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 0.5rem; text-align: center; min-width: 60px;">
+            <div style="font-weight: bold; color: var(--accent);">${startTime.toLocaleTimeString(
             "pt-BR",
             { hour: "2-digit", minute: "2-digit" }
           )}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${startTime.toLocaleDateString(
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">${startTime.toLocaleDateString(
             "pt-BR"
           )}</div>
-                        </div>
-                        <div>
-                            <div style="font-weight: bold;">${escapeHtml(
+          </div>
+          <div>
+            <div style="font-weight: bold;">${escapeHtml(
             a.customer_name
           )} ${hasMedia
             ? '<i class="fa-solid fa-photo-film" style="color:var(--accent); font-size:0.8rem; margin-left:5px;"></i>'
             : ""
             }</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                                <i class="fa-solid fa-scissors"></i> ${escapeHtml(
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+              <i class="fa-solid fa-scissors"></i> ${escapeHtml(
               a.service?.name ||
               a.barber_service?.name ||
               "Serviço"
             )}
-                                <span style="margin: 0 0.5rem;">•</span>
-                                <i class="fa-solid fa-user-tie"></i> ${escapeHtml(
+              <span style="margin: 0 0.5rem;">•</span>
+              <i class="fa-solid fa-user-tie"></i> ${escapeHtml(
               a.barber?.name || "Barbeiro"
             )}
-                            </div>
-                            <div style="font-size: 0.8rem; margin-top: 0.25rem;">
-                                <span style="color: ${statusColors[a.status] ||
-            "var(--text-secondary)"
-            }; background: rgba(0,0,0,0.05); padding: 0.1rem 0.4rem; border-radius: 4px;">
-                                    ${statusLabels[a.status] || a.status}
-                                </span>
-                                ${a.customer_phone
+            </div>
+            <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+              <span style="color: ${statusColors[a.status] ||
+            " var(--text-secondary)"}; background: rgba(0,0,0,0.05); padding: 0.1rem 0.4rem; border-radius: 4px;">
+                ${statusLabels[a.status] || a.status}
+              </span>
+              ${a.customer_phone
               ? `<span style="color: var(--text-secondary); margin-left: 0.5rem;">
-                                     <a href="${whatsappUrl}" target="_blank" style="color:inherit; text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${formatPhone(
+                <a href="${whatsappUrl}" target="_blank" style="color:inherit; text-decoration:none;"><i
+                    class="fa-brands fa-whatsapp"></i> ${formatPhone(
                 a.customer_phone
               )}</a>
-                                </span>`
+              </span>`
               : ""
             }
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        ${actionBtn}
-                    </div>
-                </li>
-            `;
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          ${actionBtn}
+        </div>
+      </li>
+      `;
         })
         .join("");
     } catch (e) {
@@ -2779,20 +2892,16 @@
       starsGroup.style.padding = "0.75rem";
       starsGroup.style.borderRadius = "0.5rem";
       starsGroup.innerHTML = `
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Avaliação do Cliente:</div>
-                <div style="color: #FFD700; font-size: 1.1rem;">
-                    ${Array(5)
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Avaliação do Cliente:</div>
+      <div style="color: #FFD700; font-size: 1.1rem;">
+        ${Array(5)
           .fill(0)
           .map((_, i) =>
-            i < appt.rating
-              ? '<i class="fa-solid fa-star"></i>'
-              : '<i class="fa-regular fa-star"></i>'
-          )
-          .join("")}
-                    <span style="color: var(--text-primary); margin-left: 0.5rem; font-weight: bold;">${appt.rating
+            i < appt.rating ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>').join("")} <span
+          style="color: var(--text-primary); margin-left: 0.5rem; font-weight: bold;">${appt.rating
         }.0</span>
-                </div>
-            `;
+      </div>
+      `;
       // Insert before form actions or at top
       const form = document.getElementById("feedback-form");
       form.insertBefore(starsGroup, form.firstChild);
@@ -2811,7 +2920,8 @@
       if (latest.media_type === "video") {
         preview.innerHTML = `<video src="${latest.media_url}" controls style="max-width:100%; max-height:100%;"></video>`;
       } else {
-        preview.innerHTML = `<img src="${latest.media_url}" style="max-width:100%; max-height:100%; object-fit: contain;">`;
+        preview.innerHTML = `<img src="${latest.media_url}"
+        style="max-width:100%; max-height:100%; object-fit: contain;">`;
       }
     }
 
@@ -2938,9 +3048,9 @@
         const reader = new FileReader();
         reader.onload = function (evt) {
           imgContainer.innerHTML = `
-                        <img src="${evt.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover;">
-                        <div class="overlay"><i class="fa-solid fa-camera"></i></div>
-                    `;
+        <img src="${evt.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover;">
+        <div class="overlay"><i class="fa-solid fa-camera"></i></div>
+        `;
         };
         reader.readAsDataURL(file);
 
@@ -2987,9 +3097,9 @@
       const imgContainer = card.querySelector(".avatar-upload-trigger");
       if (imgContainer) {
         imgContainer.innerHTML = `
-                    <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-                    <div class="overlay"><i class="fa-solid fa-pencil"></i></div>
-                `;
+        <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="overlay"><i class="fa-solid fa-pencil"></i></div>
+        `;
       }
 
       // Hide Remove Button
@@ -3021,13 +3131,15 @@
     let value = input.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
     if (value.length > 0) {
-      if (value.length <= 2) value = `(${value}`;
-      else if (value.length <= 6)
+      if (value.length <= 2) {
+        value = `(${value}`;
+      } else if (value.length <= 6) {
         value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
-      else if (value.length <= 10)
+      } else if (value.length <= 10) {
         value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
-      else
+      } else {
         value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+      }
     }
     input.value = value;
   }
@@ -3035,10 +3147,9 @@
   function formatPhone(phone) {
     if (!phone) return null;
     const value = phone.replace(/\D/g, "");
-    if (value.length > 11) return value; // Invalid length, return as is or handle
+    if (value.length > 11) return value;
     if (value.length <= 2) return `(${value}`;
-    if (value.length <= 10)
-      return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+    if (value.length <= 10) return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
     return `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
   }
 </script>

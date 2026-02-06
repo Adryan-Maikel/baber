@@ -263,39 +263,6 @@ label {
     margin: 0 auto;
 }
 
-/* Login Page specific styles */
-.login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, var(--bg-color), var(--bg-secondary));
-}
-
-.login-card {
-    max-width: 420px;
-    width: 100%;
-}
-
-.login-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.login-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.login-header p {
-    color: var(--text-secondary);
-}
-
 .error-message {
     background-color: var(--danger);
     color: var(--text-primary);

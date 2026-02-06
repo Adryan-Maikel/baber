@@ -139,6 +139,10 @@ body {
     min-height: 100vh;
 }
 
+.mb-5 {
+    margin-bottom: 5rem;
+}
+
 .row {
     display: flex;
     flex-wrap: wrap;
@@ -148,6 +152,27 @@ body {
 .column {
     display: flex;
     flex-direction: column;
+
+    &.center {
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+.pd-1 {
+    padding: 1rem;
+}
+
+.gap-05 {
+    gap: .5rem
+}
+
+.gap-1 {
+    gap: 1rem
+}
+
+.gap-2 {
+    gap: 2rem
 }
 
 /* Layout Utilities */
@@ -389,7 +414,7 @@ body {
 
 /* Buttons - Minimalist Design */
 .btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.55rem 1.2rem;
     border-radius: 0.5rem;
     border: 1px solid var(--border);
     font-weight: 500;
@@ -520,14 +545,8 @@ label {
     animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* Login Page */
-.login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, var(--bg-color), var(--bg-secondary));
+.text-center {
+    text-align: center;
 }
 
 .login-card {
@@ -537,14 +556,12 @@ label {
 
 .login-header {
     text-align: center;
-    margin-bottom: 2rem;
 }
 
+.frufru,
 .login-header h1 {
     font-size: 2rem;
-    margin-bottom: 0.5rem;
-    /* Updated Gradient to be Red/Blue barbershop style or just Blue */
-    background: linear-gradient(135deg, #2563eb, #dc2626);
+    background: var(--accent);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -607,4 +624,8 @@ label {
     pointer-events: none;
     filter: grayscale(1);
     border-color: transparent;
+}
+
+.h-100dvh {
+    height: 100dvh;
 }

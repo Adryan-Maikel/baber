@@ -2,15 +2,18 @@
    ADMIN PANEL STYLES
    ============================================ */
 
-/* Sidebar */
+/* Sidebar - Desktop (default) */
 .sidebar {
     width: 250px;
+    min-width: 250px;
     background: var(--card-bg);
     padding-top: 2rem;
     border-right: 1px solid var(--border);
-    position: fixed;
+    position: sticky;
+    top: 0;
     height: 100vh;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .sidebar-menu {
@@ -201,26 +204,7 @@
     }
 }
 
-@media (max-width: 768px) {
-    .sidebar {
-        width: 60px;
-        padding: 1rem 0.5rem;
-    }
-
-    .sidebar-menu span {
-        display: none;
-    }
-
-    .sidebar-menu a {
-        justify-content: center;
-        padding: 0.75rem;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
+/* Form Row Variations */
 .form-row.compact {
     gap: 0.5rem;
 }
@@ -237,6 +221,7 @@
     font-weight: 500;
 }
 
+/* Theme Selector */
 .theme-selector {
     display: flex;
     gap: 1rem;
@@ -326,7 +311,7 @@
 }
 
 /* ============================================
-   BARBER CARD STYLES (Migrated)
+   BARBER CARD STYLES
    ============================================ */
 
 /* Card List Container */
@@ -347,21 +332,17 @@
     border: 1px solid var(--border);
     border-radius: 1rem;
     overflow: hidden;
-    /* Clips content smoothly */
     transition: all 0.3s ease;
     position: relative;
     width: 100%;
     height: 100px;
-    /* Collapsed height */
     transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Smooth resizing */
     box-sizing: border-box;
     opacity: 1;
     display: flex;
     flex-direction: column;
 }
 
-/* New Card (Hidden initially or animating in) */
 .card-dropdown.new-card-entering {
     height: 0;
     opacity: 0;
@@ -374,7 +355,6 @@
     height: 550px;
     min-height: 550px;
     max-height: 550px;
-    /* overflow is still hidden */
 }
 
 .card-dropdown:hover {
@@ -382,7 +362,7 @@
     box-shadow: 0 4px 12px var(--shadow);
 }
 
-/* Header (Always Visible) */
+/* Header */
 .card-dropdown-header {
     display: flex;
     align-items: center;
@@ -407,7 +387,6 @@
 .card-dropdown-header:hover {
     border-color: var(--accent);
 }
-
 
 .barber-summary-left {
     display: flex;
@@ -506,20 +485,16 @@
     color: white;
 }
 
-/* Card Body (Expanded Content) */
+/* Card Body */
 .card-dropdown-body {
     flex: 1;
     opacity: 0;
-    /* Slide + Fade effect */
     transform: translateY(-10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
     padding: 0;
     overflow: hidden;
-    /* Ensure inner content doesn't spill during anim */
     pointer-events: none;
-    /* Prevent interaction when collapsed */
     min-height: 0;
-    /* Important for flex calculation */
     display: flex;
     flex-direction: column;
 }
@@ -530,7 +505,7 @@
     pointer-events: auto;
 }
 
-/* Edit Form Layout */
+/* Form Layout */
 .card-dropdown-form {
     display: flex;
     flex-direction: column;
@@ -539,10 +514,8 @@
     gap: 0;
     padding: 0;
     overflow: hidden;
-    /* Prevent form itself from scrolling */
 }
 
-/* Scrollable Content Container (Restored) */
 .card-dropdown-scroll-container {
     flex: 1;
     overflow-y: auto;
@@ -551,20 +524,17 @@
     flex-direction: column;
 }
 
-/* Footer Actions */
 .card-dropdown-footer {
     flex-shrink: 0;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border);
     background: var(--card-bg);
-    /* Ensure opacity */
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
     z-index: 10;
 }
 
-/* Legacy class kept for safety if used elsewhere or cache, but mapped to new style */
 .barber-content-scroll {
     flex: 1;
     overflow-y: auto;
@@ -650,7 +620,6 @@
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* Specific Focus Fix */
 .settings-form-group input:focus,
 .settings-form-group select:focus,
 .settings-form-group textarea:focus,
@@ -710,7 +679,6 @@ input[type="tel"],
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Responsive Adjustments */
 @media (max-width: 900px) {
     .avatar-upload-trigger {
         width: 80px;
@@ -718,7 +686,7 @@ input[type="tel"],
     }
 }
 
-/* Icon Selector Styles */
+/* Icon Selector */
 .icon-select-wrapper {
     position: relative;
     width: 38px;
@@ -783,6 +751,462 @@ input[type="tel"],
 .icon-option.selected {
     background: var(--accent);
     color: white;
+}
+
+.icon-option i {
+    pointer-events: none;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile Header */
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(135deg, var(--card-bg), var(--bg-secondary));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: 0 1rem;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mobile-header-title i {
+    color: var(--accent);
+}
+
+/* Hamburger Button */
+.hamburger-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-btn span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 1px;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    transform-origin: center;
+}
+
+.hamburger-btn.active span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.hamburger-btn.active span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 149;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Mobile Styles - 768px and below */
+@media (max-width: 768px) {
+
+    /* Prevent horizontal scroll on body */
+    html,
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    /* Show mobile header */
+    .mobile-header {
+        display: flex;
+    }
+
+    /* Adjust content for mobile header */
+    .content {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        padding: 1rem;
+        margin-left: 0 !important;
+        width: 100%;
+        min-height: calc(100dvh - 60px);
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    /* Fix admin layout for mobile */
+    .admin-layout {
+        position: relative;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+        min-height: 100dvh;
+    }
+
+    /* Sidebar as drawer - completely hidden by default */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        min-width: 0;
+        height: 100dvh;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            visibility 0s linear 0.3s;
+        z-index: 150;
+        background: linear-gradient(180deg, var(--card-bg) 0%, var(--bg-secondary) 100%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: none;
+        padding-top: 1.5rem;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+        visibility: visible;
+        pointer-events: auto;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            visibility 0s linear 0s;
+    }
+
+    .sidebar-menu span {
+        display: inline;
+    }
+
+    .sidebar-menu a {
+        justify-content: flex-start;
+        padding: 0.875rem 1.25rem;
+        margin: 0.25rem 0.75rem;
+        border-radius: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .sidebar-menu a:hover,
+    .sidebar-menu a.active {
+        background: rgba(var(--accent-rgb, 59, 130, 246), 0.15);
+        transform: translateX(4px);
+    }
+
+    .sidebar-menu a i {
+        font-size: 1.1rem;
+    }
+
+    /* Dashboard cards */
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Sections full width */
+    .section {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Cards full width */
+    .card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .card-dropdown-list {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .filter-group {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .filter-bar select,
+    .filter-bar input {
+        width: 100%;
+        min-width: unset;
+        height: 44px;
+        font-size: 16px;
+        /* Prevent iOS zoom */
+    }
+
+    .date-range-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .date-range-group input {
+        width: 100%;
+        min-width: unset;
+        text-align: center;
+    }
+
+    .date-range-group span {
+        text-align: center;
+    }
+
+    .filter-bar .btn {
+        flex: 1;
+        justify-content: center;
+        height: 44px;
+    }
+
+    /* Form rows */
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* Cards grid */
+    .card-dropdown {
+        min-height: 80px;
+    }
+
+    .card-dropdown.expanded {
+        height: auto;
+        min-height: 400px;
+        max-height: none;
+    }
+
+    .card-dropdown-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .barber-avatar-small {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+    }
+
+    .barber-summary-info {
+        padding-left: 0.75rem;
+    }
+
+    .barber-summary-info h3 {
+        font-size: 1rem;
+    }
+
+    .barber-summary-info p {
+        font-size: 0.8rem;
+    }
+
+    .barber-summary-right {
+        display: none;
+    }
+
+    /* Dropdown content */
+    .card-dropdown-scroll-container {
+        padding: 1rem;
+    }
+
+    .card-dropdown-footer {
+        padding: 0.875rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .card-dropdown-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Modal improvements */
+    .modal-content {
+        width: 95%;
+        max-height: 85vh;
+        padding: 1.25rem;
+        margin: auto;
+        border-radius: 1rem;
+    }
+
+    .confirm-modal-content {
+        width: 90%;
+        padding: 1.5rem;
+    }
+
+    /* Theme selector */
+    .theme-selector {
+        justify-content: center;
+    }
+
+    .theme-preview {
+        width: 100px;
+        height: 65px;
+    }
+
+    /* Services grid */
+    .inline-services-container {
+        grid-template-columns: 1fr;
+    }
+
+    /* Settings cards */
+    .settings-card {
+        max-width: 100%;
+    }
+
+    .color-grid-compact {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+
+    /* Charts responsiveness */
+    .charts-grid,
+    [style*="minmax(400px"] {
+        display: block !important;
+    }
+
+    [style*="minmax(400px"]>.card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Extra small screens - 480px and below */
+@media (max-width: 480px) {
+    .mobile-header {
+        padding: 0 0.75rem;
+    }
+
+    .content {
+        padding: 0.75rem;
+        padding-top: 72px;
+    }
+
+    /* Sidebar width on extra small screens */
+    .sidebar.open {
+        width: 85vw;
+        max-width: 280px;
+    }
+
+    /* Smaller cards */
+    .card {
+        padding: 1rem;
+    }
+
+    .card h1 {
+        font-size: 2rem !important;
+    }
+
+    .card h3 {
+        font-size: 0.9rem;
+    }
+
+    /* Filter buttons */
+    .filter-group {
+        flex-wrap: wrap;
+    }
+
+    .filter-bar .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Section headers */
+    h1.row {
+        font-size: 1.5rem;
+    }
+
+    /* Avatar adjustments */
+    .avatar-upload-trigger {
+        width: 100px;
+        height: 100px;
+    }
+
+    .modal-avatar {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+/* Touch feedback animations */
+@media (hover: none) and (pointer: coarse) {
+
+    .btn,
+    .sidebar-menu a,
+    .card-dropdown-header,
+    .theme-option {
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:active,
+    .sidebar-menu a:active {
+        transform: scale(0.97);
+    }
+
+    .card-dropdown-header:active {
+        background: var(--bg-secondary);
+    }
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 768px) {
+    .content {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent horizontal scroll */
+    .admin-layout {
+        overflow-x: hidden;
+    }
+}
+
+.icon-option i {
+    pointer-events: none;
 }
 
 .icon-option i {

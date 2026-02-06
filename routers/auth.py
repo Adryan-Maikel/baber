@@ -18,8 +18,8 @@ if "INSECURE" in SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours default
 
-# Rate limiting configuration
-RATE_LIMIT_DELAYS = [0, 0, 5, 30, 60, 120]  # seconds per attempt count
+# Rate limiting configuration - permite 5 tentativas antes de bloquear
+RATE_LIMIT_DELAYS = [0, 0, 0, 0, 0, 30, 60, 120]  # seconds per attempt count
 
 def get_db():
     if 'db' not in g:

@@ -2,7 +2,6 @@ from flask import Flask, render_template, g, request, redirect, url_for
 from flask_cors import CORS
 from database import engine, Base, SessionLocal, init_db
 import os
-import models
 from dotenv import load_dotenv
 
 load_dotenv()
