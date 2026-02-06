@@ -1775,7 +1775,20 @@ function selectBarber(id) {
     const barber = window.allBarbers.find(b => b.id === id);
     if (!barber) return;
 
-    selectedBarber = { id: barber.id, name: barber.name };
+    selectedBarber = { 
+        id: barber.id, 
+        name: barber.name,
+        avatar_url: barber.avatar_url
+    };
+    
+    // Update step-4 avatar with image or keep icon
+    const avatarEl = document.getElementById('confirm-barber-avatar');
+    if (avatarEl && barber.avatar_url) {
+        avatarEl.innerHTML = `<img src="${barber.avatar_url}" alt="${barber.name}">`;
+    } else if (avatarEl) {
+        avatarEl.innerHTML = '<i class="fa-solid fa-user-tie"></i>';
+    }
+    
     goToStep(2);
     loadServicesUser();
 }
@@ -1862,9 +1875,9 @@ function goToStep(step) {
 
     if (step === 4) {
         updateCustomerUI();
-        document.getElementById("confirm-barber-name").innerText = selectedBarber ? `✂️ ${selectedBarber.name}` : '';
+        document.getElementById("confirm-barber-name").innerText = selectedBarber ? `${selectedBarber.name}` : '';
         document.getElementById("confirm-service-name").innerText = `${selectedService.name} (R$ ${typeof selectedService.price === 'number' ? selectedService.price.toFixed(2) : selectedService.price})`;
-        document.getElementById("confirm-date-time").innerText = `📅 ${formatDateBR(selectedDate)} às ${selectedSlot}`;
+        document.getElementById("confirm-date-time").innerText = `${formatDateBR(selectedDate)} às ${selectedSlot}`;
     }
 }
 
@@ -2052,11 +2065,41 @@ async function loadSlots() {
 
 function selectSlot(time) {
     selectedSlot = time;
+    
+    // Update step 4 summary with barber avatar
+    if (selectedBarber && selectedBarber.avatar) {
+        const avatarEl = document.getElementById('confirm-barber-avatar');
+        if (avatarEl) avatarEl.src = selectedBarber.avatar;
+    }
+    
     goToStep(4);
 }
 
-async function confirmBooking(e) {
-    e.preventDefault();
+// Show field error for booking form
+function showBookingFieldError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+    if (input) input.classList.add('has-error');
+    if (errorSpan) errorSpan.textContent = message;
+}
+
+// Clear field error for booking form
+function clearBookingFieldError(inputId) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + '-error');
+    if (input) input.classList.remove('has-error');
+    if (errorSpan) errorSpan.textContent = '';
+}
+
+// Clear all booking errors
+function clearBookingErrors() {
+    clearBookingFieldError('customer-name');
+    clearBookingFieldError('customer-phone');
+    clearBookingFieldError('customer-password');
+}
+
+async function confirmBooking() {
+    clearBookingErrors();
 
     let name, phone, customerToken = getCustomerToken();
     let accountCreated = false;
@@ -2065,41 +2108,53 @@ async function confirmBooking(e) {
         name = currentCustomer.name;
         phone = currentCustomer.phone;
     } else {
-        name = document.getElementById("customer-name").value;
-        phone = document.getElementById("customer-phone").value;
+        name = document.getElementById("customer-name").value.trim();
+        phone = document.getElementById("customer-phone").value.trim();
+        const password = document.getElementById("customer-password").value;
 
-        const password = document.getElementById("customer-password")?.value;
-        const existingPassword = document.getElementById("existing-password")?.value;
+        // Validation
+        let hasError = false;
+        
+        if (!name || name.length < 3) {
+            showBookingFieldError('customer-name', 'Nome deve ter pelo menos 3 caracteres');
+            hasError = true;
+        }
+        
+        if (!password || password.length < 6) {
+            showBookingFieldError('customer-password', 'Senha deve ter pelo menos 6 caracteres');
+            hasError = true;
+        }
+        
+        if (hasError) return;
 
-        if (phoneExists && existingPassword) {
-            try {
-                const loginRes = await fetch('/customer/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, password: existingPassword })
-                });
-                if (loginRes.ok) {
-                    const data = await loginRes.json();
-                    customerToken = data.access_token;
-                    localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
-                    currentCustomer = data.customer;
+        // Try to register the user
+        try {
+            const regRes = await fetch('/customer/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone: phone || null, password })
+            });
+            
+            if (regRes.ok) {
+                const data = await regRes.json();
+                customerToken = data.access_token;
+                localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
+                currentCustomer = data.customer;
+                accountCreated = true;
+            } else {
+                const err = await regRes.json();
+                if (err.detail && err.detail.includes('username')) {
+                    showBookingFieldError('customer-name', 'Este nome já está em uso');
+                } else if (err.detail && err.detail.includes('phone')) {
+                    showBookingFieldError('customer-phone', 'Este telefone já está cadastrado');
+                } else {
+                    showBookingFieldError('customer-name', err.detail || 'Erro ao criar conta');
                 }
-            } catch (e) { }
-        } else if (!phoneExists && password && password.length >= 6) {
-            try {
-                const regRes = await fetch('/customer/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, password })
-                });
-                if (regRes.ok) {
-                    const data = await regRes.json();
-                    customerToken = data.access_token;
-                    localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
-                    currentCustomer = data.customer;
-                    accountCreated = true;
-                }
-            } catch (e) { }
+                return;
+            }
+        } catch (e) {
+            showBookingFieldError('customer-name', 'Erro de conexão');
+            return;
         }
     }
 
@@ -2107,7 +2162,7 @@ async function confirmBooking(e) {
 
     const bookingData = {
         customer_name: name,
-        customer_phone: phone,
+        customer_phone: phone || null,
         barber_id: selectedBarber.id,
         start_time: start_time
     };
@@ -2131,9 +2186,9 @@ async function confirmBooking(e) {
         });
 
         if (response.status === 409) {
-            alert('Ops! Este horário acabou de ser reservado por outra pessoa. A lista de horários será atualizada.');
-            goToStep(3); // Go back to slots
-            loadSlots(); // Refresh
+            await showAlertModal('Este horário foi reservado. Escolha outro horário.');
+            goToStep(3);
+            loadSlots();
             return;
         }
 
@@ -2145,13 +2200,10 @@ async function confirmBooking(e) {
         // Handle Reschedule: Cancel Old Appointment
         if (typeof rescheduleAppointmentId !== 'undefined' && rescheduleAppointmentId) {
             try {
-                // We use the same token as booking if available, or fetch current
                 const token = customerToken || getCustomerToken();
                 await fetch(`/customer/appointments/${rescheduleAppointmentId}/cancel?token=${token}`, { method: 'POST' });
-                // We could show a specific message
             } catch (e) {
                 console.error("Failed to cancel old appointment during reschedule", e);
-                alert('Novo agendamento criado, mas falha ao cancelar o anterior. Por favor cancele manualmente.');
             }
             rescheduleAppointmentId = null;
         }

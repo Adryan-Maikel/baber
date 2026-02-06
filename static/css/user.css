@@ -2183,3 +2183,128 @@
 .calendar-day.has-appointment.selected::after {
   background: white;
 }
+
+/* =========================================
+   STEP 4 - BOOKING CONFIRMATION
+   ========================================= */
+
+.booking-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.booking-summary-barber {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.booking-summary-barber .barber-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.barber-avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.barber-avatar-placeholder img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.booking-summary-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.booking-summary-info p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.booking-summary-datetime {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--accent-light);
+  border-radius: 8px;
+  width: fit-content;
+  height: fit-content;
+}
+
+.booking-summary-datetime i {
+  color: var(--accent);
+}
+
+.booking-summary-datetime span {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.logged-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  color: var(--success);
+}
+
+.logged-user-badge i {
+  font-size: 1rem;
+}
+
+.logged-user-badge strong {
+  color: var(--text-primary);
+}
+
+.booking-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.input-group.compact {
+  margin-bottom: 0;
+}
+
+.input-group.compact label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.input-group.compact input {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.btn-compact {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  width: auto;
+}

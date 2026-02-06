@@ -129,31 +129,54 @@
     <!-- Step 4: Confirm -->
     <div id="step-4" class="step fade-in" style="display: none;">
 
-        <h2>4. Seus Dados</h2>
-        <div class="card">
-            <h3 id="confirm-barber-name" style="color: var(--accent);"></h3>
-            <h3 id="confirm-service-name">Service</h3>
-            <p id="confirm-date-time" style="color: var(--text-secondary); margin-bottom: 1rem;"></p>
-
-            <!-- Logged in customer info -->
-            <div id="customer-logged-info"
-                style="display: none; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 1rem;">
-                <p style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Agendando como:</p>
-                <strong id="logged-customer-username"></strong>
+        <h2>4. Confirmar Agendamento</h2>
+        
+        <!-- Booking Summary -->
+        <div class="booking-summary">
+            <div class="booking-summary-barber">
+                <div id="confirm-barber-avatar" class="barber-avatar-placeholder">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="booking-summary-info">
+                    <h3 id="confirm-barber-name"></h3>
+                    <p id="confirm-service-name"></p>
+                </div>
+                <div class="booking-summary-datetime">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span id="confirm-date-time"></span>
+                </div>
             </div>
 
-            <!-- Guest booking form -->
-            <form onsubmit="confirmBooking(event)" id="guest-booking-form">
-                <div id="guest-fields">
-                    <label for="customer-name">Seu Nome</label>
-                    <input type="text" id="customer-name">
-                    <label for="customer-phone">Telefone</label>
-                    <input type="tel" id="customer-phone" placeholder="(11) 99999-1234"
-                        oninput="formatPhoneInput(this)">
+            <!-- Logged in customer info -->
+            <div id="customer-logged-info" class="logged-user-badge" style="display: none;">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>Agendando como <strong id="logged-customer-username"></strong></span>
+            </div>
+
+            <!-- Guest booking fields -->
+            <div id="guest-booking-section">
+                <div id="guest-fields" class="booking-fields">
+                    <div class="input-group compact">
+                        <label for="customer-name">Nome de usuário</label>
+                        <input type="text" id="customer-name" placeholder="Seu nome de usuário">
+                        <span class="input-error-text" id="customer-name-error"></span>
+                    </div>
+                    <div class="input-group compact">
+                        <label for="customer-phone">Telefone <span class="optional-label">(opcional)</span></label>
+                        <input type="tel" id="customer-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                        <span class="input-error-text" id="customer-phone-error"></span>
+                    </div>
+                    <div class="input-group compact">
+                        <label for="customer-password">Senha</label>
+                        <input type="password" id="customer-password" placeholder="Mínimo 6 caracteres">
+                        <span class="input-error-text" id="customer-password-error"></span>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Confirmar
-                    Agendamento</button>
-            </form>
+                
+                <button type="button" class="btn btn-primary btn-compact" id="confirm-booking-btn" onclick="confirmBooking()">
+                    <i class="fa-solid fa-check"></i> Confirmar
+                </button>
+            </div>
         </div>
     </div>
 
