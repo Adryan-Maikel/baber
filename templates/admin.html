@@ -772,31 +772,65 @@
       </div>
 
       <!-- Dashboard Filters -->
+      <!-- Dashboard Filters -->
       <div class="filter-bar">
-        <div class="filter-group">
-          <select id="dashboard-barber-filter" onchange="refreshDashboard()">
-            <option value="">Todos Profissionais</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <div class="date-range-group">
-            <input type="date" id="dashboard-start-date" onchange="refreshDashboard()" />
-            <span style="color: var(--text-secondary); font-size: 0.875rem">até</span>
-            <input type="date" id="dashboard-end-date" onchange="refreshDashboard()" />
+        <div class="custom-multiselect" id="dashboard-barber-multiselect">
+          <button type="button" class="multiselect-trigger" onclick="toggleMultiselect('dashboard')">
+            <span class="selected-count">Todos Profissionais</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div class="multiselect-dropdown">
+            <div class="multiselect-header">
+              <div class="multiselect-option all" onclick="toggleSelectAll('dashboard')">
+                <div class="check-icon"></div>
+                <span>Selecionar Todos</span>
+              </div>
+            </div>
+            <div class="multiselect-list" id="dashboard-barber-multiselect-list">
+              <!-- Items injected via JS -->
+            </div>
           </div>
         </div>
 
-        <div class="filter-group">
-          <button class="btn" onclick="setDashboardPeriod(0)" title="Hoje">
-            Hoje
-          </button>
-          <button class="btn" onclick="setDashboardPeriod(7)" title="7 dias">
-            7d
-          </button>
-          <button class="btn" onclick="setDashboardPeriod(30)" title="30 dias">
-            30d
-          </button>
+        <div class="row gap-5px">
+          <!-- Quick Date Buttons -->
+          <button type="button" class="quick-date-btn" onclick="setDashboardPeriod(0)">Hoje</button>
+          <button type="button" class="quick-date-btn" onclick="setDashboardPeriod(7)">7 Dias</button>
+          <button type="button" class="quick-date-btn" onclick="setDashboardPeriod(30)">30 Dias</button>
+
+          <!-- Calendar Dropdown -->
+          <div style="position: relative;">
+            <button type="button" class="icon-btn" onclick="toggleCalendarDropdown('dashboard')"
+              aria-label="Selecionar período">
+              <i class="fa-solid fa-calendar-days"></i>
+            </button>
+
+            <div class="calendar-dropdown" id="dashboard-calendar-dropdown">
+              <div class="calendar-header">
+                <button type="button" class="calendar-nav-btn" onclick="navigateCalendarMonth('dashboard', -1)">
+                  <i class="fa-solid fa-chevron-up"></i>
+                </button>
+                <span class="calendar-month-year" id="dashboard-calendar-month-year"></span>
+                <button type="button" class="calendar-nav-btn" onclick="navigateCalendarMonth('dashboard', 1)">
+                  <i class="fa-solid fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div class="calendar-days" id="dashboard-calendar-days"></div>
+              <div class="calendar-footer">
+                <button type="button" class="calendar-footer-btn"
+                  onclick="clearCalendarSelection('dashboard')">Limpar</button>
+                <button type="button" class="calendar-footer-btn calendar-today-btn"
+                  onclick="selectCalendarToday('dashboard')">Hoje</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden inputs for logic compatibility -->
+          <input type="hidden" id="dashboard-start-date">
+          <input type="hidden" id="dashboard-end-date">
         </div>
       </div>
 
@@ -866,21 +900,58 @@
 
       <!-- Appointments Filters -->
       <div class="filter-bar">
-        <div class="filter-group">
-          <label style="color: var(--text-secondary); margin-right: 0.5rem">Data:</label>
-          <input type="date" id="appointments-date-filter" onchange="loadAppointmentsAdmin()" />
-        </div>
-
-        <div class="filter-group">
-          <select id="appointments-barber-filter" onchange="loadAppointmentsAdmin()">
-            <option value="">Todos Profissionais</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <button class="btn" onclick="setAppointmentsToday()">
-            <i class="fa-solid fa-calendar-day"></i> Hoje
+        <div class="custom-multiselect" id="appointments-barber-multiselect">
+          <button type="button" class="multiselect-trigger" onclick="toggleMultiselect('appointments')">
+            <span class="selected-count">Todos Profissionais</span>
+            <i class="fa-solid fa-chevron-down"></i>
           </button>
+          <div class="multiselect-dropdown">
+            <div class="multiselect-header">
+              <div class="multiselect-option all" onclick="toggleSelectAll('appointments')">
+                <div class="check-icon"></div>
+                <span>Selecionar Todos</span>
+              </div>
+            </div>
+            <div class="multiselect-list" id="appointments-barber-multiselect-list">
+              <!-- Items injected via JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="row gap-5px">
+          <button type="button" class="quick-date-btn" onclick="setAppointmentsToday()">Hoje</button>
+          <button type="button" class="quick-date-btn" onclick="setAppointmentsDate(1)">Amanhã</button>
+
+          <div style="position: relative;">
+            <button type="button" class="icon-btn" onclick="toggleCalendarDropdown('appointments')"
+              aria-label="Selecionar data">
+              <i class="fa-solid fa-calendar-days"></i>
+            </button>
+
+            <div class="calendar-dropdown" id="appointments-calendar-dropdown">
+              <div class="calendar-header">
+                <button type="button" class="calendar-nav-btn" onclick="navigateCalendarMonth('appointments', -1)">
+                  <i class="fa-solid fa-chevron-up"></i>
+                </button>
+                <span class="calendar-month-year" id="appointments-calendar-month-year"></span>
+                <button type="button" class="calendar-nav-btn" onclick="navigateCalendarMonth('appointments', 1)">
+                  <i class="fa-solid fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div class="calendar-days" id="appointments-calendar-days"></div>
+              <div class="calendar-footer">
+                <button type="button" class="calendar-footer-btn"
+                  onclick="clearCalendarSelection('appointments')">Limpar</button>
+                <button type="button" class="calendar-footer-btn calendar-today-btn"
+                  onclick="selectCalendarToday('appointments')">Hoje</button>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="appointments-date-filter">
         </div>
       </div>
 
@@ -1314,22 +1385,153 @@
     } catch (e) { }
   }
 
+  // =============== MULTISELECT LOGIC ===============
+  const multiselectState = {
+    dashboard: new Set(),
+    appointments: new Set()
+  };
+
+  function toggleMultiselect(context) {
+    const el = document.getElementById(`${context}-barber-multiselect`);
+    // Close others
+    document.querySelectorAll('.custom-multiselect.show').forEach(e => {
+      if (e.id !== el.id) e.classList.remove('show');
+    });
+    el.classList.toggle('show');
+  }
+
+  // Close when clicking outside
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.custom-multiselect')) {
+      document.querySelectorAll('.custom-multiselect.show').forEach(el => el.classList.remove('show'));
+    }
+  });
+
   function populateBarberSelects() {
-    const dashboardSelect = document.getElementById("dashboard-barber-filter");
-    const appointmentsSelect = document.getElementById(
-      "appointments-barber-filter"
-    );
+    // Replaced by renderMultiselects, calling it here for compatibility with loadBarbersForFilters
+    renderMultiselects();
+  }
 
-    const options = barbersCache
-      .map((b) => `<option value="${b.id}">${b.name}</option>`)
-      .join("");
+  function renderMultiselects() {
+    renderMultiselectComponent('dashboard');
+    renderMultiselectComponent('appointments');
+  }
 
-    if (dashboardSelect)
-      dashboardSelect.innerHTML =
-        '<option value="">Todos Profissionais</option>' + options;
-    if (appointmentsSelect)
-      appointmentsSelect.innerHTML =
-        '<option value="">Todos Profissionais</option>' + options;
+  function renderMultiselectComponent(context) {
+    const container = document.getElementById(`${context}-barber-multiselect-list`);
+    if (!container) return;
+
+    // Determine state
+    const state = multiselectState[context];
+    const allIds = barbersCache.map(b => b.id.toString());
+    const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
+    const isNoneSelected = state.size === 0; // Treated as "All" for filter purposes
+
+    // Render "Select All" Header State
+    const headerIcon = document.querySelector(`#${context}-barber-multiselect .multiselect-header .multiselect-option .check-icon`);
+    if (headerIcon) {
+      // If isNoneSelected (initial) -> we can show "Checked" visually or handle logic 'empty = all'
+      // Visual preference: If empty, it means 'All', so checking 'All' makes sense.
+      const isEffectiveAll = isNoneSelected || isAllSelected;
+
+      if (isEffectiveAll) {
+        headerIcon.parentElement.classList.add('selected');
+        headerIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else {
+        headerIcon.parentElement.classList.remove('selected');
+        headerIcon.innerHTML = '';
+      }
+    }
+
+    container.innerHTML = barbersCache.map(b => {
+      const isSelected = state.has(b.id.toString());
+      return `
+            <div class="multiselect-option ${isSelected ? 'selected' : ''}" 
+                 onclick="toggleBarberSelection('${context}', '${b.id}')">
+                <div class="check-icon">
+                    ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
+                </div>
+                <span>${escapeHtml(b.name)}</span>
+            </div>
+        `;
+    }).join('');
+
+    updateMultiselectLabel(context);
+  }
+
+  function toggleBarberSelection(context, id) {
+    const state = multiselectState[context];
+
+    // If state is empty (All), and we click one, we should probably:
+    // 1. If clicking to SELECT one specific? 
+    // Usually: Empty = All. 
+    // If I click one, do I want ONLY that one? Yes.
+    // But wait, if I had "All" (empty set), and I toggle one, I should probably select that ONE.
+    // OR, if I want to deselect one from All?
+
+    // Let's stick to simple set logic.
+    // If empty, treating as "All" for backend.
+    // For UI: logic is simpler if we treat "Empty" as "None Selected" but backend treats as "All".
+    // But user wants "Select All" button.
+
+    if (state.has(id)) state.delete(id);
+    else state.add(id);
+
+    renderMultiselectComponent(context);
+
+    // Trigger refresh
+    if (context === 'dashboard') refreshDashboard();
+    else loadAppointmentsAdmin();
+  }
+
+  function toggleSelectAll(context) {
+    const state = multiselectState[context];
+    const allIds = barbersCache.map(b => b.id.toString());
+    const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
+    const isNoneSelected = state.size === 0;
+
+    if (isAllSelected || isNoneSelected) {
+      // If All (explicitly or implicitly empty), Clear everything? 
+      // Or Select All explicit?
+
+      if (isNoneSelected) {
+        // Currently "All". Click -> Select specific all? Or Deselect All (clear)?
+        // If I click "Select All" when "All" is active, maybe I want to Deselect All?
+        // But treating empty as All...
+
+        // Let's try:
+        // Click Select All -> Selects ALL IDs explicitly
+        allIds.forEach(id => state.add(id));
+      } else {
+        // If all selected, clear -> Empty -> All
+        state.clear();
+      }
+    } else {
+      // Some selected -> Select All
+      allIds.forEach(id => state.add(id));
+    }
+
+    renderMultiselectComponent(context);
+
+    if (context === 'dashboard') refreshDashboard();
+    else loadAppointmentsAdmin();
+  }
+
+  function updateMultiselectLabel(context) {
+    const count = multiselectState[context].size;
+    // const total = barbersCache.length;
+    const labelEl = document.querySelector(`#${context}-barber-multiselect .multiselect-trigger span`);
+
+    if (count === 0) {
+      labelEl.innerHTML = 'Todos Profissionais';
+    } else {
+      labelEl.innerHTML = `<i class="fa-solid fa-user-check"></i> ${count} Selecionado${count > 1 ? 's' : ''}`;
+    }
+  }
+
+  function getSelectedBarberIds(context) {
+    if (multiselectState[context].size === 0) return []; // Backend treats empty as All
+    return Array.from(multiselectState[context]);
   }
 
   function initializeDashboardDates() {
@@ -1394,15 +1596,14 @@
   async function loadDashboardStats() {
     try {
       const token = localStorage.getItem("access_token");
-      const barberId =
-        document.getElementById("dashboard-barber-filter")?.value || "";
+      const barberIds = getSelectedBarberIds('dashboard');
       const startDate =
         document.getElementById("dashboard-start-date")?.value || "";
       const endDate =
         document.getElementById("dashboard-end-date")?.value || "";
 
       let url = "/panel/dashboard-stats?";
-      if (barberId) url += `barber_id=${barberId}&`;
+      if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
       if (startDate) url += `start_date=${startDate}&`;
       if (endDate) url += `end_date=${endDate}&`;
 
@@ -2157,7 +2358,7 @@
 
     <!--Body(Expanded Form) -->
     <div class="card-dropdown-body">
-      <form onsubmit="saveBarber(event, null)" class="card-dropdown-form">
+      <form class="card-dropdown-form">
 
         <div class="card-dropdown-scroll-container">
           <!-- Row 1 & 2 Combined: Profile & Schedule -->
@@ -2197,6 +2398,18 @@
                 <div class="settings-form-group">
                   <label>Usuário (Login)</label>
                   <input type="text" name="username" placeholder="Usuário para acesso">
+                </div>
+                <div class="settings-form-group">
+                  <label>Instagram (@)</label>
+                  <input type="text" name="instagram" placeholder="sem o @">
+                </div>
+                <div class="settings-form-group">
+                  <label>Twitter (@)</label>
+                  <input type="text" name="twitter" placeholder="sem o @">
+                </div>
+                <div class="settings-form-group">
+                  <label>Email</label>
+                  <input type="email" name="email" placeholder="email@exemplo.com">
                 </div>
                 <div class="settings-form-group">
                   <label>Senha</label>
@@ -2259,7 +2472,7 @@
 
         <div class="card-dropdown-footer">
           <button type="button" class="btn" onclick="clearNewBarberForm()">Limpar</button>
-          <button type="submit" class="btn btn-primary">Criar Profissional</button>
+          <button type="button" class="btn btn-primary" onclick="saveBarber(event)">Criar Profissional</button>
         </div>
       </form>
     </div>
@@ -2495,7 +2708,7 @@
       .closest(".services-inline-section")
       .querySelector(".inline-services-container");
     const div = document.createElement("div");
-    div.className = "service-form-item";
+    div.className = "service-form-item inline-service-item";
     div.innerHTML = `
   <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
     <i class="fa-solid fa-times"></i>
@@ -2544,6 +2757,10 @@
   </div>
   `;
     container.appendChild(div);
+  }
+
+  function removeInlineServiceItem(btn) {
+    btn.closest(".service-form-item").remove();
   }
 
   // Currency Helpers
@@ -2674,13 +2891,12 @@
 
     const dateFilter =
       document.getElementById("appointments-date-filter")?.value || "";
-    const barberFilter =
-      document.getElementById("appointments-barber-filter")?.value || "";
+    const barberIds = getSelectedBarberIds('appointments');
 
     try {
       let url = "/panel/appointments?";
       if (dateFilter) url += `date_filter=${dateFilter}&`;
-      if (barberFilter) url += `barber_id=${barberFilter}&`;
+      if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
 
       const res = await fetch(url, {
         headers: { Authorization: "Bearer " + token },
@@ -3152,5 +3368,245 @@
     if (value.length <= 10) return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
     return `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
   }
+
+  // =============== CALENDAR COMPONENT LOGIC ===============
+
+  const calendarState = {
+    dashboard: {
+      currentDate: new Date(),
+      selectionState: 'complete', // 'selecting' or 'complete'
+      tempStartDate: null
+    },
+    appointments: {
+      currentDate: new Date(),
+      selectionState: 'complete'
+    }
+  };
+
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  function toggleCalendarDropdown(context) {
+    const dropdown = document.getElementById(`${context}-calendar-dropdown`);
+    const backdrop = document.getElementById('calendar-backdrop'); // Mobile only
+
+    // Close others
+    document.querySelectorAll('.calendar-dropdown.show').forEach(el => {
+      if (el.id !== `${context}-calendar-dropdown`) el.classList.remove('show');
+    });
+
+    if (dropdown.classList.contains('show')) {
+      dropdown.classList.remove('show');
+      if (backdrop) backdrop.classList.remove('show');
+    } else {
+      dropdown.classList.add('show');
+      if (backdrop) backdrop.classList.add('show');
+      renderCalendar(context);
+    }
+  }
+
+  // Close calendars when clicking outside
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.calendar-dropdown') && !e.target.closest('.icon-btn')) {
+      document.querySelectorAll('.calendar-dropdown.show').forEach(el => el.classList.remove('show'));
+    }
+  });
+
+  function navigateCalendarMonth(context, delta) {
+    calendarState[context].currentDate.setMonth(calendarState[context].currentDate.getMonth() + delta);
+    renderCalendar(context);
+  }
+
+  function renderCalendar(context) {
+    const state = calendarState[context];
+    const year = state.currentDate.getFullYear();
+    const month = state.currentDate.getMonth();
+
+    // Header
+    document.getElementById(`${context}-calendar-month-year`).textContent = `${monthNames[month]} ${year}`;
+
+    const daysContainer = document.getElementById(`${context}-calendar-days`);
+    daysContainer.innerHTML = "";
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const prevLastDay = new Date(year, month, 0).getDate();
+
+    // Previous month days
+    for (let i = firstDayIndex; i > 0; i--) {
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "calendar-day other-month";
+      dayDiv.textContent = prevLastDay - i + 1;
+      daysContainer.appendChild(dayDiv);
+    }
+
+    // Current days
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get current selection
+    let startDate, endDate;
+    if (context === 'dashboard') {
+      const startVal = document.getElementById('dashboard-start-date').value;
+      const endVal = document.getElementById('dashboard-end-date').value;
+      startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
+      endDate = endVal ? new Date(endVal + 'T00:00:00') : null;
+
+      if (state.selectionState === 'selecting' && state.tempStartDate) {
+        startDate = state.tempStartDate;
+        endDate = null; // Highlighting logic handles range visuals
+      }
+    } else {
+      const dateVal = document.getElementById('appointments-date-filter').value;
+      startDate = dateVal ? new Date(dateVal + 'T00:00:00') : null;
+    }
+
+    for (let i = 1; i <= lastDay; i++) {
+      const date = new Date(year, month, i);
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "calendar-day";
+      dayDiv.textContent = i;
+
+      // Weekend check
+      if (date.getDay() === 0 || date.getDay() === 6) {
+        // dayDiv.classList.add("weekend"); // Optional style
+      }
+
+      // Today check
+      if (date.getTime() === today.getTime()) {
+        dayDiv.classList.add("today");
+      }
+
+      // Selection Check
+      if (context === 'dashboard') {
+        if (startDate && date.getTime() === startDate.getTime()) dayDiv.classList.add("selected");
+        if (endDate && date.getTime() === endDate.getTime()) dayDiv.classList.add("selected");
+
+        // Range check
+        if (startDate && endDate && date > startDate && date < endDate) {
+          dayDiv.classList.add("selected");
+          dayDiv.style.opacity = "0.7";
+        }
+      } else {
+        if (startDate && date.getTime() === startDate.getTime()) {
+          dayDiv.classList.add("selected");
+        }
+      }
+
+      dayDiv.onclick = () => selectCalendarDate(context, i);
+      daysContainer.appendChild(dayDiv);
+    }
+
+    // Next month days to fill grid (42 cells usually 6 rows)
+    const totalCells = daysContainer.children.length;
+    const nextDays = 42 - totalCells;
+
+    for (let i = 1; i <= nextDays; i++) {
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "calendar-day other-month";
+      dayDiv.textContent = i;
+      daysContainer.appendChild(dayDiv);
+    }
+  }
+
+  function selectCalendarDate(context, day) {
+    const state = calendarState[context];
+    const selectedDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth(), day);
+    const dateStr = selectedDate.toISOString().split('T')[0];
+
+    if (context === 'dashboard') {
+      const startInput = document.getElementById('dashboard-start-date');
+      const endInput = document.getElementById('dashboard-end-date');
+
+      if (state.selectionState === 'complete') {
+        // Start new selection
+        state.tempStartDate = selectedDate;
+        state.selectionState = 'selecting';
+        startInput.value = dateStr;
+        endInput.value = ""; // Clear end
+        renderCalendar(context); // Re-render to show start
+      } else {
+        // Complete selection
+        const startDate = state.tempStartDate;
+
+        if (selectedDate < startDate) {
+          // Swap if needed
+          startInput.value = dateStr;
+          endInput.value = startDate.toISOString().split('T')[0];
+        } else {
+          endInput.value = dateStr;
+        }
+
+        state.selectionState = 'complete';
+        state.tempStartDate = null;
+        toggleCalendarDropdown(context); // Close
+        refreshDashboard();
+      }
+    } else {
+      // Appointments - Single Date
+      document.getElementById('appointments-date-filter').value = dateStr;
+      toggleCalendarDropdown(context); // Close
+      loadAppointmentsAdmin();
+    }
+  }
+
+  function selectCalendarToday(context) {
+    const today = new Date().toISOString().split('T')[0];
+    if (context === 'dashboard') {
+      document.getElementById('dashboard-start-date').value = today;
+      document.getElementById('dashboard-end-date').value = today;
+      calendarState.dashboard.selectionState = 'complete';
+      refreshDashboard();
+    } else {
+      document.getElementById('appointments-date-filter').value = today;
+      loadAppointmentsAdmin();
+    }
+    toggleCalendarDropdown(context);
+
+    // Visual update for quick buttons
+    updateQuickButtons(context, 0);
+  }
+
+  function clearCalendarSelection(context) {
+    if (context === 'dashboard') {
+      document.getElementById('dashboard-start-date').value = "";
+      document.getElementById('dashboard-end-date').value = "";
+      refreshDashboard();
+    } else {
+      // For appointments, clearing might mean 'today' or 'all' depending on business logic
+      // Defaulting to today for safety
+      selectCalendarToday(context);
+    }
+    toggleCalendarDropdown(context);
+  }
+
+  function setAppointmentsDate(offset) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    document.getElementById('appointments-date-filter').value = date.toISOString().split('T')[0];
+    loadAppointmentsAdmin();
+    updateQuickButtons('appointments', offset);
+  }
+
+  // Override existing setDashboardPeriod to update UI
+  const originalSetDashboardPeriod = setDashboardPeriod;
+  setDashboardPeriod = function (days) {
+    originalSetDashboardPeriod(days);
+    updateQuickButtons('dashboard', days);
+  };
+
+  // Override setAppointmentsToday
+  const originalSetAppointmentsToday = setAppointmentsToday;
+  setAppointmentsToday = function () {
+    originalSetAppointmentsToday();
+    updateQuickButtons('appointments', 0);
+  }
+
+  function updateQuickButtons(context, value) {
+    // Optional: specific logic to highlight quick buttons based on value
+    // Implementation depends on uniquely identifying the buttons
+  }
+
 </script>
 {% endblock %}

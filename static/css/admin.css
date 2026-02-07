@@ -63,13 +63,6 @@
     box-shadow: 0 4px 6px -1px rgba(var(--shadow-rgb), 0.1), 0 2px 4px -1px rgba(var(--shadow-rgb), 0.06);
 }
 
-.filter-group {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
 .filter-bar select,
 .filter-bar input {
     margin-bottom: 0;
@@ -391,7 +384,6 @@
 .barber-summary-left {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
     flex: 1;
     min-width: 0;
 }
@@ -944,14 +936,14 @@ input[type="tel"],
     }
 
     /* Dashboard cards */
-    .filter-bar {
+    /* .filter-bar {
         flex-direction: column;
         align-items: stretch;
         gap: 0.75rem;
         padding: 1rem;
         width: 100%;
         box-sizing: border-box;
-    }
+    } */
 
     /* Sections full width */
     .section {
@@ -969,20 +961,6 @@ input[type="tel"],
     .card-dropdown-list {
         width: 100%;
         max-width: 100%;
-    }
-
-    .filter-group {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    .filter-bar select,
-    .filter-bar input {
-        width: 100%;
-        min-width: unset;
-        height: 44px;
-        font-size: 16px;
-        /* Prevent iOS zoom */
     }
 
     .date-range-group {
@@ -1046,9 +1024,11 @@ input[type="tel"],
         font-size: 0.8rem;
     }
 
-    .barber-summary-right {
-        display: none;
+    .barber-summary-info p {
+        font-size: 0.8rem;
     }
+
+    /* .barber-summary-right removed to keep arrow visible */
 
     /* Dropdown content */
     .card-dropdown-scroll-container {
@@ -1145,11 +1125,6 @@ input[type="tel"],
         font-size: 0.9rem;
     }
 
-    /* Filter buttons */
-    .filter-group {
-        flex-wrap: wrap;
-    }
-
     .filter-bar .btn {
         font-size: 0.875rem;
         padding: 0.5rem 0.75rem;
@@ -1177,7 +1152,6 @@ input[type="tel"],
 
     .btn,
     .sidebar-menu a,
-    .card-dropdown-header,
     .theme-option {
         transition: transform 0.15s ease, background 0.15s ease;
     }
@@ -1185,10 +1159,6 @@ input[type="tel"],
     .btn:active,
     .sidebar-menu a:active {
         transform: scale(0.97);
-    }
-
-    .card-dropdown-header:active {
-        background: var(--bg-secondary);
     }
 }
 
@@ -1209,6 +1179,4 @@ input[type="tel"],
     pointer-events: none;
 }
 
-.icon-option i {
-    pointer-events: none;
-}
+/* Calendar moved to global.css */

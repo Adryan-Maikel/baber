@@ -335,15 +335,40 @@ def read_appointments():
     db = get_db()
     
     date_filter = request.args.get('date_filter')
-    barber_id = request.args.get('barber_id')
+    barber_ids_param = request.args.get('barber_ids')
     skip = request.args.get('skip', default=0, type=int)
     limit = request.args.get('limit', default=100, type=int)
     
     query = db.query(models.Appointment)
     
-    # If user is a barber, force filter
+    # Check permissions and build list of allowed IDs
+    allowed_ids = None
     if getattr(current_user, "role", "admin") == "barber":
-        barber_id = current_user.id
+        allowed_ids = [str(current_user.id)]
+    
+    # Process filter from request
+    filter_ids = []
+    if barber_ids_param:
+        filter_ids = [bid.strip() for bid in barber_ids_param.split(",") if bid.strip()]
+        
+    # Apply filters
+    effective_ids = []
+    if allowed_ids is not None:
+        if filter_ids:
+            # Intersection (only allow what they are permitted to see)
+            effective_ids = list(set(allowed_ids) & set(filter_ids))
+            if not effective_ids: 
+                # They asked for IDs they can't see, or intersection is empty -> return empty or just allowed?
+                # Usually return empty result is safer/correct
+                 query = query.filter(models.Appointment.id == -1) # Impossible
+        else:
+            effective_ids = allowed_ids
+    else:
+        # Admin - use filter if present
+        effective_ids = filter_ids
+
+    if effective_ids:
+        query = query.filter(models.Appointment.barber_id.in_(effective_ids))
 
     # Filter by date (default: today)
     if date_filter:
@@ -357,10 +382,6 @@ def read_appointments():
             )
         except ValueError:
             pass
-    
-    # Filter by barber
-    if barber_id:
-        query = query.filter(models.Appointment.barber_id == barber_id)
     
     # Order by start_time ascending (earliest first)
     appointments = query.order_by(models.Appointment.start_time.asc()).offset(skip).limit(limit).all()
@@ -377,13 +398,30 @@ def get_dashboard_stats():
 
     db = get_db()
     
-    barber_id = request.args.get('barber_id')
+    barber_ids_param = request.args.get('barber_ids')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    # If user is a barber, force filter
+    # Calculate effective IDs similar to appointments
+    allowed_ids = None
     if getattr(current_user, "role", "admin") == "barber":
-        barber_id = current_user.id
+        allowed_ids = [str(current_user.id)]
+    
+    filter_ids = []
+    if barber_ids_param:
+        filter_ids = [bid.strip() for bid in barber_ids_param.split(",") if bid.strip()]
+        
+    effective_ids = []
+    impossible_filter = False
+    
+    if allowed_ids is not None:
+        if filter_ids:
+            effective_ids = list(set(allowed_ids) & set(filter_ids))
+            if not effective_ids: impossible_filter = True
+        else:
+            effective_ids = allowed_ids
+    else:
+        effective_ids = filter_ids
 
     today = date.today()
     
@@ -410,9 +448,10 @@ def get_dashboard_stats():
         models.Appointment.start_time <= datetime.combine(end_dt, datetime.max.time())
     )
     
-    # Filter by barber if specified
-    if barber_id:
-        query = query.filter(models.Appointment.barber_id == barber_id)
+    if impossible_filter:
+        query = query.filter(models.Appointment.id == -1)
+    elif effective_ids:
+        query = query.filter(models.Appointment.barber_id.in_(effective_ids))
     
     appointments = query.all()
     

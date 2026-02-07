@@ -144,7 +144,7 @@ function showAuthStep() {
         }
         if (step) step.style.display = 'none';
     });
-    
+
     // Show auth step
     const authStep = document.getElementById('step-auth');
     if (authStep) {
@@ -171,7 +171,7 @@ function toggleRegisterMode(checkbox) {
     const registerFields = document.getElementById('register-fields');
     const btnText = document.getElementById('auth-btn-text');
     const title = document.getElementById('auth-title');
-    
+
     if (checkbox.checked) {
         registerFields.classList.add('show');
         btnText.textContent = 'Criar Conta';
@@ -224,10 +224,10 @@ function showAuthError(message) {
 function validateAuthForm(isRegister) {
     clearAuthErrors();
     let isValid = true;
-    
+
     const username = document.getElementById('auth-username').value.trim();
     const password = document.getElementById('auth-password').value;
-    
+
     // Username validation
     if (!username) {
         showFieldError('auth-username', 'Username é obrigatório');
@@ -239,7 +239,7 @@ function validateAuthForm(isRegister) {
         showFieldError('auth-username', 'Apenas letras, números e _');
         isValid = false;
     }
-    
+
     // Password validation
     if (!password) {
         showFieldError('auth-password', 'Senha é obrigatória');
@@ -248,7 +248,7 @@ function validateAuthForm(isRegister) {
         showFieldError('auth-password', 'Mínimo 6 caracteres');
         isValid = false;
     }
-    
+
     return isValid;
 }
 
@@ -256,38 +256,38 @@ function validateAuthForm(isRegister) {
 
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    
+
     const isRegister = document.getElementById('auth-is-register').checked;
-    
+
     if (!validateAuthForm(isRegister)) {
         return;
     }
-    
+
     const username = document.getElementById('auth-username').value.trim();
     const password = document.getElementById('auth-password').value;
     const phone = document.getElementById('auth-phone').value || null;
-    
+
     const btn = document.getElementById('auth-submit-btn');
     const btnText = document.getElementById('auth-btn-text');
     const spinner = document.getElementById('auth-btn-spinner');
-    
+
     // Show loading state
     btn.disabled = true;
     btnText.style.display = 'none';
     spinner.style.display = 'inline-block';
-    
+
     try {
         const endpoint = isRegister ? '/customer/register' : '/customer/login';
-        const body = isRegister 
+        const body = isRegister
             ? { username, password, phone }
             : { username, password };
-        
+
         const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
-        
+
         if (!res.ok) {
             const error = await res.json();
             if (res.status === 429) {
@@ -297,14 +297,14 @@ async function handleAuthSubmit(e) {
             }
             return;
         }
-        
+
         const data = await res.json();
         localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
         currentCustomer = data.customer;
 
         hideAuthStep();
         updateCustomerUI();
-        
+
     } catch (e) {
         showAuthError('Erro de conexão. Tente novamente.');
     } finally {
@@ -346,7 +346,7 @@ async function showHistoryStep() {
     // Show history step
     const historyStep = document.getElementById('step-history');
     if (historyStep) historyStep.style.display = 'block';
-    
+
     const historyList = document.getElementById('history-list');
     historyList.innerHTML = '<p style="color: var(--text-secondary);">Carregando...</p>';
 
@@ -460,17 +460,17 @@ function renderHistory(list) {
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <label>Avaliação</label>
                                     <div class="star-rating-input" style="justify-content: flex-start;">
-                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 1)" id="inline-star-${h.id}-1"></i>
-                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 2)" id="inline-star-${h.id}-2"></i>
-                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 3)" id="inline-star-${h.id}-3"></i>
-                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 4)" id="inline-star-${h.id}-4"></i>
-                                        <i class="fa-regular fa-star" onclick="setInlineRating(${h.id}, 5)" id="inline-star-${h.id}-5"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating('${h.id}', 1)" id="inline-star-${h.id}-1"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating('${h.id}', 2)" id="inline-star-${h.id}-2"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating('${h.id}', 3)" id="inline-star-${h.id}-3"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating('${h.id}', 4)" id="inline-star-${h.id}-4"></i>
+                                        <i class="fa-regular fa-star" onclick="setInlineRating('${h.id}', 5)" id="inline-star-${h.id}-5"></i>
                                     </div>
                                 </div>
 
                                 ${h.media_url ? `
                                 <div class="privacy-toggle-wrapper" onclick="document.getElementById('inline-feedback-public-${h.id}').click()" style="margin: 0; justify-content: flex-start;">
-                                    <input type="checkbox" id="inline-feedback-public-${h.id}" class="privacy-checkbox" ${h.story_is_public !== false ? 'checked' : ''} onchange="updateInlinePrivacyEmote(${h.id})">
+                                    <input type="checkbox" id="inline-feedback-public-${h.id}" class="privacy-checkbox" ${h.story_is_public !== false ? 'checked' : ''} onchange="updateInlinePrivacyEmote('${h.id}')">
                                     <label class="privacy-label" for="inline-feedback-public-${h.id}">
                                         <i id="inline-privacy-emote-${h.id}" class="privacy-emote fa-solid fa-earth-americas"></i>
                                         <span id="inline-privacy-text-${h.id}" class="privacy-text" style="font-size: 0.8rem;">Visível para todos</span>
@@ -491,10 +491,10 @@ function renderHistory(list) {
                         
                         ${canCancel ? `
                         <div class="actions-column">
-                            <button class="btn btn-primary" onclick="rescheduleAppointment(${h.id})">
+                            <button class="btn btn-primary" onclick="rescheduleAppointment('${h.id}')">
                                 <i class="fa-solid fa-calendar-days"></i> Reagendar
                             </button>
-                            <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment(${h.id})">
+                            <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment('${h.id}')">
                                 <i class="fa-solid fa-xmark"></i> Cancelar
                             </button>
                         </div>
@@ -502,7 +502,7 @@ function renderHistory(list) {
                     </div>
                     
                     <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
-                        <button class="btn btn-primary" onclick="submitInlineFeedback(${h.id})" style="min-width: 120px;">
+                        <button class="btn btn-primary" onclick="submitInlineFeedback('${h.id}')" style="min-width: 120px;">
                             <i class="fa-solid fa-check"></i> Salvar
                         </button>
                     </div>
@@ -515,10 +515,10 @@ function renderHistory(list) {
         if (canCancel && h.status !== 'completed') {
             actionsHtml = `
                 <div class="history-actions">
-                    <button class="btn btn-primary" onclick="rescheduleAppointment(${h.id})">
+                    <button class="btn btn-primary" onclick="rescheduleAppointment('${h.id}')">
                         <i class="fa-solid fa-calendar-days"></i> Reagendar
                     </button>
-                    <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment(${h.id})">
+                    <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment('${h.id}')">
                         <i class="fa-solid fa-xmark"></i> Cancelar
                     </button>
                 </div>
@@ -527,7 +527,7 @@ function renderHistory(list) {
 
         return `
             <div class="history-card" id="history-card-${h.id}">
-                <div class="history-card-header" onclick="toggleHistoryCard(${h.id})">
+                <div class="history-card-header" onclick="toggleHistoryCard('${h.id}')">
                     <div class="history-summary-left">
                         <div class="history-icon">
                             <i class="fa-solid fa-scissors"></i>
@@ -555,7 +555,7 @@ function renderHistory(list) {
                     ${ratingFeedbackHtml}
                     
                     <!-- Toggle Details Button -->
-                    <div class="details-toggle-btn" onclick="toggleHistoryDetails(${h.id})">
+                    <div class="details-toggle-btn" onclick="toggleHistoryDetails('${h.id}')">
                         <span>Mais detalhes</span>
                         <i class="fa-solid fa-chevron-down" id="details-arrow-${h.id}"></i>
                     </div>
@@ -775,7 +775,7 @@ async function submitInlineFeedback(apptId) {
         if (res.ok) {
             await showAlertModal('Avaliação salva com sucesso!');
             // Refresh history to show updated rating
-            openHistoryModal();
+            showHistoryStep();
         } else {
             const error = await res.json();
             await showAlertModal('Erro ao salvar avaliação: ' + (error.detail || 'Erro desconhecido'));
@@ -814,7 +814,7 @@ document.addEventListener('click', (e) => {
     const calendarBtn = e.target.closest('.icon-btn[onclick*="toggleHistoryCalendarDropdown"]');
     const calendarDropdown = e.target.closest('#history-calendar-dropdown');
     const quickBtn = e.target.closest('.quick-date-btn');
-    
+
     if (dropdown && dropdown.classList.contains('show') && !calendarBtn && !calendarDropdown && !quickBtn) {
         closeHistoryCalendarDropdown();
     }
@@ -823,7 +823,7 @@ document.addEventListener('click', (e) => {
 function getAppointmentDates() {
     // Get unique dates from history that have appointments
     if (!currentHistory || currentHistory.length === 0) return new Set();
-    
+
     const dates = new Set();
     currentHistory.forEach(h => {
         const dateStr = h.start_time.split('T')[0];
@@ -835,59 +835,59 @@ function getAppointmentDates() {
 function renderHistoryCalendar() {
     const daysContainer = document.getElementById('history-calendar-days');
     const monthYearLabel = document.getElementById('history-calendar-month-year');
-    
+
     if (!daysContainer || !monthYearLabel) return;
-    
+
     // Update month/year label
     const monthNames = [
         'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
         'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
     ];
     monthYearLabel.textContent = `${monthNames[historyCalendarMonth]} de ${historyCalendarYear}`;
-    
+
     // Get first day of month and number of days
     const firstDay = new Date(historyCalendarYear, historyCalendarMonth, 1);
     const lastDay = new Date(historyCalendarYear, historyCalendarMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay();
-    
+
     // Get today's date and appointment dates
     const today = new Date();
     const todayStr = getFormattedDate(today);
     const appointmentDates = getAppointmentDates();
-    
+
     // Build calendar HTML
     let html = '';
-    
+
     // Empty cells for days before the first day of month
     for (let i = 0; i < startingDay; i++) {
         html += '<div class="calendar-day other-month"></div>';
     }
-    
+
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(historyCalendarYear, historyCalendarMonth, day);
         const dateStr = getFormattedDate(date);
         const dayOfWeek = date.getDay();
-        
+
         let classes = ['calendar-day'];
         const hasAppointment = appointmentDates.has(dateStr);
-        
+
         // Check if weekend
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             classes.push('weekend');
         }
-        
+
         // Check if today
         if (dateStr === todayStr) {
             classes.push('today');
         }
-        
+
         // Check if selected
         if (dateStr === historySelectedDate) {
             classes.push('selected');
         }
-        
+
         // Check if has appointment
         if (hasAppointment) {
             classes.push('has-appointment');
@@ -895,18 +895,18 @@ function renderHistoryCalendar() {
             // Disable days without appointments
             classes.push('disabled');
         }
-        
+
         const clickHandler = hasAppointment ? `onclick="selectHistoryDate('${dateStr}')"` : '';
-        
+
         html += `<div class="${classes.join(' ')}" ${clickHandler}>${day}</div>`;
     }
-    
+
     daysContainer.innerHTML = html;
 }
 
 function navigateHistoryMonth(direction) {
     historyCalendarMonth += direction;
-    
+
     if (historyCalendarMonth > 11) {
         historyCalendarMonth = 0;
         historyCalendarYear++;
@@ -914,14 +914,14 @@ function navigateHistoryMonth(direction) {
         historyCalendarMonth = 11;
         historyCalendarYear--;
     }
-    
+
     renderHistoryCalendar();
 }
 
 function selectHistoryDate(dateStr) {
     historySelectedDate = dateStr;
     document.getElementById('history-date-filter').value = dateStr;
-    
+
     renderHistoryCalendar();
     closeHistoryCalendarDropdown();
     filterHistory();
@@ -930,11 +930,11 @@ function selectHistoryDate(dateStr) {
 function filterHistoryToday() {
     const today = new Date();
     const dateStr = getFormattedDate(today);
-    
+
     historyCalendarMonth = today.getMonth();
     historyCalendarYear = today.getFullYear();
     historySelectedDate = dateStr;
-    
+
     document.getElementById('history-date-filter').value = dateStr;
     renderHistoryCalendar();
     filterHistory();
@@ -944,11 +944,11 @@ function filterHistoryTomorrow() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateStr = getFormattedDate(tomorrow);
-    
+
     historyCalendarMonth = tomorrow.getMonth();
     historyCalendarYear = tomorrow.getFullYear();
     historySelectedDate = dateStr;
-    
+
     document.getElementById('history-date-filter').value = dateStr;
     renderHistoryCalendar();
     filterHistory();
@@ -957,7 +957,7 @@ function filterHistoryTomorrow() {
 function clearHistoryFilter() {
     historySelectedDate = null;
     document.getElementById('history-date-filter').value = '';
-    
+
     renderHistoryCalendar();
     closeHistoryCalendarDropdown();
     renderHistory(currentHistory);
@@ -1185,7 +1185,9 @@ async function submitFeedback() {
         if (res.ok) {
             closeFeedbackModal();
             // Refresh history
-            openHistoryModal();
+            closeFeedbackModal();
+            // Refresh history
+            showHistoryStep();
             // Optional: show thank you
             await showAlertModal('Obrigado pela sua avaliação!');
         } else {
@@ -1213,7 +1215,9 @@ async function cancelMyAppointment(id) {
 
         if (res.ok) {
             await showAlertModal('Agendamento cancelado com sucesso!');
-            openHistoryModal();
+            await showAlertModal('Agendamento cancelado com sucesso!');
+            // Refresh history instead of just opening modal (which re-fetches)
+            await showHistoryStep();
         } else {
             const err = await res.json();
             let msg = err.detail || 'Falha ao cancelar';
@@ -1233,13 +1237,18 @@ async function rescheduleAppointment(id) {
     const appt = currentHistory.find(h => h.id === id);
     if (!appt) return;
 
-    // Just close modal and prepare booking flow
-    document.getElementById('history-modal').style.display = 'none';
+    // Switch to booking step
+    const historyStep = document.getElementById('step-history');
+    if (historyStep) historyStep.style.display = 'none';
 
     rescheduleAppointmentId = id; // Set pending reschedule
 
     // Pre-fill booking state
     selectedBarber = { id: appt.barber_id, name: appt.barber_name };
+
+    // Load services for this barber so "Back" navigation works (Step 2)
+    // We don't await this to keep transition fast, it populates in background
+    loadServicesUser();
 
     const isBarberService = !!appt.barber_service_id;
     const sId = isBarberService ? appt.barber_service_id : appt.service_id;
@@ -1263,8 +1272,9 @@ async function rescheduleAppointment(id) {
     // Trigger load immediately
     await loadSlots();
 
-    // Scroll to booking section
-    document.getElementById("booking").scrollIntoView({ behavior: 'smooth' });
+    // Scroll to booking section (step-3)
+    const step3 = document.getElementById("step-3");
+    if (step3) step3.scrollIntoView({ behavior: 'smooth' });
 
     // Notify user they are rescheduling
     await showAlertModal('Escolha o novo horário para o agendamento.', 'Alterando Agendamento');
@@ -1721,13 +1731,11 @@ async function loadBarbers() {
                 </div>
              `;
 
-            // Service list preview (first 3)
-            const serviceList = b.services ? b.services.slice(0, 3).map(s => `
-                <span style="font-size: 0.75rem; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary);">
-                    <i class="fa-solid ${s.icon || 'fa-scissors'}"></i> ${s.name}
-                </span>
+            // Service list preview (first 4)
+            const serviceList = b.services ? b.services.slice(0, 4).map(s => `
+                <span class="badge"><i class="fa-solid ${s.icon || 'fa-scissors'}"></i> ${s.name}</span>
             `).join('') : '';
-            const moreServices = b.services && b.services.length > 3 ? `<span style="font-size: 0.75rem; color: var(--text-secondary);">+${b.services.length - 3}</span>` : '';
+            const moreServices = b.services && b.services.length > 4 ? `<span style="font-size: 0.75rem; color: var(--text-secondary);">+${b.services.length - 4}</span>` : '';
 
             const instaLink = b.instagram ? `https://instagram.com/${b.instagram.replace('@', '')}` : null;
             const twitterLink = b.twitter ? `https://twitter.com/${b.twitter.replace('@', '')}` : null;
@@ -1736,36 +1744,31 @@ async function loadBarbers() {
             const whatsappLink = (phoneDigits.length >= 10) ? `https://wa.me/55${phoneDigits}` : null;
 
             return `
-            <div class="card barber-card" onclick="selectBarber('${b.id}')" 
-                 style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; padding: 1.5rem; min-width: 100px; max-width: 300px;">
-                 ${avatarHtml}
-                <div>
-                    <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">${b.name}</h3>
-                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem;">
-                        ${serviceList} ${moreServices}
-                    </div>
-                    
-                    <div class="social-links" onclick="event.stopPropagation()">
-                        <a href="${instaLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!instaLink ? 'disabled' : ''}">
-                            <i class="fa-brands fa-instagram"></i>
-                        </a>
-                        <a href="${twitterLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!twitterLink ? 'disabled' : ''}">
-                            <i class="fa-brands fa-x-twitter"></i>
-                        </a>
-                        <a href="${emailLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!emailLink ? 'disabled' : ''}">
-                            <i class="fa-solid fa-envelope"></i>
-                        </a>
-                        <a href="${whatsappLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!whatsappLink ? 'disabled' : ''}">
-                            <i class="fa-brands fa-whatsapp"></i>
-                        </a>
-                    </div>
+            <div class="barber-card column center pd-1" onclick="selectBarber('${b.id}')">
+                ${avatarHtml}
+                <h3 class="my-05">${b.name}</h3>
+                <div class="row center gap-05" style="min-height: 50px;">
+                    ${serviceList} ${moreServices}
+                </div>
+
+                <div class="row center gap-05" onclick="event.stopPropagation()">
+                    <a href="${instaLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!instaLink ? 'disabled' : ''}">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="${twitterLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!twitterLink ? 'disabled' : ''}">
+                        <i class="fa-brands fa-x-twitter"></i>
+                    </a>
+                    <a href="${emailLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!emailLink ? 'disabled' : ''}">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+                    <a href="${whatsappLink || 'javascript:void(0)'}" target="_blank" class="icon-btn social-btn ${!whatsappLink ? 'disabled' : ''}">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
                 </div>
             </div>
             `;
         }).join('');
 
-        // CSS Grid adjustment for the new card style (simulated via inline style logic or CSS update)
-        // Ideally we update CSS, but we can rely on existing grid.
     } catch (e) {
         container.innerHTML = '<p style="color: var(--danger);">Erro ao carregar profissionais.</p>';
     }
@@ -1775,12 +1778,12 @@ function selectBarber(id) {
     const barber = window.allBarbers.find(b => b.id === id);
     if (!barber) return;
 
-    selectedBarber = { 
-        id: barber.id, 
+    selectedBarber = {
+        id: barber.id,
         name: barber.name,
         avatar_url: barber.avatar_url
     };
-    
+
     // Update step-4 avatar with image or keep icon
     const avatarEl = document.getElementById('confirm-barber-avatar');
     if (avatarEl && barber.avatar_url) {
@@ -1788,7 +1791,7 @@ function selectBarber(id) {
     } else if (avatarEl) {
         avatarEl.innerHTML = '<i class="fa-solid fa-user-tie"></i>';
     }
-    
+
     goToStep(2);
     loadServicesUser();
 }
@@ -1889,14 +1892,14 @@ function goBack() {
         document.getElementById(previousStep).style.display = 'block';
         return;
     }
-    
+
     // Check if we're on history step
     const historyStep = document.getElementById('step-history');
     if (historyStep && historyStep.style.display !== 'none') {
         const historyStep = document.getElementById('step-history');
         if (historyStep) historyStep.style.display = 'none';
     }
-    
+
     // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection
     if (currentStep === 4) {
         selectedSlot = null;
@@ -1940,12 +1943,12 @@ async function loadSlots() {
         dateInput.value = today;
         dateStr = today;
     }
-    
+
     // Block past dates - only allow today or future dates
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0); // Start of today
     const selectedDateObj = new Date(dateStr + 'T00:00:00'); // Parse as local time
-    
+
     if (selectedDateObj < todayDate) {
         const container = document.getElementById("slots-container");
         container.innerHTML = `
@@ -1960,7 +1963,7 @@ async function loadSlots() {
         lastLoadedSlotsJSON = ''; // Reset cache to force reload on next valid date
         return;
     }
-    
+
     selectedDate = dateStr;
 
     const container = document.getElementById("slots-container");
@@ -2065,13 +2068,13 @@ async function loadSlots() {
 
 function selectSlot(time) {
     selectedSlot = time;
-    
+
     // Update step 4 summary with barber avatar
     if (selectedBarber && selectedBarber.avatar) {
         const avatarEl = document.getElementById('confirm-barber-avatar');
         if (avatarEl) avatarEl.src = selectedBarber.avatar;
     }
-    
+
     goToStep(4);
 }
 
@@ -2105,7 +2108,7 @@ async function confirmBooking() {
     let accountCreated = false;
 
     if (isCustomerLoggedIn() && currentCustomer) {
-        name = currentCustomer.name;
+        name = currentCustomer.username;
         phone = currentCustomer.phone;
     } else {
         name = document.getElementById("customer-name").value.trim();
@@ -2114,17 +2117,17 @@ async function confirmBooking() {
 
         // Validation
         let hasError = false;
-        
+
         if (!name || name.length < 3) {
             showBookingFieldError('customer-name', 'Nome deve ter pelo menos 3 caracteres');
             hasError = true;
         }
-        
+
         if (!password || password.length < 6) {
             showBookingFieldError('customer-password', 'Senha deve ter pelo menos 6 caracteres');
             hasError = true;
         }
-        
+
         if (hasError) return;
 
         // Try to register the user
@@ -2134,7 +2137,7 @@ async function confirmBooking() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, phone: phone || null, password })
             });
-            
+
             if (regRes.ok) {
                 const data = await regRes.json();
                 customerToken = data.access_token;
@@ -2254,7 +2257,7 @@ document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('calendar-dropdown');
     const calendarBtn = e.target.closest('.icon-btn[onclick*="toggleCalendarDropdown"]');
     const calendarDropdown = e.target.closest('.calendar-dropdown');
-    
+
     if (dropdown && dropdown.classList.contains('show') && !calendarBtn && !calendarDropdown) {
         closeCalendarDropdown();
     }
@@ -2264,11 +2267,11 @@ function initializeCalendar() {
     const today = new Date();
     calendarCurrentMonth = today.getMonth();
     calendarCurrentYear = today.getFullYear();
-    
+
     // Select today by default
     calendarSelectedDate = getFormattedDate(today);
     document.getElementById('booking-date').value = calendarSelectedDate;
-    
+
     renderCalendar();
     updateDateRelativeLabel(today);
 }
@@ -2277,16 +2280,16 @@ function renderCalendar() {
     const daysContainer = document.getElementById('calendar-days');
     const monthYearLabel = document.getElementById('calendar-month-year');
     const prevBtn = document.getElementById('prev-month-btn');
-    
+
     if (!daysContainer || !monthYearLabel) return;
-    
+
     // Update month/year label
     const monthNames = [
         'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
         'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
     ];
     monthYearLabel.textContent = `${monthNames[calendarCurrentMonth]} de ${calendarCurrentYear}`;
-    
+
     // Disable prev button if we're at current month
     const today = new Date();
     if (calendarCurrentYear === today.getFullYear() && calendarCurrentMonth === today.getMonth()) {
@@ -2294,58 +2297,58 @@ function renderCalendar() {
     } else {
         prevBtn.disabled = false;
     }
-    
+
     // Get first day of month and number of days
     const firstDay = new Date(calendarCurrentYear, calendarCurrentMonth, 1);
     const lastDay = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay(); // 0 = Sunday
-    
+
     // Get today's date for comparison
     const todayStr = getFormattedDate(today);
     today.setHours(0, 0, 0, 0);
-    
+
     // Build calendar HTML
     let html = '';
-    
+
     // Empty cells for days before the first day of month
     for (let i = 0; i < startingDay; i++) {
         html += '<div class="calendar-day other-month"></div>';
     }
-    
+
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(calendarCurrentYear, calendarCurrentMonth, day);
         const dateStr = getFormattedDate(date);
         const dayOfWeek = date.getDay();
-        
+
         let classes = ['calendar-day'];
-        
+
         // Check if weekend (Sunday = 0, Saturday = 6)
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             classes.push('weekend');
         }
-        
+
         // Check if today
         if (dateStr === todayStr) {
             classes.push('today');
         }
-        
+
         // Check if selected
         if (dateStr === calendarSelectedDate) {
             classes.push('selected');
         }
-        
+
         // Check if past (disabled)
         if (date < today) {
             classes.push('disabled');
         }
-        
+
         const clickHandler = date >= today ? `onclick="selectCalendarDate('${dateStr}')"` : '';
-        
+
         html += `<div class="${classes.join(' ')}" ${clickHandler}>${day}</div>`;
     }
-    
+
     daysContainer.innerHTML = html;
 }
 
@@ -2353,14 +2356,14 @@ function navigateMonth(direction) {
     const today = new Date();
     const currentMonthYear = today.getFullYear() * 12 + today.getMonth();
     const targetMonthYear = calendarCurrentYear * 12 + calendarCurrentMonth + direction;
-    
+
     // Don't go before current month
     if (targetMonthYear < currentMonthYear) {
         return;
     }
-    
+
     calendarCurrentMonth += direction;
-    
+
     if (calendarCurrentMonth > 11) {
         calendarCurrentMonth = 0;
         calendarCurrentYear++;
@@ -2368,7 +2371,7 @@ function navigateMonth(direction) {
         calendarCurrentMonth = 11;
         calendarCurrentYear--;
     }
-    
+
     renderCalendar();
 }
 
@@ -2377,15 +2380,15 @@ function selectCalendarDate(dateStr) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(dateStr + 'T00:00:00');
-    
+
     if (selectedDate < today) {
         // Don't allow past dates - validation to prevent backend submission
         return;
     }
-    
+
     calendarSelectedDate = dateStr;
     document.getElementById('booking-date').value = dateStr;
-    
+
     renderCalendar();
     updateDateRelativeLabel(selectedDate);
     closeCalendarDropdown(); // Close dropdown after selection
@@ -2395,11 +2398,11 @@ function selectCalendarDate(dateStr) {
 function selectToday() {
     const today = new Date();
     const dateStr = getFormattedDate(today);
-    
+
     // Navigate to current month if not there
     calendarCurrentMonth = today.getMonth();
     calendarCurrentYear = today.getFullYear();
-    
+
     selectCalendarDate(dateStr);
 }
 
@@ -2407,7 +2410,7 @@ function clearCalendarSelection() {
     calendarSelectedDate = null;
     document.getElementById('booking-date').value = '';
     renderCalendar();
-    
+
     // Clear slots container
     const container = document.getElementById('slots-container');
     if (container) {
@@ -2419,7 +2422,7 @@ function clearCalendarSelection() {
             </div>
         `;
     }
-    
+
     // Hide the relative label
     const label = document.getElementById('date-relative-label');
     if (label) label.classList.add('hidden');
@@ -2429,13 +2432,13 @@ function clearCalendarSelection() {
 function onDateInputChange() {
     const dateInput = document.getElementById('booking-date');
     if (!dateInput || !dateInput.value) return;
-    
+
     const selectedDate = new Date(dateInput.value + 'T00:00:00');
-    
+
     // Validate: don't allow past dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (selectedDate < today) {
         // Reset to today
         const todayStr = getFormattedDate(today);
@@ -2444,11 +2447,11 @@ function onDateInputChange() {
         renderCalendar();
         return;
     }
-    
+
     calendarSelectedDate = dateInput.value;
     calendarCurrentMonth = selectedDate.getMonth();
     calendarCurrentYear = selectedDate.getFullYear();
-    
+
     renderCalendar();
     updateDateRelativeLabel(selectedDate);
     loadSlots();
@@ -2457,18 +2460,18 @@ function onDateInputChange() {
 function updateDateRelativeLabel(selectedDate) {
     const label = document.getElementById('date-relative-label');
     if (!label) return;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const selected = new Date(selectedDate);
     selected.setHours(0, 0, 0, 0);
-    
+
     const diffDays = Math.round((selected - today) / (1000 * 60 * 60 * 24));
-    
+
     let labelText = '';
     let showLabel = true;
-    
+
     if (diffDays === 0) {
         labelText = 'Hoje';
     } else if (diffDays === 1) {
@@ -2479,7 +2482,7 @@ function updateDateRelativeLabel(selectedDate) {
         // Past dates - hide label
         showLabel = false;
     }
-    
+
     if (showLabel && labelText) {
         label.classList.remove('hidden');
     } else {

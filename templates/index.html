@@ -69,7 +69,7 @@
     <!-- Step 1: Select Barber -->
     <div id="step-1" class="step fade-in">
         <h2>1. Escolha o profissional</h2>
-        <div id="barbers-list" style="display: grid; gap: 1rem; margin-top: 1rem;"></div>
+        <div id="barbers-list" class="row center gap-05"></div>
     </div>
 
     <!-- Step 2: Select Service -->
@@ -90,11 +90,13 @@
                 <!-- Calendar Dropdown -->
                 <div class="calendar-dropdown" id="calendar-dropdown">
                     <div class="calendar-header">
-                        <button type="button" class="calendar-nav-btn" id="prev-month-btn" onclick="navigateMonth(-1)" aria-label="Mês anterior">
+                        <button type="button" class="calendar-nav-btn" id="prev-month-btn" onclick="navigateMonth(-1)"
+                            aria-label="Mês anterior">
                             <i class="fa-solid fa-chevron-up"></i>
                         </button>
                         <span class="calendar-month-year" id="calendar-month-year">fevereiro de 2026</span>
-                        <button type="button" class="calendar-nav-btn" id="next-month-btn" onclick="navigateMonth(1)" aria-label="Próximo mês">
+                        <button type="button" class="calendar-nav-btn" id="next-month-btn" onclick="navigateMonth(1)"
+                            aria-label="Próximo mês">
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                     </div>
@@ -109,8 +111,10 @@
                     </div>
                     <div class="calendar-days" id="calendar-days"></div>
                     <div class="calendar-footer">
-                        <button type="button" class="calendar-footer-btn" onclick="clearCalendarSelection()">Limpar</button>
-                        <button type="button" class="calendar-footer-btn calendar-today-btn" onclick="selectToday()">Hoje</button>
+                        <button type="button" class="calendar-footer-btn"
+                            onclick="clearCalendarSelection()">Limpar</button>
+                        <button type="button" class="calendar-footer-btn calendar-today-btn"
+                            onclick="selectToday()">Hoje</button>
                     </div>
                 </div>
 
@@ -130,9 +134,9 @@
     <div id="step-4" class="step fade-in" style="display: none;">
 
         <h2>4. Confirmar Agendamento</h2>
-        
+
         <!-- Booking Summary -->
-        <div class="booking-summary">
+        <div class="booking-summary column">
             <div class="booking-summary-barber">
                 <div id="confirm-barber-avatar" class="barber-avatar-placeholder">
                     <i class="fa-solid fa-user-tie"></i>
@@ -163,7 +167,8 @@
                     </div>
                     <div class="input-group compact">
                         <label for="customer-phone">Telefone <span class="optional-label">(opcional)</span></label>
-                        <input type="tel" id="customer-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                        <input type="tel" id="customer-phone" placeholder="(11) 99999-1234"
+                            oninput="formatPhoneInput(this)">
                         <span class="input-error-text" id="customer-phone-error"></span>
                     </div>
                     <div class="input-group compact">
@@ -172,8 +177,9 @@
                         <span class="input-error-text" id="customer-password-error"></span>
                     </div>
                 </div>
-                
-                <button type="button" class="btn btn-primary btn-compact" id="confirm-booking-btn" onclick="confirmBooking()">
+
+                <button type="button" class="btn btn-primary btn-compact" id="confirm-booking-btn"
+                    onclick="confirmBooking()">
                     <i class="fa-solid fa-check"></i> Confirmar
                 </button>
             </div>
@@ -183,25 +189,25 @@
     <!-- Step Auth - Login/Register -->
     <div id="step-auth" class="step fade-in" style="display: none;">
         <h2 id="auth-title"><i class="fa-solid fa-user"></i> Entrar</h2>
-        
+
         <form id="auth-form" onsubmit="handleAuthSubmit(event)">
             <!-- Error message container -->
             <div id="auth-error" class="auth-error" style="display: none;"></div>
-            
+
             <!-- Username -->
             <div class="input-group">
                 <label for="auth-username">Username</label>
                 <input type="text" id="auth-username" placeholder="Seu username" autocomplete="username">
                 <span class="input-error-text" id="auth-username-error"></span>
             </div>
-            
+
             <!-- Password -->
             <div class="input-group">
                 <label for="auth-password">Senha</label>
                 <input type="password" id="auth-password" placeholder="Sua senha" autocomplete="current-password">
                 <span class="input-error-text" id="auth-password-error"></span>
             </div>
-            
+
             <!-- Register checkbox -->
             <label class="auth-checkbox-label" for="auth-is-register">
                 <input type="checkbox" id="auth-is-register" onchange="toggleRegisterMode(this)" hidden>
@@ -209,7 +215,7 @@
                 <i class="fa-solid fa-xmark"></i>
                 <span>Não tenho uma conta</span>
             </label>
-            
+
             <!-- Register fields (hidden by default) -->
             <div id="register-fields" class="register-fields">
                 <div class="input-group">
@@ -231,20 +237,22 @@
     <div id="step-history" class="step fade-in" style="display: none;">
         <div class="step-header-row">
             <h2><i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico</h2>
-            
+
             <div class="step-header-right">
                 <!-- Quick date buttons -->
                 <button type="button" class="quick-date-btn" onclick="filterHistoryToday()">Hoje</button>
                 <button type="button" class="quick-date-btn" onclick="filterHistoryTomorrow()">Amanhã</button>
-                
+
                 <!-- History Calendar Dropdown -->
                 <div class="calendar-dropdown" id="history-calendar-dropdown">
                     <div class="calendar-header">
-                        <button type="button" class="calendar-nav-btn" id="history-prev-month-btn" onclick="navigateHistoryMonth(-1)" aria-label="Mês anterior">
+                        <button type="button" class="calendar-nav-btn" id="history-prev-month-btn"
+                            onclick="navigateHistoryMonth(-1)" aria-label="Mês anterior">
                             <i class="fa-solid fa-chevron-up"></i>
                         </button>
                         <span class="calendar-month-year" id="history-calendar-month-year">fevereiro de 2026</span>
-                        <button type="button" class="calendar-nav-btn" id="history-next-month-btn" onclick="navigateHistoryMonth(1)" aria-label="Próximo mês">
+                        <button type="button" class="calendar-nav-btn" id="history-next-month-btn"
+                            onclick="navigateHistoryMonth(1)" aria-label="Próximo mês">
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                     </div>
@@ -260,19 +268,21 @@
                     <div class="calendar-days" id="history-calendar-days"></div>
                     <div class="calendar-footer">
                         <button type="button" class="calendar-footer-btn" onclick="clearHistoryFilter()">Limpar</button>
-                        <button type="button" class="calendar-footer-btn calendar-today-btn" onclick="filterHistoryToday()">Hoje</button>
+                        <button type="button" class="calendar-footer-btn calendar-today-btn"
+                            onclick="filterHistoryToday()">Hoje</button>
                     </div>
                 </div>
 
-                <button type="button" class="icon-btn" onclick="toggleHistoryCalendarDropdown()" aria-label="Selecionar data">
+                <button type="button" class="icon-btn" onclick="toggleHistoryCalendarDropdown()"
+                    aria-label="Selecionar data">
                     <i class="fa-solid fa-calendar-days"></i>
                 </button>
             </div>
         </div>
-        
+
         <!-- Hidden input to store the selected date -->
         <input type="hidden" id="history-date-filter" value="">
-        
+
         <div class="history-content">
             <!-- History List -->
             <div id="history-list"></div>

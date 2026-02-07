@@ -147,6 +147,11 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+
+    &.center {
+        justify-content: center;
+        align-items: center;
+    }
 }
 
 .column {
@@ -161,6 +166,14 @@ body {
 
 .pd-1 {
     padding: 1rem;
+}
+
+.mx-05 {
+    margin: 0 .5rem;
+}
+
+.my-05 {
+    margin: .5rem 0;
 }
 
 .gap-05 {
@@ -463,6 +476,38 @@ body {
     border-color: var(--danger-hover);
 }
 
+.icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    /* Ghost */
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+    box-shadow: none;
+
+    &:focus,
+    &:focus-visible {
+        outline: none;
+    }
+
+    &:focus,
+    &:focus-visible,
+    &:hover {
+        transform: scale(1.10);
+    }
+
+    &:active {
+        transform: scale(0.90);
+    }
+}
+
 .remove-avatar-btn {
     position: relative;
     width: 35px;
@@ -600,11 +645,17 @@ label {
     background: var(--accent-hover);
 }
 
+.badge {
+    font-size: 0.75rem;
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+}
+
 /* Social Media Buttons */
 .social-links {
-    margin-top: 0.5rem;
     display: flex;
-    gap: 0.75rem;
     justify-content: center;
     width: 100%;
 }
@@ -626,6 +677,378 @@ label {
     border-color: transparent;
 }
 
-.h-100dvh {
-    height: 100dvh;
+
+/* =========================================
+   GLOBAL CALENDAR COMPONENT
+   ========================================= */
+
+.calendar-dropdown {
+    position: absolute;
+    right: 0;
+    top: 50px;
+    /* Adjusted context */
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 0.5rem;
+    min-width: 280px;
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top right;
+    scale: 0;
+    opacity: 0;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+}
+
+.calendar-dropdown.show {
+    scale: 1;
+    opacity: 1;
+}
+
+/* Arrow pointing up */
+
+.calendar-dropdown::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    right: 14px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--border);
+}
+
+.calendar-dropdown::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 14px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--bg-secondary);
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+}
+
+.calendar-month-year {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.calendar-nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.calendar-nav-btn:active {
+    transform: scale(0.9);
+}
+
+.calendar-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.calendar-weekdays span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    background: transparent;
+}
+
+.calendar-day:hover:not(.disabled):not(.selected) {
+    background: var(--card-hover);
+    transform: scale(1.1);
+}
+
+.calendar-day:active:not(.disabled) {
+    transform: scale(0.95);
+    transition: transform 0.05s;
+}
+
+.calendar-day.today:not(.selected) {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.calendar-day.selected {
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4);
+}
+
+.calendar-day.other-month {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.calendar-day.disabled {
+    color: var(--text-secondary);
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.calendar-day.disabled:hover {
+    background: transparent;
+    transform: none;
+}
+
+.calendar-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+.calendar-footer-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.calendar-footer-btn:hover {
+    background: var(--accent-light);
+    transform: scale(1.05);
+}
+
+/* Quick date buttons */
+.quick-date-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quick-date-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.quick-date-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .calendar-dropdown {
+        position: absolute;
+        opacity: 0;
+        scale: 0;
+        right: 0;
+        width: 90%;
+        max-width: 320px;
+        transform-origin: top right;
+    }
+
+    /* Backdrop for mobile calendar */
+    .calendar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99;
+        backdrop-filter: blur(2px);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .calendar-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+/* =========================================
+    CUSTOM MULTISELECT DROPDOWN
+    ========================================= */
+
+.custom-multiselect {
+    position: relative;
+    display: inline-block;
+}
+
+.multiselect-trigger {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    min-width: 200px;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.multiselect-trigger:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.multiselect-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.5rem;
+    width: 280px;
+    z-index: 100;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top left;
+}
+
+.custom-multiselect.show .multiselect-dropdown {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+.multiselect-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.multiselect-list {
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.multiselect-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.multiselect-option:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.multiselect-option.selected {
+    background: rgba(var(--accent-rgb, 59, 130, 246), 0.1);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.multiselect-option .check-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: transparent;
+    transition: all 0.2s;
+}
+
+.multiselect-option.selected .check-icon {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.multiselect-option.all {
+    font-weight: 600;
+    color: var(--text-primary);
 }

@@ -3,6 +3,12 @@
    (Lift on Hover, Press on Click)
    ========================================= */
 
+
+.barber-card {
+  width: 300px;
+  max-width: 300px;
+}
+
 .barber-card,
 .service-card,
 .slot-btn,
@@ -25,15 +31,21 @@
   border-color: var(--accent);
 }
 
+/* Active - Press Effect */
+.barber-card:active,
+.service-card:active,
+.slot-btn:active,
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.05s;
+}
+
 /* Selection State */
 .service-card.selected,
 .slot-btn.selected-slot {
   border-color: var(--accent);
   background: var(--accent-light);
 }
-
-/* Removing old Barber Card block as it's redefined above */
-/* .barber-card styles handled in generic block */
 
 /* User menu dropdown */
 /* Main Header Layout - Minimalist & Clean */
@@ -92,44 +104,11 @@
   font-weight: 400;
 }
 
-/* Ghost Buttons - No background, just icons */
-.icon-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  /* Ghost */
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 1.25rem;
-  box-shadow: none;
+#global-back-btn {
+  scale: 0;
 
-  &#global-back-btn {
-    scale: 0;
-    
-    &.show {
-      scale: 1;
-    }
-  }
-
-  &:focus,
-  &:focus-visible {
-    outline: none;
-  }
-
-  &:focus,
-  &:focus-visible,
-  &:hover {
-    transform: scale(1.10);
-  }
-
-  &:active {
-    transform: scale(0.90);
+  &.show {
+    scale: 1;
   }
 }
 
@@ -161,7 +140,7 @@
     position: absolute;
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  
+
   &#user-menu-dropdown {
     transform-origin: top right;
 
@@ -367,6 +346,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -378,30 +358,11 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.icon-btn-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 1rem;
-}
-
-.icon-btn-sm:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
 }
 
 /* Responsive */
@@ -411,12 +372,7 @@
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
-  .step-header-left {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
+
   .step-header-right {
     position: absolute;
     right: 0.5rem;
@@ -532,18 +488,9 @@
     font-size: 0.8rem;
   }
 
-  .icon-btn {
-    font-size: 1rem;
-  }
-
   .barber-avatar {
     width: 50px;
     height: 50px;
-  }
-
-  /* Barber Cards - Stack on Mobile */
-  #barbers-list {
-    grid-template-columns: 1fr !important;
   }
 
   /* Service Cards - 2 columns on mobile */
@@ -563,10 +510,6 @@
     font-size: 0.75rem;
   }
 
-  .icon-btn {
-    font-size: 0.95rem;
-  }
-
   .barber-avatar {
     width: 45px;
     height: 45px;
@@ -581,55 +524,6 @@
     font-size: 1.2rem;
   }
 
-}
-
-/* Barber Card Responsive Improvements */
-.barber-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-}
-
-.barber-card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.barber-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.barber-card-info h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.15rem;
-  color: var(--text-primary);
-}
-
-.barber-card-info p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-@media (max-width: 768px) {
-  .barber-card {
-    padding: 1rem;
-  }
-
-  .barber-card-header {
-    gap: 0.75rem;
-  }
-
-  .barber-card-info h3 {
-    font-size: 1rem;
-  }
-
-  .barber-card-info p {
-    font-size: 0.8rem;
-  }
 }
 
 /* Service Card Responsive */
@@ -765,31 +659,8 @@
 .barber-card,
 .service-card,
 .slot-btn {
-  cursor: pointer;
   transition: all 0.3s ease;
-  /* Apply popIn animation */
   animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards !important;
-}
-
-/* Stagger animations for cards if possible (requires nth-child which works for grid items) */
-.barber-card:nth-child(1) {
-  animation-delay: 0.1s;
-}
-
-.barber-card:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.barber-card:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.barber-card:nth-child(4) {
-  animation-delay: 0.4s;
-}
-
-.barber-card:nth-child(5) {
-  animation-delay: 0.5s;
 }
 
 /* Story Viewer Modal */
@@ -1756,6 +1627,7 @@
     font-size: 1rem;
   }
 }
+
 /* =============== Auth Step Styles =============== */
 
 #step-auth {
@@ -1851,12 +1723,13 @@
     justify-content: center;
   }
 
-  & input ~ .fa-check,
-  & input:checked ~ .fa-xmark {
+  & input~.fa-check,
+  & input:checked~.fa-xmark {
     scale: 0;
   }
-  & input ~ .fa-xmark,
-  & input:checked ~ .fa-check {
+
+  & input~.fa-xmark,
+  & input:checked~.fa-check {
     scale: 1;
   }
 
@@ -1869,9 +1742,9 @@
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-              opacity 0.3s ease,
-              margin 0.3s ease;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease,
+    margin 0.3s ease;
   margin-top: 0;
 }
 
@@ -1900,289 +1773,30 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(8px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-8px);
+  }
+
+  40% {
+    transform: translateX(8px);
+  }
+
+  60% {
+    transform: translateX(-5px);
+  }
+
+  80% {
+    transform: translateX(5px);
+  }
 }
 
-/* =========================================
-   HISTORY STEP CONTENT
-   ========================================= */
-
-.history-content {
-  max-height: calc(100dvh - 250px);
-  overflow-y: auto;
-}
-
-.history-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.history-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.history-content::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-.history-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* =========================================
-   CUSTOM CALENDAR COMPONENT
-   ========================================= */
-
-.calendar-dropdown {
-  position: absolute;
-  right: 0;
-  top: 40px;
-  background: var(--bg-secondary);
-  border-radius: 16px;
-  padding: 0.5rem;
-  min-width: 250px;
-  z-index: 100;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  transform-origin: top right;
-  scale: 0;
-  opacity: 0;
-}
-
-.calendar-dropdown.show {
-  scale: 1;
-  opacity: 1;
-}
-
-/* Arrow pointing up to button */
-.calendar-dropdown::before {
-  content: "";
-  position: absolute;
-  top: -7px;
-  right: 14px;
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid var(--bg-secondary);
-}
-
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  padding: 0 0.25rem;
-}
-
-.calendar-month-year {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-transform: lowercase;
-}
-
-.calendar-nav-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.calendar-nav-btn:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  transform: scale(1.1);
-}
-
-.calendar-nav-btn:active {
-  transform: scale(0.9);
-}
-
-.calendar-nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.calendar-weekdays span {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-}
-
-.calendar-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  background: transparent;
-}
-
-.calendar-day:hover:not(.disabled):not(.selected) {
-  background: var(--bg-secondary);
-  transform: scale(1.1);
-}
-
-.calendar-day:active:not(.disabled) {
-  transform: scale(0.9);
-}
-
-.calendar-day.today:not(.selected) {
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.calendar-day.selected {
-  background: var(--accent);
-  color: white;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4);
-}
-
-.calendar-day.disabled {
-  color: var(--text-secondary);
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.calendar-day.disabled:hover {
-  background: transparent;
-  transform: none;
-}
-
-.calendar-day.other-month {
-  color: var(--text-secondary);
-  opacity: 0.5;
-}
-
-.calendar-day.weekend {
-  color: var(--danger);
-}
-
-.calendar-day.weekend.disabled {
-  color: var(--danger);
-  opacity: 0.25;
-}
-
-.calendar-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.calendar-footer-btn {
-  background: transparent;
-  border: none;
-  color: var(--accent);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.calendar-footer-btn:hover {
-  background: var(--accent-light);
-  transform: scale(1.05);
-}
-
-.calendar-footer-btn:active {
-  transform: scale(0.95);
-}
-
-.calendar-today-btn {
-  color: var(--accent);
-}
-
-/* Quick date buttons for history */
-.quick-date-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.4rem 0.75rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.quick-date-btn:hover {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: scale(1.05);
-}
-
-.quick-date-btn:active {
-  transform: scale(0.95);
-}
-
-.quick-date-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-/* Calendar day with appointments */
-.calendar-day.has-appointment {
-  font-weight: 700;
-  position: relative;
-}
-
-.calendar-day.has-appointment::after {
-  content: "";
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.calendar-day.has-appointment.selected::after {
-  background: white;
-}
+/* Calendar moved to global.css */
 
 /* =========================================
    STEP 4 - BOOKING CONFIRMATION
@@ -2270,7 +1884,6 @@
   padding: 0.75rem 1rem;
   background: rgba(34, 197, 94, 0.1);
   border-radius: 8px;
-  margin-bottom: 1rem;
   color: var(--success);
 }
 
@@ -2307,4 +1920,102 @@
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   width: auto;
+}
+
+/* =========================================
+   HISTORY SECTION IMPROVEMENTS
+   ========================================= */
+
+.history-content {
+  max-height: calc(100dvh - 200px);
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Compact History Card */
+.history-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  /* Slightly less rounded for compact feel */
+  overflow: hidden;
+  transition: all 0.2s ease;
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  /* Reduced margin */
+}
+
+/* Compact Header */
+.history-card-header {
+  padding: 0.75rem 1rem;
+  /* Reduced padding */
+  min-height: auto;
+  /* Remove min-height */
+}
+
+.history-icon {
+  width: 40px;
+  /* Smaller icon */
+  height: 40px;
+  min-width: 40px;
+  font-size: 1.1rem;
+}
+
+.history-summary-info h4 {
+  font-size: 0.95rem;
+  /* Slightly smaller */
+}
+
+.history-summary-info p {
+  font-size: 0.8rem;
+}
+
+/* Improved Grid for Details */
+.history-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  /* 2 columns minimum */
+  gap: 0.5rem 1rem;
+  /* Row gap and Column gap */
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 600px) {
+  .history-details-grid {
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 columns on wider screens */
+  }
+}
+
+/* Ensure specific data uses more space if needed, or structured better */
+.history-detail-item {
+  background: var(--bg-secondary);
+  /* Highlight details */
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-detail-label {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  margin-bottom: 0.1rem;
+}
+
+.history-detail-value {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+/* Actions in History */
+.history-actions .btn {
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  min-width: auto;
 }

@@ -212,7 +212,7 @@ class AppointmentHistory(BaseModel):
 
 class AppointmentBase(BaseModel):
     customer_name: str
-    customer_phone: str
+    customer_phone: Optional[str] = None
     barber_id: str
     barber_service_id: Optional[str] = None
     service_id: Optional[str] = None  # Legacy
@@ -221,6 +221,8 @@ class AppointmentBase(BaseModel):
     @field_validator('customer_phone')
     @classmethod
     def validate_phone(cls, v):
+        if v is None:
+            return None
         return validate_brazilian_phone(v)
 
 class AppointmentCreate(AppointmentBase):
