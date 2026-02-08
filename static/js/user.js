@@ -21,8 +21,30 @@ function isCustomerLoggedIn() {
 function logoutCustomer() {
     localStorage.removeItem(CUSTOMER_TOKEN_KEY);
     currentCustomer = null;
+
+    // Reset booking state
+    selectedBarber = null;
+    selectedService = null;
+    selectedDate = null;
+    selectedSlot = null;
+    rescheduleAppointmentId = null;
+
+    // Clear inputs
+    const nameInput = document.getElementById('customer-name');
+    const phoneInput = document.getElementById('customer-phone');
+    const passInput = document.getElementById('customer-password');
+    if (nameInput) { nameInput.value = ''; nameInput.classList.remove('has-error'); }
+    if (phoneInput) { phoneInput.value = ''; phoneInput.classList.remove('has-error'); }
+    if (passInput) { passInput.value = ''; passInput.classList.remove('has-error'); }
+
+    // Clear history
+    const historyList = document.getElementById('history-list');
+    if (historyList) historyList.innerHTML = '';
+
+    // Reset UI
     updateCustomerUI();
     closeUserMenu();
+    goToStep(1);
 }
 
 // Toggle user menu dropdown
@@ -515,10 +537,10 @@ function renderHistory(list) {
         if (canCancel && h.status !== 'completed') {
             actionsHtml = `
                 <div class="history-actions">
-                    <button class="btn btn-primary" onclick="rescheduleAppointment('${h.id}')">
+                    <button class="" onclick="rescheduleAppointment('${h.id}')">
                         <i class="fa-solid fa-calendar-days"></i> Reagendar
                     </button>
-                    <button class="btn" style="background: var(--danger); color: white;" onclick="cancelMyAppointment('${h.id}')">
+                    <button class="" onclick="cancelMyAppointment('${h.id}')">
                         <i class="fa-solid fa-xmark"></i> Cancelar
                     </button>
                 </div>
@@ -526,7 +548,7 @@ function renderHistory(list) {
         }
 
         return `
-            <div class="history-card" id="history-card-${h.id}">
+            <div class="history-card fade-in" id="history-card-${h.id}">
                 <div class="history-card-header" onclick="toggleHistoryCard('${h.id}')">
                     <div class="history-summary-left">
                         <div class="history-icon">
@@ -2135,7 +2157,7 @@ async function confirmBooking() {
             const regRes = await fetch('/customer/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, phone: phone || null, password })
+                body: JSON.stringify({ username: name, phone: phone || null, password })
             });
 
             if (regRes.ok) {

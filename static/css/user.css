@@ -1214,11 +1214,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
   background: transparent;
-  min-height: 80px;
-  box-sizing: border-box;
+  min-height: 64px;
+}
+
+.history-card .history-card-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.history-card.expanded .history-card-header:hover {
+  border-bottom: 1px solid var(--accent);
 }
 
 .history-summary-left {
@@ -1291,20 +1298,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
+  background: transparent;
   color: var(--text-secondary);
   transition: all 0.3s ease;
 }
 
 .history-card:hover .history-expand-icon {
-  background: var(--accent);
-  color: white;
+  color: var(--accent);
 }
 
 .history-card.expanded .history-expand-icon {
   transform: rotate(180deg);
-  background: var(--accent);
-  color: white;
 }
 
 /* History Card Body (Expanded Content) */
@@ -1326,26 +1330,18 @@
 
 /* Details Toggle Button */
 .details-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1rem;
-  margin: 0.75rem 0;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  width: fit-content;
+  padding: .5rem 0;
   cursor: pointer;
+  text-align: center;
   transition: all 0.3s ease;
-  color: var(--text-secondary);
+  color: var(--accent);
   font-size: 0.85rem;
   font-weight: 500;
 }
 
 .details-toggle-btn:hover {
-  background: var(--card-hover);
-  border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-hover);
 }
 
 .details-toggle-btn i {
@@ -1438,6 +1434,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1rem;
+  font-size: 0.85rem;
 }
 
 /* Media Preview in History */
@@ -1560,11 +1557,6 @@
     font-size: 1.25rem;
   }
 
-  .history-card-header {
-    padding: 1rem;
-    min-height: auto;
-  }
-
   .history-summary-left {
     gap: 0.75rem;
   }
@@ -1584,24 +1576,9 @@
     font-size: 0.8rem;
   }
 
-  .history-summary-right {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-end;
-  }
-
   .history-details-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
-  }
-
-  .history-actions {
-    flex-direction: column;
-  }
-
-  .history-actions .btn {
-    width: 100%;
-    min-width: auto;
   }
 
   .history-card.expanded .history-card-body {
@@ -1947,14 +1924,6 @@
   /* Reduced margin */
 }
 
-/* Compact Header */
-.history-card-header {
-  padding: 0.75rem 1rem;
-  /* Reduced padding */
-  min-height: auto;
-  /* Remove min-height */
-}
-
 .history-icon {
   width: 40px;
   /* Smaller icon */
@@ -2011,11 +1980,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
-}
-
-/* Actions in History */
-.history-actions .btn {
-  font-size: 0.85rem;
-  padding: 0.5rem;
-  min-width: auto;
 }
