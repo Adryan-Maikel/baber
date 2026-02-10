@@ -536,15 +536,13 @@ function renderHistory(list) {
         let actionsHtml = '';
         if (canCancel && h.status !== 'completed') {
             actionsHtml = `
-                <div class="history-actions">
-                    <button class="" onclick="rescheduleAppointment('${h.id}')">
-                        <i class="fa-solid fa-calendar-days"></i> Reagendar
-                    </button>
-                    <button class="" onclick="cancelMyAppointment('${h.id}')">
-                        <i class="fa-solid fa-xmark"></i> Cancelar
-                    </button>
-                </div>
-            `;
+            <button class="btn-action" onclick="rescheduleAppointment('${h.id}')">
+                <i class="fa-solid fa-pencil"></i> Editar / Reagendar
+            </button>
+            <button class="btn-action danger" onclick="cancelMyAppointment('${h.id}')">
+                <i class="fa-solid fa-calendar-xmark"></i> Cancelar Agendamento
+            </button>
+        `;
         }
 
         return `
@@ -574,14 +572,17 @@ function renderHistory(list) {
                 </div>
                 
                 <div class="history-card-body">
-                    ${ratingFeedbackHtml}
-                    
-                    <!-- Toggle Details Button -->
-                    <div class="details-toggle-btn" onclick="toggleHistoryDetails('${h.id}')">
-                        <span>Mais detalhes</span>
-                        <i class="fa-solid fa-chevron-down" id="details-arrow-${h.id}"></i>
+                    <div class="row gap-05">    
+                        ${ratingFeedbackHtml}
+
+                        ${actionsHtml}
+
+                        <button class="btn-action" onclick="toggleHistoryDetails(event, '${h.id}')">
+                            Mais detalhes
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
                     </div>
-                    
+
                     <!-- Collapsible Details Section -->
                     <div class="history-details-section" id="details-section-${h.id}">
                         <div class="history-details-grid">
@@ -621,8 +622,6 @@ function renderHistory(list) {
                             </div>
                         </div>
                     </div>
-                    
-                    ${actionsHtml}
                 </div>
             </div>
         `;
@@ -653,16 +652,16 @@ function toggleHistoryCard(id) {
 }
 
 // Toggle history details section
-function toggleHistoryDetails(id) {
-    const detailsSection = document.getElementById(`details-section-${id}`);
-    const arrow = document.getElementById(`details-arrow-${id}`);
+function toggleHistoryDetails(event, id) {
+    event.target.classList.toggle('open');
 
-    if (!detailsSection || !arrow) return;
+    const detailsSection = document.getElementById(`details-section-${id}`);
+
+    if (!detailsSection) return;
 
     const isExpanding = !detailsSection.classList.contains('expanded');
 
     detailsSection.classList.toggle('expanded');
-    arrow.classList.toggle('rotated');
 
     // Scroll suave para mostrar o conteúdo expandido
     if (isExpanding) {
@@ -1297,9 +1296,6 @@ async function rescheduleAppointment(id) {
     // Scroll to booking section (step-3)
     const step3 = document.getElementById("step-3");
     if (step3) step3.scrollIntoView({ behavior: 'smooth' });
-
-    // Notify user they are rescheduling
-    await showAlertModal('Escolha o novo horário para o agendamento.', 'Alterando Agendamento');
 }
 
 
@@ -1747,7 +1743,7 @@ async function loadBarbers() {
                    </div>`;
 
             const avatarHtml = `
-                <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer(${b.id})"` : ''} 
+                <div class="${ringClass}" ${hasStories ? `onclick="event.stopPropagation(); openStoryViewer('${b.id}')"` : ''} 
                      style="width: 100px; height: 100px; min-width: 100px;">
                     ${innerAvatar}
                 </div>

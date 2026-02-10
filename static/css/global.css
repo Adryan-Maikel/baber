@@ -417,6 +417,74 @@ body {
     }
 }
 
+.btn-action {
+    width: fit-content;
+    background: transparent;
+    border: var(--text-secondary);
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    scale: 1;
+
+    &>i {
+        user-select: none;
+        pointer-events: none;
+    }
+
+    &>.fa-chevron-down {
+        rotate: 0deg;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &.open>.fa-chevron-down {
+        rotate: 180deg;
+    }
+
+    &:focus-visible,
+    &:focus,
+    &:hover {
+        transform: translateY(-2px);
+        color: var(--text-primary);
+        border-color: var(--text-primary);
+        scale: 1.05;
+    }
+
+    &:visited,
+    &:active {
+        transform: translateY(1px);
+        scale: 0.95;
+    }
+
+    &.primary {
+        border-color: var(--accent);
+        color: var(--accent);
+
+        &:focus-visible,
+        &:focus,
+        &:hover {
+            border-color: var(--accent-hover);
+            color: var(--accent-hover);
+        }
+    }
+
+    &.danger {
+        border-color: var(--danger);
+        color: var(--danger);
+
+        &:focus-visible,
+        &:focus,
+        &:hover {
+            border-color: var(--danger-hover);
+            color: var(--danger-hover);
+        }
+    }
+}
+
+
 /* Container */
 .container {
     padding: 1rem;

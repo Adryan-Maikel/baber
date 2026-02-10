@@ -586,23 +586,25 @@
 
 .story-ring {
   position: relative;
-  /* Remove padding-based background since we use pseudos now */
-  padding: 3px;
+  padding: 2px;
   border-radius: 50%;
   cursor: pointer;
   z-index: 1;
-  /* Ensure container is above pseudos if needed, though pseudos -1 works */
   display: block;
-}
 
-/* Base Ring Visuals (Mobile / Default) */
-.story-ring::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--accent);
-  z-index: -1;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--border);
+    z-index: -1;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  &:hover::before {
+    background: var(--accent);
+  }
 }
 
 .story-ring img {
@@ -616,31 +618,6 @@
   position: relative;
   /* Ensure image is above background pseudos */
   z-index: 2;
-}
-
-/* PC Specific Effect */
-@media (min-width: 768px) {
-  .story-ring::before {
-    opacity: 0.5;
-    transition: all 0.3s ease;
-  }
-
-  .story-ring:hover::before {
-    opacity: 1;
-  }
-
-  /* Remove complex ::after animation */
-  .story-ring::after {
-    display: none;
-  }
-}
-
-.story-ring.seen::before,
-.story-ring.seen::after {
-  background: var(--text-secondary);
-  opacity: 0.2;
-  transition: none;
-  /* Disable effect for seen? Or keep it simple */
 }
 
 /* Improved Card Animation - Bottom Up Growing */

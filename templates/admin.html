@@ -2946,19 +2946,19 @@
           let actionBtn = "";
           if (a.status === "scheduled") {
             actionBtn = `
-      <button class="btn btn-primary" onclick="openFeedbackModal(${a.id})"
+      <button class="btn btn-primary" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
         <i class="fa-solid fa-check"></i> Feedback / Baixa
       </button>`;
           } else if (a.status === "completed") {
             actionBtn = `
-      <button class="btn" onclick="openFeedbackModal(${a.id})"
+      <button class="btn" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--success); color: var(--success);">
         <i class="fa-solid fa-check-double"></i> Ver / Editar ${noteIcon}
       </button>`;
           } else {
             actionBtn = `
-      <button class="btn" onclick="openFeedbackModal(${a.id})"
+      <button class="btn" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
         <i class="fa-solid fa-user-xmark"></i> Ver / Editar ${noteIcon}
       </button>`;
@@ -3077,6 +3077,7 @@
   }
 
   function openFeedbackModal(appointmentId) {
+    console.log(appointmentId);
     document.getElementById("feedback-appointment-id").value = appointmentId; // Keeping ID for submit
 
     // Find data in cache
