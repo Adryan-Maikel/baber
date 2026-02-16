@@ -38,6 +38,10 @@
                         <i class="fa-solid fa-right-to-bracket"></i>
                         <span class="label">Entrar</span>
                     </button>
+                    <button class="dropdown-item" onclick="showAuthStepRegister()">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span class="label">Criar Conta</span>
+                    </button>
                 </div>
 
                 <div id="logged-menu-items" style="display: none;">
@@ -160,18 +164,18 @@
             <!-- Guest booking fields -->
             <div id="guest-booking-section">
                 <div id="guest-fields" class="booking-fields">
-                    <div class="input-group compact">
+                    <div class="input-group">
                         <label for="customer-name">Nome de usuário</label>
                         <input type="text" id="customer-name" placeholder="Seu nome de usuário">
                         <span class="input-error-text" id="customer-name-error"></span>
                     </div>
-                    <div class="input-group compact">
+                    <div class="input-group">
                         <label for="customer-phone">Telefone <span class="optional-label">(opcional)</span></label>
                         <input type="tel" id="customer-phone" placeholder="(11) 99999-1234"
                             oninput="formatPhoneInput(this)">
                         <span class="input-error-text" id="customer-phone-error"></span>
                     </div>
-                    <div class="input-group compact">
+                    <div class="input-group">
                         <label for="customer-password">Senha</label>
                         <input type="password" id="customer-password" placeholder="Mínimo 6 caracteres">
                         <span class="input-error-text" id="customer-password-error"></span>
@@ -195,22 +199,22 @@
             <div id="auth-error" class="auth-error" style="display: none;"></div>
 
             <!-- Username -->
-            <div class="input-group">
+            <div>
                 <label for="auth-username">Username</label>
                 <input type="text" id="auth-username" placeholder="Seu username" autocomplete="username">
                 <span class="input-error-text" id="auth-username-error"></span>
             </div>
 
             <!-- Password -->
-            <div class="input-group">
+            <div>
                 <label for="auth-password">Senha</label>
                 <input type="password" id="auth-password" placeholder="Sua senha" autocomplete="current-password">
                 <span class="input-error-text" id="auth-password-error"></span>
             </div>
 
             <!-- Register checkbox -->
-            <label class="auth-checkbox-label" for="auth-is-register">
-                <input type="checkbox" id="auth-is-register" onchange="toggleRegisterMode(this)" hidden>
+            <label class="flex checkbox-label mb-05" for="auth-is-register" tabindex="0">
+                <input type="checkbox" id="auth-is-register" onchange="toggleRegisterMode(this)">
                 <i class="fa-solid fa-check"></i>
                 <i class="fa-solid fa-xmark"></i>
                 <span>Não tenho uma conta</span>
@@ -218,7 +222,7 @@
 
             <!-- Register fields (hidden by default) -->
             <div id="register-fields" class="register-fields">
-                <div class="input-group">
+                <div>
                     <label for="auth-phone">Telefone <span class="optional-label">(opcional)</span></label>
                     <input type="tel" id="auth-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
                     <span class="input-error-text" id="auth-phone-error"></span>
@@ -226,7 +230,7 @@
             </div>
 
             <!-- Submit button -->
-            <button type="submit" class="btn btn-primary auth-submit-btn" id="auth-submit-btn">
+            <button type="submit" class="btn btn-primary" id="auth-submit-btn">
                 <span id="auth-btn-text">Entrar</span>
                 <i class="fa-solid fa-spinner fa-spin-pulse" id="auth-btn-spinner" style="display: none;"></i>
             </button>
@@ -241,7 +245,6 @@
             <div class="step-header-right">
                 <!-- Quick date buttons -->
                 <button type="button" class="quick-date-btn" onclick="filterHistoryToday()">Hoje</button>
-                <button type="button" class="quick-date-btn" onclick="filterHistoryTomorrow()">Amanhã</button>
 
                 <!-- History Calendar Dropdown -->
                 <div class="calendar-dropdown" id="history-calendar-dropdown">
@@ -304,27 +307,27 @@
 <!-- Story Viewer Modal -->
 <div id="story-viewer-modal">
     <div class="story-progress-container" id="story-progress-bars"></div>
-    <div class="story-header">
-        <div class="barber-avatar" style="width: 32px; height: 32px;">
-            <img id="story-barber-avatar" src=""
-                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+    <div class="story-header flex justify-between">
+        <div class="absolute row center gap-05">
+            <div class="barber-avatar" style="width: 44px; height: 44px;">
+                <img id="story-barber-avatar" src=""
+                    style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            </div>
+            <span id="story-barber-name" style="font-weight: bold;"></span>
+            <span id="story-time" style="opacity: 0.7; font-size: 0.8rem;"></span>
         </div>
-        <span id="story-barber-name" style="font-weight: bold;"></span>
-        <span id="story-time" style="opacity: 0.7; font-size: 0.8rem;"></span>
-        <button id="story-pause-btn" onclick="toggleStoryPause()"
-            style="background: transparent; border: none; color: white; margin-left: 10px; cursor: pointer; font-size: 1rem;">
-            <i class="fa-solid fa-pause"></i>
+        <button class="icon-btn" onclick="closeStoryViewer()">
+            <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
-    <button class="story-close" onclick="closeStoryViewer()"><i class="fa-solid fa-xmark"></i></button>
 
     <div id="story-content">
-        <button class="story-nav left" onclick="prevStory()"></button>
-        <div id="story-media-container" onclick="toggleStoryPause()"
+        <button class="story-nav left" id="story-nav-left"></button>
+        <div id="story-media-container"
             style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
             <!-- Media injected here -->
         </div>
-        <button class="story-nav right" onclick="nextStory()"></button>
+        <button class="story-nav right" id="story-nav-right"></button>
 
         <!-- Story Footer Interaction -->
         <div class="story-footer-interaction">

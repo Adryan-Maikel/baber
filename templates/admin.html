@@ -718,21 +718,28 @@
 
     <ul class="sidebar-menu">
       <li id="menu-dashboard">
-        <a href="#" class="active" onclick="showSection('dashboard'); closeMobileSidebar();"><i
-            class="fa-solid fa-chart-line"></i>
-          <span>Dashboard</span></a>
+        <a class="active" onclick="showSection('dashboard'); closeMobileSidebar();">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
       </li>
       <li id="menu-appointments">
-        <a href="#" onclick="showSection('appointments'); closeMobileSidebar();"><i
-            class="fa-solid fa-calendar-check"></i> <span>Agendamentos</span></a>
+        <a onclick="showSection('appointments'); closeMobileSidebar();">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Agendamentos</span>
+        </a>
       </li>
       <li id="menu-barbers">
-        <a href="#" onclick="showSection('barbers'); closeMobileSidebar();"><i class="fa-solid fa-scissors"></i>
-          <span>Profissionais</span></a>
+        <a onclick="showSection('barbers'); closeMobileSidebar();">
+          <i class="fa-solid fa-scissors"></i>
+          <span>Profissionais</span>
+        </a>
       </li>
       <li id="menu-settings">
-        <a href="#" onclick="showSection('settings'); closeMobileSidebar();"><i class="fa-solid fa-cog"></i>
-          <span>Configurações</span></a>
+        <a onclick="showSection('settings'); closeMobileSidebar();">
+          <i class="fa-solid fa-cog"></i>
+          <span>Configurações</span>
+        </a>
       </li>
     </ul>
 
@@ -771,7 +778,6 @@
         </p>
       </div>
 
-      <!-- Dashboard Filters -->
       <!-- Dashboard Filters -->
       <div class="filter-bar">
         <div class="custom-multiselect" id="dashboard-barber-multiselect">
@@ -1974,22 +1980,17 @@
 
     <!-- Body (Expanded View - Edit Form) -->
     <div class="card-dropdown-body">
-      <form onsubmit="saveBarber(event, '${b.id
-              }')" class="card-dropdown-form">
+      <form onsubmit="saveBarber(event, '${b.id}')" class="card-dropdown-form">
 
         <div class="card-dropdown-scroll-container">
           <!-- Row 1: Profile & Info -->
-          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
 
             <!-- Avatar Column -->
-            <div style="width: 140px;heigth: 140px">
-              <div class="avatar-upload-trigger" onclick="triggerAvatarUpload('${b.id
-              }')" style="width: 140px; height: 140px;">
+            <div class="column gap-05" style="width: 180px">
+              <div class="avatar-upload-trigger" onclick="triggerAvatarUpload('${b.id}')" style="width: 180px; height: 180px;">
                 ${b.avatar_url
-                ? `<img src="${b.avatar_url
-                }" alt="${escapeHtml(
-                  b.name
-                )}">`
+                ? `<img src="${b.avatar_url}" alt="${escapeHtml(b.name)}">`
                 : `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>`
               }
                 <div class="overlay">
@@ -1997,10 +1998,28 @@
                 </div>
               </div>
               <button type="button" class="btn btn-sm btn-danger remove-avatar-btn ${b.avatar_url ? " fade-in" : ""}"
-                onclick="removeAvatar('${b.id
-              }')" style="${b.avatar_url ? "" : " display: none;"}">
+                  onclick="removeAvatar('${b.id}')"
+                  style="${b.avatar_url ? "" : " display: none;"}">
                 <i class="fa-solid fa-trash"></i>
               </button>
+
+              <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
+                <i class="fa-solid fa-clock"></i> Jornada de Trabalho*
+              </h4>
+              <div class="row gap-05">
+                ${createTimeInput({ name: "start_time", id: `start_time_${b.id}`, value: b.start_time, required: true })}
+                <span style="color: var(--text-secondary);">até</span>
+                ${createTimeInput({ name: "end_time", id: `end_time_${b.id}`, value: b.end_time, required: true })}
+              </div>
+
+              <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
+                <i class="fa-solid fa-clock"></i> Intervalo
+              </h4>
+              <div class="row gap-05">
+                ${createTimeInput({ name: "start_interval", id: `start_interval_${b.id}`, value: b.start_interval || "" })}
+                <span style="color: var(--text-secondary);">até</span>
+                ${createTimeInput({ name: "end_interval", id: `end_interval_${b.id}`, value: b.end_interval || "" })}
+              </div>
             </div>
 
             <!-- Right Column: Info + Schedule -->
@@ -2011,86 +2030,31 @@
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
                 <div class="settings-form-group">
                   <label>Nome</label>
-                  <input type="text" name="name" value="${escapeHtml(
-                b.name
-              )}" required>
+                  <input type="text" name="name" value="${escapeHtml(b.name)}" required>
                 </div>
                 <div class="settings-form-group">
                   <label>Telefone</label>
-                  <input type="tel" name="phone" value="${formatPhone(b.phone) || ""
-              }" oninput="formatPhoneInput(this)">
+                  <input type="tel" name="phone" value="${formatPhone(b.phone) || ""}" oninput="formatPhoneInput(this)">
                 </div>
                 <div class="settings-form-group">
                   <label>Usuário (Login)</label>
-                  <input type="text" name="username" value="${escapeHtml(
-                b.username || ""
-              )}" placeholder="Opcional">
+                  <input type="text" name="username" value="${escapeHtml(b.username || "")}" placeholder="Opcional">
                 </div>
                 <div class="settings-form-group">
                   <label>Instagram (@)</label>
-                  <input type="text" name="instagram" value="${escapeHtml(
-                b.instagram || ""
-              )}" placeholder="sem o @">
+                  <input type="text" name="instagram" value="${escapeHtml(b.instagram || "")}" placeholder="sem o @">
                 </div>
                 <div class="settings-form-group">
                   <label>Twitter (@)</label>
-                  <input type="text" name="twitter" value="${escapeHtml(
-                b.twitter || ""
-              )}" placeholder="sem o @">
+                  <input type="text" name="twitter" value="${escapeHtml(b.twitter || "")}" placeholder="sem o @">
                 </div>
                 <div class="settings-form-group">
                   <label>Email</label>
-                  <input type="email" name="email" value="${escapeHtml(
-                b.email || ""
-              )}" placeholder="email@exemplo.com">
+                  <input type="email" name="email" value="${escapeHtml(b.email || "")}" placeholder="email@exemplo.com">
                 </div>
                 <div class="settings-form-group">
                   <label>Nova Senha</label>
                   <input type="password" name="password" placeholder="Deixe em branco para manter">
-                </div>
-              </div>
-
-              <!-- Schedule Section (Merged) -->
-              <div class="column">
-                <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                  <i class="fa-solid fa-clock"></i> Jornada de Trabalho
-                </h4>
-                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
-                  <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
-                    ${createTimeInput({
-                name: "start_time",
-                id: `start_time_${b.id}`,
-                value: b.start_time,
-                required: true,
-              })}
-                    <span style="color: var(--text-secondary);">até</span>
-                    ${createTimeInput({
-                name: "end_time",
-                id: `end_time_${b.id}`,
-                value: b.end_time,
-                required: true,
-              })}
-                  </div>
-
-                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
-
-                  <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
-                    ${createTimeInput({
-                name: "start_interval",
-                id: `start_interval_${b.id}`,
-                value:
-                  b.start_interval || "",
-              })}
-                    <span style="color: var(--text-secondary);">até</span>
-                    ${createTimeInput({
-                name: "end_interval",
-                id: `end_interval_${b.id}`,
-                value:
-                  b.end_interval || "",
-              })}
-                  </div>
                 </div>
               </div>
             </div>
@@ -3077,7 +3041,6 @@
   }
 
   function openFeedbackModal(appointmentId) {
-    console.log(appointmentId);
     document.getElementById("feedback-appointment-id").value = appointmentId; // Keeping ID for submit
 
     // Find data in cache

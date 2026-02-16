@@ -143,6 +143,22 @@ body {
     margin-bottom: 5rem;
 }
 
+.absolute {
+    position: absolute;
+}
+
+.relative {
+    position: relative;
+}
+
+.flex {
+    display: flex;
+
+    &.justify-between {
+        justify-content: space-between;
+    }
+}
+
 .row {
     display: flex;
     flex-wrap: wrap;
@@ -168,10 +184,6 @@ body {
     padding: 1rem;
 }
 
-.mx-05 {
-    margin: 0 .5rem;
-}
-
 .my-05 {
     margin: .5rem 0;
 }
@@ -180,33 +192,11 @@ body {
     gap: .5rem
 }
 
-.gap-1 {
-    gap: 1rem
-}
-
-.gap-2 {
-    gap: 2rem
-}
-
 /* Layout Utilities */
 .row-start {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-}
-
-.row-between {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.row-center {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
 }
 
 .gap-5px {
@@ -219,10 +209,6 @@ body {
 
 .gap-lg {
     gap: 1rem;
-}
-
-.gap-xl {
-    gap: 1.5rem;
 }
 
 /* Form Groups - Standardized */
@@ -551,7 +537,7 @@ body {
     border: none;
     background: transparent;
     /* Ghost */
-    color: var(--text-primary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -559,6 +545,7 @@ body {
     transition: all 0.2s ease;
     font-size: 1.25rem;
     box-shadow: none;
+    scale: 1;
 
     &:focus,
     &:focus-visible {
@@ -568,11 +555,12 @@ body {
     &:focus,
     &:focus-visible,
     &:hover {
-        transform: scale(1.10);
+        color: var(--text-primary);
+        scale: 1.1;
     }
 
     &:active {
-        transform: scale(0.90);
+        scale: 0.9;
     }
 }
 
@@ -630,7 +618,6 @@ input:focus,
 select:focus,
 textarea:focus {
     border-color: var(--accent);
-    transform: translateY(-2px);
 }
 
 label {
@@ -667,12 +654,7 @@ label {
     width: 100%;
 }
 
-.login-header {
-    text-align: center;
-}
-
-.frufru,
-.login-header h1 {
+.frufru {
     font-size: 2rem;
     background: var(--accent);
     -webkit-background-clip: text;
@@ -730,11 +712,7 @@ input:-webkit-autofill:focus {
 }
 
 /* Social Media Buttons */
-.social-links {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
+
 
 .social-btn {
     width: 36px !important;
@@ -970,7 +948,6 @@ input:-webkit-autofill:focus {
 }
 
 .quick-date-btn:hover {
-    background: var(--accent-light);
     border-color: var(--accent);
     color: var(--accent);
     transform: translateY(-1px);
@@ -979,6 +956,7 @@ input:-webkit-autofill:focus {
 .quick-date-btn.active {
     background: var(--accent);
     border-color: var(--accent);
+    transform: translateY(1px);
     color: white;
 }
 

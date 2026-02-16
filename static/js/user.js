@@ -10,6 +10,12 @@ const CUSTOMER_TOKEN_KEY = 'customer_token';
 let phoneCheckTimeout = null;
 let phoneExists = false;
 
+function deleteCustomerToken() {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    currentCustomer = null;
+    updateCustomerUI();
+}
+
 function getCustomerToken() {
     return localStorage.getItem(CUSTOMER_TOKEN_KEY);
 }
@@ -19,8 +25,7 @@ function isCustomerLoggedIn() {
 }
 
 function logoutCustomer() {
-    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
-    currentCustomer = null;
+    deleteCustomerToken();
 
     // Reset booking state
     selectedBarber = null;
@@ -184,6 +189,15 @@ function showAuthStep() {
     closeUserMenu();
 }
 
+function showAuthStepRegister() {
+    showAuthStep();
+    const checkbox = document.getElementById('auth-is-register');
+    if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        toggleRegisterMode(checkbox);
+    }
+}
+
 function hideAuthStep() {
     const authStep = document.getElementById('step-auth');
     if (authStep) authStep.style.display = 'none';
@@ -271,6 +285,15 @@ function validateAuthForm(isRegister) {
         isValid = false;
     }
 
+    // Phone validation (only when registering and phone is filled)
+    if (isRegister) {
+        const phoneRaw = document.getElementById('auth-phone').value.replace(/\D/g, '');
+        if (phoneRaw.length > 0 && (phoneRaw.length < 10 || phoneRaw.length > 11)) {
+            showFieldError('auth-phone', 'Telefone inválido');
+            isValid = false;
+        }
+    }
+
     return isValid;
 }
 
@@ -326,6 +349,7 @@ async function handleAuthSubmit(e) {
 
         hideAuthStep();
         updateCustomerUI();
+        goToStep(1)
 
     } catch (e) {
         showAuthError('Erro de conexão. Tente novamente.');
@@ -346,7 +370,10 @@ async function loadCustomerProfile() {
             currentCustomer = await res.json();
             updateCustomerUI();
         }
-    } catch (e) { }
+    } catch (e) {
+        console.error(e);
+        logoutCustomer();
+    }
 }
 
 let previousHistoryStep = null;
@@ -961,20 +988,6 @@ function filterHistoryToday() {
     filterHistory();
 }
 
-function filterHistoryTomorrow() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = getFormattedDate(tomorrow);
-
-    historyCalendarMonth = tomorrow.getMonth();
-    historyCalendarYear = tomorrow.getFullYear();
-    historySelectedDate = dateStr;
-
-    document.getElementById('history-date-filter').value = dateStr;
-    renderHistoryCalendar();
-    filterHistory();
-}
-
 function clearHistoryFilter() {
     historySelectedDate = null;
     document.getElementById('history-date-filter').value = '';
@@ -1344,7 +1357,6 @@ function openStoryViewer(barberId) {
     currentStoryBarberId = barberId;
     currentStoryIndex = 0;
     isStoryPaused = false;
-    updatePauseButtonIcon();
 
     const group = storiesData[barberId];
 
@@ -1368,55 +1380,115 @@ function closeStoryViewer() {
     fetchStories();
 }
 
-function toggleStoryPause() {
-    const btn = document.getElementById('story-pause-btn');
+function pauseStory() {
+    if (isStoryPaused) return;
+    isStoryPaused = true;
+
     const video = document.querySelector('#story-content video');
     const progressBar = document.querySelectorAll('.story-progress-fill')[currentStoryIndex];
 
-    if (isStoryPaused) {
-        // RESUME
-        isStoryPaused = false;
-        if (video) {
-            video.play();
-        } else {
-            // Resume image timer
-            storyStartTime = Date.now();
-            storyTimer = setTimeout(nextStory, storyRemainingTime);
-
-            // Resume animation
-            if (progressBar) {
-                progressBar.style.transition = `width ${storyRemainingTime}ms linear`;
-                progressBar.style.width = '100%';
-            }
-        }
+    if (video) {
+        video.pause();
     } else {
-        // PAUSE
-        isStoryPaused = true;
-        if (video) {
-            video.pause();
-        } else {
-            // Pause image timer
-            clearTimeout(storyTimer);
-            const elapsed = Date.now() - storyStartTime;
-            storyRemainingTime = Math.max(0, storyRemainingTime - elapsed);
+        clearTimeout(storyTimer);
+        const elapsed = Date.now() - storyStartTime;
+        storyRemainingTime = Math.max(0, storyRemainingTime - elapsed);
 
-            // Pause animation
-            if (progressBar) {
-                const computedStyle = window.getComputedStyle(progressBar);
-                const width = computedStyle.getPropertyValue('width');
-                progressBar.style.transition = 'none';
-                progressBar.style.width = width;
-            }
+        if (progressBar) {
+            const computedStyle = window.getComputedStyle(progressBar);
+            const width = computedStyle.getPropertyValue('width');
+            progressBar.style.transition = 'none';
+            progressBar.style.width = width;
         }
     }
-    updatePauseButtonIcon();
 }
 
-function updatePauseButtonIcon() {
-    const btnIcon = document.querySelector('#story-pause-btn i');
-    if (btnIcon) {
-        btnIcon.className = isStoryPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+function resumeStory() {
+    if (!isStoryPaused) return;
+    isStoryPaused = false;
+
+    const video = document.querySelector('#story-content video');
+    const progressBar = document.querySelectorAll('.story-progress-fill')[currentStoryIndex];
+
+    if (video) {
+        video.play();
+    } else {
+        storyStartTime = Date.now();
+        storyTimer = setTimeout(nextStory, storyRemainingTime);
+
+        if (progressBar) {
+            progressBar.style.transition = `width ${storyRemainingTime}ms linear`;
+            progressBar.style.width = '100%';
+        }
     }
+}
+
+// Hold-to-pause event listeners (Instagram/WhatsApp style)
+const HOLD_THRESHOLD = 200; // ms — longer than this = hold (pause), shorter = tap (navigate)
+
+function setupStoryHoldEvents() {
+    const mediaContainer = document.getElementById('story-media-container');
+    const navLeft = document.getElementById('story-nav-left');
+    const navRight = document.getElementById('story-nav-right');
+
+    // Helper: attach hold-to-pause + tap-action to an element
+    function attachHoldBehavior(el, tapAction) {
+        let holdTimer = null;
+        let isHolding = false;
+
+        function onDown(e) {
+            // Don't interfere with reaction buttons or footer
+            if (e.target.closest('.story-footer-interaction') || e.target.closest('.story-feedback-overlay')) return;
+            isHolding = false;
+            holdTimer = setTimeout(() => {
+                isHolding = true;
+                pauseStory();
+            }, HOLD_THRESHOLD);
+        }
+
+        function onUp(e) {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (isHolding) {
+                // Was a hold — resume on release
+                isHolding = false;
+                resumeStory();
+            } else if (tapAction) {
+                // Was a quick tap — execute tap action
+                tapAction();
+            }
+        }
+
+        function onCancel() {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (isHolding) {
+                isHolding = false;
+                resumeStory();
+            }
+        }
+
+        // Mouse events
+        el.addEventListener('mousedown', onDown);
+        el.addEventListener('mouseup', onUp);
+        el.addEventListener('mouseleave', onCancel);
+
+        // Touch events
+        el.addEventListener('touchstart', onDown, { passive: true });
+        el.addEventListener('touchend', onUp);
+        el.addEventListener('touchcancel', onCancel);
+    }
+
+    // Media container: hold = pause, tap = nothing (no navigation)
+    if (mediaContainer) attachHoldBehavior(mediaContainer, null);
+
+    // Nav buttons: hold = pause, tap = navigate
+    if (navLeft) attachHoldBehavior(navLeft, prevStory);
+    if (navRight) attachHoldBehavior(navRight, nextStory);
 }
 
 function showStory(index) {
@@ -1434,7 +1506,6 @@ function showStory(index) {
 
     currentStoryIndex = index;
     isStoryPaused = false;
-    updatePauseButtonIcon();
 
     const story = stories[index];
     const container = document.getElementById('story-media-container');
@@ -2146,6 +2217,15 @@ async function confirmBooking() {
             hasError = true;
         }
 
+        // Phone validation
+        if (phone) {
+            const phoneDigits = phone.replace(/\D/g, '');
+            if (phoneDigits.length > 0 && (phoneDigits.length < 10 || phoneDigits.length > 11)) {
+                showBookingFieldError('customer-phone', 'Numero invalido');
+                hasError = true;
+            }
+        }
+
         if (hasError) return;
 
         // Try to register the user
@@ -2529,4 +2609,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize custom calendar
     initializeCalendar();
+
+    // Setup story hold-to-pause events
+    setupStoryHoldEvents();
 });

@@ -14,7 +14,7 @@
 .slot-btn,
 .btn {
   position: relative;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--card-bg);
   cursor: pointer;
@@ -36,7 +36,7 @@
 .service-card:active,
 .slot-btn:active,
 .btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(1px) scale(0.98);
   transition: transform 0.05s;
 }
 
@@ -74,18 +74,6 @@
   display: none;
 }
 
-/* If we want to keep the logo but minimal */
-/*
-.brand-logo-container {
-    width: 40px;
-    height: 40px;
-    background: none;
-    box-shadow: none;
-    border-radius: 0;
-    margin-bottom: 0.25rem;
-}
-*/
-
 .brand-text h1 {
   font-size: 1.1rem;
   font-weight: 600;
@@ -104,12 +92,8 @@
   font-weight: 400;
 }
 
-#global-back-btn {
+#global-back-btn:not(.show) {
   scale: 0;
-
-  &.show {
-    scale: 1;
-  }
 }
 
 .dropdown-menu {
@@ -121,6 +105,7 @@
   right: 0;
   display: block;
   background: var(--bg-secondary);
+  border: 1px solid var(--border);
   z-index: 100;
   overflow: visible;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -133,6 +118,7 @@
     opacity: 1;
   }
 
+  &::after,
   &::before {
     content: "";
     width: 0;
@@ -145,25 +131,21 @@
     transform-origin: top right;
 
     &::before {
+      top: -8px;
+      right: 14px;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid var(--border);
+    }
+
+    &::after {
       top: -7px;
       right: 14px;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
       border-bottom: 8px solid var(--bg-secondary);
     }
-  }
 
-  &#date-picker-dropdown {
-    transform-origin: right;
-    right: 50px;
-
-    &::before {
-      top: 50%;
-      right: -8px;
-      border-bottom: 8px solid transparent;
-      border-top: 8px solid transparent;
-      border-left: 8px solid var(--bg-secondary);
-    }
   }
 }
 
@@ -480,19 +462,6 @@
     gap: 0.75rem;
   }
 
-  .header-brand h1 {
-    font-size: 1.15rem;
-  }
-
-  .header-brand p {
-    font-size: 0.8rem;
-  }
-
-  .barber-avatar {
-    width: 50px;
-    height: 50px;
-  }
-
   /* Service Cards - 2 columns on mobile */
   #user-services-list {
     grid-template-columns: repeat(2, 1fr) !important;
@@ -513,11 +482,6 @@
   .barber-avatar {
     width: 45px;
     height: 45px;
-  }
-
-  /* Service Cards - 1 column on very small screens */
-  #user-services-list {
-    grid-template-columns: 1fr !important;
   }
 
   .step h2 {
@@ -754,19 +718,25 @@
   transform: scale(1.1);
 }
 
+.story-header,
 .story-progress-container {
   position: absolute;
-  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   width: 95%;
-  /* Safe margin on mobile */
   max-width: 600px;
-  /* Limit width on desktop */
-  padding: 0;
+  z-index: 2001;
+}
+
+.story-header {
+  top: 35px;
+  display: flex;
+}
+
+.story-progress-container {
+  top: 20px;
   display: flex;
   gap: 4px;
-  z-index: 2001;
 }
 
 .story-progress-bar {
@@ -782,7 +752,7 @@
 
 .story-progress-fill {
   height: 100%;
-  background: #fff;
+  background: var(--text-secondary);
   width: 0%;
   transition: width 0.1s linear;
   border-radius: 4px;
@@ -807,62 +777,22 @@
   border: none;
   cursor: pointer;
   outline: none;
+
+  &.right {
+    right: 0;
+  }
+
+  &.left {
+    left: 0;
+  }
 }
 
-.story-nav.right {
-  right: 0;
-}
-
-.story-nav.left {
-  left: 0;
-}
-
-.story-header {
+/* .story-header {
   position: absolute;
   top: 35px;
-  left: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  padding: 0 15px;
   z-index: 2002;
-  color: #fff;
-}
-
-.story-close {
-  position: absolute;
-  top: 35px;
-  right: 15px;
-  color: #fff;
-  font-size: 1.5rem;
-  cursor: pointer;
-  z-index: 2002;
-  background: none;
-  border: none;
-  transition: all 0.2s ease;
-}
-
-.story-close:hover {
-  color: var(--danger, red);
-  transform: scale(1.3);
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-}
-
-.modal-close-icon {
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0.5rem;
-  border-radius: 50%;
-}
-
-.modal-close-icon:hover {
-  color: var(--danger, red);
-  transform: scale(1.2);
-  /* background and rotation removed */
-}
+} */
 
 /* Privacy Toggle Animation */
 .privacy-toggle-wrapper {
@@ -919,10 +849,6 @@
 .privacy-checkbox:checked+.privacy-label .privacy-text {
   color: var(--success);
 }
-
-/* =========================================
-   STORY INTERACTIONS
-   ========================================= */
 
 /* =========================================
    STORY INTERACTIONS
@@ -1648,33 +1574,31 @@
   font-size: 0.75rem;
 }
 
-.auth-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+
+.checkbox-label {
+  position: relative;
   cursor: pointer;
   user-select: none;
   color: var(--text-primary);
   font-size: 0.9rem;
-  margin-bottom: .5rem;
-}
+  transform-origin: left;
+  transition: all 0.2s cubic-bezier(0.86, 0, 1, 1);
 
-.auth-checkbox-label input[type="checkbox"] {
-  display: none;
-}
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    scale: 1.02;
+    outline: none;
+  }
 
-.auth-checkbox-label {
-  position: relative;
+  & input {
+    display: none;
+  }
 
   & i {
-    transition: all 0.2s cubic-bezier(0.86, 0, 1, 1);
-    scale: 0;
     position: absolute;
     width: 22px;
     height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   & input~.fa-check,
@@ -1696,19 +1620,18 @@
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s ease,
-    margin 0.3s ease;
   margin-top: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: .5rem;
+  }
 }
 
-.register-fields.show {
-  max-height: 200px;
-  opacity: 1;
-  margin-top: 1rem;
-}
 
-.auth-submit-btn:disabled {
+#auth-submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
