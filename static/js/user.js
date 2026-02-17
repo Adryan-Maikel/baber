@@ -369,11 +369,11 @@ async function loadCustomerProfile() {
         if (res.ok) {
             currentCustomer = await res.json();
             updateCustomerUI();
+        } else {
+            // Token inválido/expirado — limpar e resetar UI
+            deleteCustomerToken();
         }
-    } catch (e) {
-        console.error(e);
-        logoutCustomer();
-    }
+    } catch (e) { }
 }
 
 let previousHistoryStep = null;
@@ -1086,13 +1086,13 @@ function openFeedbackModal(apptId, existingRating, existingNotes, isPublic = tru
                             onclick="openSingleStoryViewer('${mediaUrl}', '${mediaType}', '${barberName}', '${startTime}', '${barberAvatar}')" title="Tela Cheia">
                         <i class="fa-solid fa-expand"></i>
                     </button>
-                    <div class="privacy-toggle-wrapper" onclick="document.getElementById('feedback-public').click()" style="margin-bottom: 0;">
+                    <label for="feedback-public" class="privacy-toggle-wrapper" style="margin-bottom: 0;">
                          <input type="checkbox" id="feedback-public" class="privacy-checkbox" onchange="updatePrivacyEmote()">
                          <div class="privacy-label">
                              <i id="privacy-emote-display" class="privacy-emote fa-solid fa-earth-americas"></i>
                              <span id="privacy-text-display" class="privacy-text"></span>
                          </div>
-                    </div>
+                    </label>
                 </div>
             </fieldset>
         `;
@@ -1974,19 +1974,31 @@ function goToStep(step) {
 }
 
 function goBack() {
+    const backBtn = document.getElementById('global-back-btn');
+
     // Check if we're on auth step
     const authStep = document.getElementById('step-auth');
     if (authStep && authStep.style.display !== 'none') {
         hideAuthStep();
-        document.getElementById(previousStep).style.display = 'block';
+        if (previousStep) {
+            document.getElementById(previousStep).style.display = 'block';
+            // Se voltou para step-1, esconde o botão de voltar
+            if (previousStep === 'step-1' && backBtn) backBtn.classList.remove('show');
+        }
         return;
     }
 
     // Check if we're on history step
     const historyStep = document.getElementById('step-history');
     if (historyStep && historyStep.style.display !== 'none') {
-        const historyStep = document.getElementById('step-history');
-        if (historyStep) historyStep.style.display = 'none';
+        historyStep.style.display = 'none';
+        if (previousHistoryStep) {
+            document.getElementById(previousHistoryStep).style.display = 'block';
+            if (previousHistoryStep === 'step-1' && backBtn) backBtn.classList.remove('show');
+        } else {
+            goToStep(1);
+        }
+        return;
     }
 
     // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection

@@ -4,111 +4,108 @@
 
 /* Theme System - Dark and Light Palettes */
 body[data-theme="dark"] {
-    /* Backgrounds: Deep Black/Gray */
-    --bg-color: #050505;
-    --bg-secondary: #0a0a0a;
-    --card-bg: #141414;
-    --card-hover: #1f1f1f;
+    /* Backgrounds: Deep Warm Black */
+    --bg-color: #0A0806;
+    --bg-secondary: #110E0A;
+    --card-bg: #1A1410;
+    --card-hover: #241C16;
 
-    /* Text: High Contrast White */
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
+    /* Text: Warm Cream */
+    --text-primary: #F5E6D3;
+    --text-secondary: #B8A898;
 
-    /* Accents: Classic Barbershop Blue & Red */
-    --accent: #2563eb;
-    /* Royal Blue */
-    --accent-hover: #1d4ed8;
-    --accent-light: rgba(37, 99, 235, 0.15);
+    /* Accents: Copper / Burnt Orange */
+    --accent: #bd4d1b;
+    --accent-hover: #b8430d;
+    --accent-light: rgba(212, 148, 94, 0.15);
 
-    --danger: #dc2626;
-    /* Classic Red */
-    --danger-hover: #b91c1c;
+    --danger: #C44B4B;
+    --danger-hover: #A63A3A;
 
-    --success: #16a34a;
-    --success-hover: #15803d;
+    --success: #5A9A6B;
+    --success-hover: #4A8259;
 
-    --border: #262626;
+    --border: #2E2218;
     --shadow: rgba(0, 0, 0, 0.7);
     --shadow-rgb: 0, 0, 0;
 
     /* RGB helpers for opacity */
-    --accent-rgb: 37, 99, 235;
-    --danger-rgb: 220, 38, 38;
+    --accent-rgb: 212, 148, 94;
+    --danger-rgb: 196, 75, 75;
 
     /* Specific UI Colors */
-    --star-color: #fbbf24;
+    --star-color: #E8B84B;
 
     /* Glassmorphism */
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(245, 230, 211, 0.04);
+    --glass-border: rgba(245, 230, 211, 0.08);
 
     --font-main: 'Outfit', sans-serif;
 }
 
 body[data-theme="light"] {
-    --bg-color: #ffffff;
-    --bg-secondary: #f1f1f1;
-    --card-bg: #f2f2f2;
-    --card-hover: #f1f5f9;
+    --bg-color: #FDF8F3;
+    --bg-secondary: #F5EDE4;
+    --card-bg: #FFFAF5;
+    --card-hover: #F0E6DA;
 
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
+    --text-primary: #1A1410;
+    --text-secondary: #7A6B5D;
 
-    --accent: #2563eb;
-    /* Same Blue */
-    --accent-hover: #1d4ed8;
-    --accent-light: rgba(37, 99, 235, 0.1);
+    --accent: #bd4d1b;
+    --accent-hover: #b8430d;
+    --accent-light: rgba(193, 127, 78, 0.1);
 
-    --danger: #dc2626;
-    --danger-hover: #b91c1c;
+    --danger: #C44B4B;
+    --danger-hover: #A63A3A;
 
-    --success: #16a34a;
-    --success-hover: #15803d;
+    --success: #5A9A6B;
+    --success-hover: #4A8259;
 
-    --border: #e2e8f0;
-    --shadow: rgba(0, 0, 0, 0.1);
-    --shadow-rgb: 0, 0, 0;
+    --border: #E0D3C5;
+    --shadow: rgba(26, 20, 16, 0.08);
+    --shadow-rgb: 26, 20, 16;
 
     /* RGB helpers for opacity */
-    --accent-rgb: 37, 99, 235;
-    --danger-rgb: 220, 38, 38;
+    --accent-rgb: 193, 127, 78;
+    --danger-rgb: 196, 75, 75;
 
     /* Specific UI Colors */
-    --star-color: #fbbf24;
+    --star-color: #D4A03C;
     --whatsapp-hover: #128C7E;
 
     /* Glassmorphism */
-    --glass-bg: rgba(0, 0, 0, 0.05);
-    --glass-border: rgba(0, 0, 0, 0.1);
+    --glass-bg: rgba(26, 20, 16, 0.04);
+    --glass-border: rgba(26, 20, 16, 0.08);
 
     --font-main: 'Outfit', sans-serif;
 }
 
 /* Default theme variables (Maps to Dark Theme) */
 body {
-    --bg-color: #050505;
-    --bg-secondary: #0a0a0a;
-    --card-bg: #141414;
-    --card-hover: #1f1f1f;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
-    --accent-light: rgba(37, 99, 235, 0.15);
-    --danger: #dc2626;
-    --danger-hover: #b91c1c;
-    --success: #16a34a;
-    --success-hover: #15803d;
-    --border: #262626;
+    --bg-color: #0A0806;
+    --bg-secondary: #110E0A;
+    --card-bg: #1A1410;
+    --card-hover: #241C16;
+    --text-primary: #F5E6D3;
+    --text-secondary: #B8A898;
+    --accent: #bd4d1b;
+    --accent-hover: #b8430d;
+    --accent-light: rgba(212, 148, 94, 0.15);
+    --danger: #C44B4B;
+    --danger-hover: #A63A3A;
+    --success: #5A9A6B;
+    --success-hover: #4A8259;
+    --border: #2E2218;
     --shadow: rgba(0, 0, 0, 0.7);
     --shadow-rgb: 0, 0, 0;
-    --accent-rgb: 37, 99, 235;
-    --danger-rgb: 220, 38, 38;
-    --star-color: #fbbf24;
+    --accent-rgb: 212, 148, 94;
+    --danger-rgb: 196, 75, 75;
+    --star-color: #E8B84B;
     --whatsapp-color: #25D366;
     --whatsapp-hover: #128C7E;
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(245, 230, 211, 0.04);
+    --glass-border: rgba(245, 230, 211, 0.08);
 
     --font-main: 'Outfit', sans-serif;
 
@@ -139,6 +136,10 @@ body {
     min-height: 100vh;
 }
 
+.mb-05 {
+    margin-bottom: .5rem;
+}
+
 .mb-5 {
     margin-bottom: 5rem;
 }
@@ -151,12 +152,10 @@ body {
     position: relative;
 }
 
-.flex {
-    display: flex;
 
-    &.justify-between {
-        justify-content: space-between;
-    }
+.justify-between {
+    display: flex;
+    justify-content: space-between;
 }
 
 .row {
