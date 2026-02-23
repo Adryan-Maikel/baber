@@ -19,48 +19,52 @@
   background: var(--card-bg);
   cursor: pointer;
   transform: translateY(0);
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+
+  &:active {
+    transform: translateY(1px) scale(0.98);
+    transition: transform 0.05s;
+  }
+
+  &.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
 }
 
-/* Hover - Levitate */
-.barber-card:hover,
-.service-card:hover,
-.slot-btn:hover,
-.btn:hover {
-  transform: translateY(-3px);
-  /* Deep float shadow */
-  border-color: var(--accent);
+/* Slot Button Responsive */
+.slot-btn {
+  padding: 0.75rem 0.5rem;
+  width: 100px;
+  font-size: 16px;
+  text-align: center;
+  font-weight: 600;
 }
 
-/* Active - Press Effect */
-.barber-card:active,
-.service-card:active,
-.slot-btn:active,
-.btn:active {
-  transform: translateY(1px) scale(0.98);
-  transition: transform 0.05s;
+/* Time slots */
+.slot-btn {
+  /* background-color: var(--card-bg); */
+  /* border: 1px solid var(--accent); */
+  color: var(--text-primary);
+  /* padding: 0.5rem; */
+  /* border-radius: 0.5rem; */
+  /* cursor: pointer; */
+  /* transition: all 0.2s; */
 }
 
-/* Selection State */
-.service-card.selected,
-.slot-btn.selected-slot {
-  border-color: var(--accent);
-  background: var(--accent-light);
-}
-
-/* User menu dropdown */
-/* Main Header Layout - Minimalist & Clean */
 .main-header {
   display: flex;
-  /* Back to flex for better control of center */
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 1rem;
   margin-bottom: 2rem;
   background: transparent;
-  /* Ensure transparent */
 }
 
-/* Central Brand Section */
 .header-brand {
   display: flex;
   flex-direction: column;
@@ -97,21 +101,22 @@
 }
 
 .dropdown-menu {
-  min-width: 150px;
-  width: fit-content;
-  padding: 0.5rem;
-  border-radius: 16px;
   position: absolute;
   right: 0;
-  display: block;
+  border-radius: 11px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  z-index: 100;
-  overflow: visible;
+  border: 2px solid var(--border);
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  transform-origin: top;
   scale: 0;
   opacity: 0;
+
+  width: fit-content;
+  min-width: 150px;
+  padding: 0.5rem;
+  display: block;
+  z-index: 100;
+  overflow: visible;
+  transform-origin: top;
 
   &.show {
     scale: 1;
@@ -129,9 +134,10 @@
 
   &#user-menu-dropdown {
     transform-origin: top right;
+    border-radius: 8px;
 
     &::before {
-      top: -8px;
+      top: -9px;
       right: 14px;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
@@ -139,7 +145,7 @@
     }
 
     &::after {
-      top: -7px;
+      top: -6px;
       right: 14px;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
@@ -192,34 +198,11 @@
 
 /* Menu User Info Block */
 .menu-user-info {
-  padding: 0.75rem 1rem;
-  /* background: var(--bg-secondary); Remove bg for cleaner look */
-  border-bottom: 1px solid var(--border);
+  padding: 0.5rem;
+  border-bottom: 2px solid var(--border);
   margin-bottom: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
 }
 
-.menu-user-info strong {
-  font-size: 1rem;
-  color: var(--text-primary);
-}
-
-.menu-user-info p {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.menu-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 0.5rem 0.5rem;
-  opacity: 0.5;
-}
-
-/* Service cards */
 .service-card {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -230,16 +213,6 @@
   background: var(--accent-light);
 }
 
-/* Time slots */
-.slot-btn {
-  background-color: var(--card-bg);
-  /* border: 1px solid var(--accent); */
-  color: var(--text-primary);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
 
 .col {
   display: flex;
@@ -462,11 +435,6 @@
     gap: 0.75rem;
   }
 
-  /* Service Cards - 2 columns on mobile */
-  #user-services-list {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
   .step h2 {
     font-size: 1.35rem;
   }
@@ -522,15 +490,6 @@
   .service-card p {
     font-size: 0.8rem;
   }
-}
-
-/* Slot Button Responsive */
-.slot-btn {
-  padding: 0.75rem 0.5rem;
-  width: 100px;
-  font-size: 16px;
-  text-align: center;
-  font-weight: 600;
 }
 
 @media (max-width: 480px) {
@@ -742,6 +701,12 @@
 
 .story-header {
   top: 35px;
+
+  & .icon-btn i,
+  & #story-barber-name,
+  & #story-time {
+    color: white;
+  }
 }
 
 .story-progress-container {
@@ -753,31 +718,18 @@
 .story-progress-bar {
   flex: 1;
   height: 4px;
-  /* Thicker */
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--accent-light);
   border-radius: 4px;
-  /* Rounded */
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(var(--shadow-rgb), 0.2);
+  /* box-shadow: 0 1px 2px rgba(var(--shadow-rgb), 0.2); */
 }
 
 .story-progress-fill {
   height: 100%;
-  background: var(--text-secondary);
+  background: var(--accent);
   width: 0%;
   transition: width 0.1s linear;
   border-radius: 4px;
-}
-
-.story-controls {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: space-between;
-  z-index: 2000;
 }
 
 .story-nav {
@@ -788,6 +740,7 @@
   border: none;
   cursor: pointer;
   outline: none;
+  overflow: hidden;
 
   &.right {
     right: 0;
@@ -1128,14 +1081,6 @@
   min-height: 64px;
 }
 
-.history-card .history-card-header {
-  border-bottom: 1px solid var(--border);
-}
-
-.history-card.expanded .history-card-header:hover {
-  border-bottom: 1px solid var(--accent);
-}
-
 .history-summary-left {
   display: flex;
   align-items: center;
@@ -1233,7 +1178,7 @@
 .history-card.expanded .history-card-body {
   max-height: 400px;
   opacity: 1;
-  padding: 1rem;
+  padding: 1rem 0.5rem;
 }
 
 /* Details Toggle Button */
@@ -1490,7 +1435,7 @@
   }
 
   .history-card.expanded .history-card-body {
-    padding: 1rem;
+    padding: 1rem 0.5rem;
   }
 }
 
@@ -1499,11 +1444,6 @@
     padding: 0;
   }
 
-  .history-summary-left {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
 
   .history-icon {
     width: 40px;

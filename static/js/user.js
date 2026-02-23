@@ -56,6 +56,11 @@ function logoutCustomer() {
 function toggleUserMenu() {
     const dropdown = document.getElementById('user-menu-dropdown');
     if (dropdown) dropdown.classList.toggle('show');
+    if (dropdown.classList.contains("show")) {
+
+    } else {
+
+    }
 }
 
 function closeUserMenu() {
@@ -271,8 +276,8 @@ function validateAuthForm(isRegister) {
     } else if (username.length < 3) {
         showFieldError('auth-username', 'Username deve ter pelo menos 3 caracteres');
         isValid = false;
-    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        showFieldError('auth-username', 'Apenas letras, números e _');
+    } else if (!/^[a-zA-Z0-9_. ]+$/.test(username)) {
+        showFieldError('auth-username', 'Apenas letras, números, espaços, pontos e _');
         isValid = false;
     }
 
@@ -1278,7 +1283,7 @@ async function rescheduleAppointment(id) {
     rescheduleAppointmentId = id; // Set pending reschedule
 
     // Pre-fill booking state
-    selectedBarber = { id: appt.barber_id, name: appt.barber_name };
+    selectedBarber = { id: appt.barber_id, name: appt.barber_name, avatar_url: appt.barber_avatar };
 
     // Load services for this barber so "Back" navigation works (Step 2)
     // We don't await this to keep transition fast, it populates in background
@@ -1968,8 +1973,17 @@ function goToStep(step) {
     if (step === 4) {
         updateCustomerUI();
         document.getElementById("confirm-barber-name").innerText = selectedBarber ? `${selectedBarber.name}` : '';
-        document.getElementById("confirm-service-name").innerText = `${selectedService.name} (R$ ${typeof selectedService.price === 'number' ? selectedService.price.toFixed(2) : selectedService.price})`;
+        document.getElementById("confirm-service-name").innerText = selectedService.name;
+        document.getElementById("confirm-service-price").innerText = `R$ ${typeof selectedService.price === 'number' ? selectedService.price.toFixed(2) : selectedService.price}`;
         document.getElementById("confirm-date-time").innerText = `${formatDateBR(selectedDate)} às ${selectedSlot}`;
+
+        // Update avatar
+        const avatarEl = document.getElementById('confirm-barber-avatar');
+        if (avatarEl && selectedBarber && selectedBarber.avatar_url) {
+            avatarEl.innerHTML = `<img src="${selectedBarber.avatar_url}" alt="${selectedBarber.name}">`;
+        } else if (avatarEl) {
+            avatarEl.innerHTML = '<i class="fa-solid fa-user-tie"></i>';
+        }
     }
 }
 
@@ -2138,7 +2152,7 @@ async function loadSlots() {
                 `;
             } else {
                 newHTML = data.slots.map(slot => `
-                    <button class="btn slot-btn ${slot === selectedSlot ? 'selected-slot' : ''}" 
+                    <button class="slot-btn ${slot === selectedSlot ? 'selected' : ''}" 
                             style="${slot === selectedSlot ? 'background: var(--accent); color: var(--text-primary);' : ''}"
                             onclick="selectSlot('${slot}')">${slot}</button>
                 `).join('');
@@ -2171,9 +2185,9 @@ function selectSlot(time) {
     selectedSlot = time;
 
     // Update step 4 summary with barber avatar
-    if (selectedBarber && selectedBarber.avatar) {
+    if (selectedBarber && selectedBarber.avatar_url) {
         const avatarEl = document.getElementById('confirm-barber-avatar');
-        if (avatarEl) avatarEl.src = selectedBarber.avatar;
+        if (avatarEl) avatarEl.innerHTML = `<img src="${selectedBarber.avatar_url}" alt="${selectedBarber.name}">`;
     }
 
     goToStep(4);

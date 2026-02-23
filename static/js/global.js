@@ -5,16 +5,10 @@
 const API_URL = "";
 
 // Theme Management
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-}
-
 function toggleTheme() {
-    const currentTheme = document.body.getAttribute('data-theme');
+    const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
 }
@@ -93,9 +87,10 @@ function formatPhoneInput(input) {
     input.value = value;
 }
 
-// Initialize theme on load
+// Sync theme icon on load
 document.addEventListener('DOMContentLoaded', function () {
-    initTheme();
+    const theme = document.documentElement.getAttribute('data-theme');
+    updateThemeIcon(theme);
 });
 
 // Global Modal Helpers

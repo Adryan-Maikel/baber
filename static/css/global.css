@@ -3,7 +3,7 @@
    ============================================ */
 
 /* Theme System - Dark and Light Palettes */
-body[data-theme="dark"] {
+html[data-theme="dark"] {
     /* Backgrounds: Deep Warm Black */
     --bg-color: #0A0806;
     --bg-secondary: #110E0A;
@@ -35,15 +35,19 @@ body[data-theme="dark"] {
 
     /* Specific UI Colors */
     --star-color: #E8B84B;
+    --whatsapp-color: #25D366;
+    --whatsapp-hover: #128C7E;
 
     /* Glassmorphism */
     --glass-bg: rgba(245, 230, 211, 0.04);
     --glass-border: rgba(245, 230, 211, 0.08);
 
     --font-main: 'Outfit', sans-serif;
+    --transition-speed: 0.3s;
+    --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body[data-theme="light"] {
+html[data-theme="light"] {
     --bg-color: #FDF8F3;
     --bg-secondary: #F5EDE4;
     --card-bg: #FFFAF5;
@@ -54,7 +58,7 @@ body[data-theme="light"] {
 
     --accent: #bd4d1b;
     --accent-hover: #b8430d;
-    --accent-light: rgba(193, 127, 78, 0.1);
+    --accent-light: rgba(193, 127, 78, 0.2);
 
     --danger: #C44B4B;
     --danger-hover: #A63A3A;
@@ -72,6 +76,7 @@ body[data-theme="light"] {
 
     /* Specific UI Colors */
     --star-color: #D4A03C;
+    --whatsapp-color: #25D366;
     --whatsapp-hover: #128C7E;
 
     /* Glassmorphism */
@@ -79,36 +84,6 @@ body[data-theme="light"] {
     --glass-border: rgba(26, 20, 16, 0.08);
 
     --font-main: 'Outfit', sans-serif;
-}
-
-/* Default theme variables (Maps to Dark Theme) */
-body {
-    --bg-color: #0A0806;
-    --bg-secondary: #110E0A;
-    --card-bg: #1A1410;
-    --card-hover: #241C16;
-    --text-primary: #F5E6D3;
-    --text-secondary: #B8A898;
-    --accent: #bd4d1b;
-    --accent-hover: #b8430d;
-    --accent-light: rgba(212, 148, 94, 0.15);
-    --danger: #C44B4B;
-    --danger-hover: #A63A3A;
-    --success: #5A9A6B;
-    --success-hover: #4A8259;
-    --border: #2E2218;
-    --shadow: rgba(0, 0, 0, 0.7);
-    --shadow-rgb: 0, 0, 0;
-    --accent-rgb: 212, 148, 94;
-    --danger-rgb: 196, 75, 75;
-    --star-color: #E8B84B;
-    --whatsapp-color: #25D366;
-    --whatsapp-hover: #128C7E;
-    --glass-bg: rgba(245, 230, 211, 0.04);
-    --glass-border: rgba(245, 230, 211, 0.08);
-
-    --font-main: 'Outfit', sans-serif;
-
     --transition-speed: 0.3s;
     --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -156,6 +131,10 @@ body {
 .justify-between {
     display: flex;
     justify-content: space-between;
+}
+
+.flex {
+    display: flex;
 }
 
 .row {
@@ -414,6 +393,9 @@ body {
     transition: all 0.2s ease;
     cursor: pointer;
     scale: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
 
     &>i {
         user-select: none;
@@ -422,6 +404,7 @@ body {
 
     &>.fa-chevron-down {
         rotate: 0deg;
+        margin-top: 2px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -536,7 +519,7 @@ body {
     border: none;
     background: transparent;
     /* Ghost */
-    color: var(--text-secondary);
+    color: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -554,7 +537,7 @@ body {
     &:focus,
     &:focus-visible,
     &:hover {
-        color: var(--text-primary);
+        color: var(--accent-hover);
         scale: 1.1;
     }
 
@@ -738,10 +721,10 @@ input:-webkit-autofill:focus {
 .calendar-dropdown {
     position: absolute;
     right: 0;
-    top: 50px;
+    top: 45px;
     /* Adjusted context */
     background: var(--bg-secondary);
-    border-radius: 16px;
+    border-radius: 11px;
     padding: 0.5rem;
     min-width: 280px;
     z-index: 100;
@@ -749,39 +732,36 @@ input:-webkit-autofill:focus {
     transform-origin: top right;
     scale: 0;
     opacity: 0;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border);
-}
+    /* box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); */
+    border: 2px solid var(--border);
 
-.calendar-dropdown.show {
-    scale: 1;
-    opacity: 1;
-}
+    &.show {
+        scale: 1;
+        opacity: 1;
+    }
 
-/* Arrow pointing up */
+    &::before,
+    &::after {
+        pointer-events: none;
+        content: "";
+        position: absolute;
+        right: 12px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+    }
 
-.calendar-dropdown::before {
-    content: "";
-    position: absolute;
-    top: -8px;
-    right: 14px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--border);
-}
+    &::before {
+        top: -10px;
+        border-bottom-color: var(--border);
+    }
 
-.calendar-dropdown::after {
-    content: "";
-    position: absolute;
-    top: -7px;
-    right: 14px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--bg-secondary);
+    &::after {
+        top: -7px;
+        border-bottom-color: var(--bg-secondary);
+    }
 }
 
 .calendar-header {
@@ -885,8 +865,6 @@ input:-webkit-autofill:focus {
 .calendar-day.selected {
     background: var(--accent);
     color: white;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4);
 }
 
 .calendar-day.other-month {

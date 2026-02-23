@@ -27,8 +27,7 @@
         </div>
 
         <div id="user-menu-container">
-            <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn"
-                aria-label="Menu do Usuário">
+            <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn">
                 <i class="fa-solid fa-user" id="user-menu-icon"></i>
             </button>
 
@@ -57,8 +56,6 @@
                         <span class="label">Sair</span>
                     </button>
                 </div>
-
-                <div class="menu-divider"></div>
 
                 <div class="menu-actions">
                     <button class="dropdown-item" onclick="toggleTheme()">
@@ -148,10 +145,11 @@
                 <div class="booking-summary-info">
                     <h3 id="confirm-barber-name"></h3>
                     <p id="confirm-service-name"></p>
+                    <p id="confirm-service-price" style="font-weight: 600;"></p>
                 </div>
                 <div class="booking-summary-datetime">
                     <i class="fa-regular fa-calendar"></i>
-                    <span id="confirm-date-time"></span>
+                    <span id="confirm-date-time" style="white-space: nowrap;"></span>
                 </div>
             </div>
 

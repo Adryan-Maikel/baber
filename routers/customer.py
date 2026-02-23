@@ -58,8 +58,8 @@ def register_customer():
     if not data.get('username') or len(data.get('username', '').strip()) < 3:
         return jsonify({"detail": "Username deve ter pelo menos 3 caracteres"}), 400
     
-    if not re.match(r'^[a-zA-Z0-9_]+$', data.get('username', '')):
-        return jsonify({"detail": "Username deve conter apenas letras, números e underscore"}), 400
+    if not re.match(r'^[a-zA-Z0-9_. ]+$', data.get('username', '')):
+        return jsonify({"detail": "Username deve conter apenas letras, números, espaços, pontos e underscore"}), 400
     
     if not data.get('password') or len(data.get('password', '')) < 6:
         return jsonify({"detail": "Senha deve ter pelo menos 6 caracteres"}), 400

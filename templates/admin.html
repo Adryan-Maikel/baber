@@ -3,42 +3,7 @@
 <link rel="stylesheet" href="/static/css/admin.css" />
 {% endblock %} {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // Theme Logic runs on load
-  document.addEventListener("DOMContentLoaded", function () {
-    // Get current theme
-    const currentTheme = localStorage.getItem("theme") || "dark";
 
-    // Apply the current theme's CSS
-    if (typeof themePresets !== "undefined" && themePresets[currentTheme]) {
-      const preset = themePresets[currentTheme];
-      const cssMapping = {
-        bg_color: "bg-color",
-        bg_secondary: "bg-secondary",
-        card_bg: "card-bg",
-        card_hover: "card-hover",
-        text_primary: "text-primary",
-        text_secondary: "text-secondary",
-        accent_color: "accent",
-        accent_hover: "accent-hover",
-        accent_light: "accent-light",
-        danger_color: "danger",
-        success_color: "success",
-        border_color: "border",
-        star_color: "star-color",
-        whatsapp_color: "whatsapp-color",
-      };
-      for (const [key, cssVar] of Object.entries(cssMapping)) {
-        if (preset[key]) {
-          document.documentElement.style.setProperty(
-            "--" + cssVar,
-            preset[key]
-          );
-        }
-      }
-    }
-  });
-</script>
 <style>
   :root {
     --max-content-width: 1000px;
@@ -1276,41 +1241,7 @@
   let autoRefreshInterval = null;
   let barbersCache = [];
 
-  // Theme Presets Definition
-  const themePresets = {
-    dark: {
-      bg_color: "#111827",
-      bg_secondary: "#1f2937",
-      card_bg: "#1f2937",
-      card_hover: "#374151",
-      text_primary: "#f9fafb",
-      text_secondary: "#9ca3af",
-      accent_color: "#3b82f6",
-      accent_hover: "#2563eb",
-      accent_light: "rgba(59, 130, 246, 0.1)",
-      danger_color: "#ef4444",
-      success_color: "#10b981",
-      border_color: "#374151",
-      star_color: "#f59e0b",
-      whatsapp_color: "#25d366",
-    },
-    light: {
-      bg_color: "#f3f4f6",
-      bg_secondary: "#ffffff",
-      card_bg: "#ffffff",
-      card_hover: "#f9fafb",
-      text_primary: "#111827",
-      text_secondary: "#4b5563",
-      accent_color: "#3b82f6",
-      accent_hover: "#2563eb",
-      accent_light: "rgba(59, 130, 246, 0.1)",
-      danger_color: "#ef4444",
-      success_color: "#10b981",
-      border_color: "#e5e7eb",
-      star_color: "#f59e0b",
-      whatsapp_color: "#25d366",
-    },
-  };
+
 
   // Security & Helper Utility Functions
   function escapeHtml(text) {
@@ -1807,86 +1738,7 @@
 
   // toggleSettingsCard and changePassword removed - replaced by new card logic
 
-  function setTheme(theme) {
-    // If already on this theme, do nothing
-    const currentTheme = localStorage.getItem("theme") || "dark";
-    if (currentTheme === theme) {
-      return; // Cancel - already on this theme
-    }
 
-    document.body.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-    updateThemeUI(theme);
-
-    applyPresetToCSS(theme);
-  }
-
-  function updateThemeUI(theme) {
-    document
-      .querySelectorAll(".theme-option")
-      .forEach((opt) => opt.classList.remove("active"));
-    const activeBtn = document.getElementById(`theme-${theme}`);
-    if (activeBtn) activeBtn.classList.add("active");
-  }
-
-  // Apply preset colors to CSS variables
-  function applyPresetToCSS(themeName) {
-    if (typeof themePresets !== "undefined" && themePresets[themeName]) {
-      const preset = themePresets[themeName];
-      const cssMapping = {
-        bg_color: "bg-color",
-        bg_secondary: "bg-secondary",
-        card_bg: "card-bg",
-        card_hover: "card-hover",
-        text_primary: "text-primary",
-        text_secondary: "text-secondary",
-        accent_color: "accent",
-        accent_hover: "accent-hover",
-        accent_light: "accent-light",
-        danger_color: "danger",
-        success_color: "success",
-        border_color: "border",
-        star_color: "star-color",
-        whatsapp_color: "whatsapp-color",
-      };
-
-      for (const [key, cssVar] of Object.entries(cssMapping)) {
-        if (preset[key]) {
-          document.documentElement.style.setProperty(
-            "--" + cssVar,
-            preset[key]
-          );
-        }
-      }
-    }
-  }
-
-  // Converted to use the global function at the top
-  // function saveCustomTheme() { ... } removed
-
-  // Converted to use the global function at the top
-  // function resetThemeDefaults() { ... } removed
-
-  // Initialize Theme on Load
-  (function initTheme() {
-    const savedTheme = localStorage.getItem("theme") || "dark";
-
-    // Fallback if user had 'custom' selected before
-    let themeToApply = savedTheme;
-    if (savedTheme === "custom") {
-      themeToApply = "dark";
-      localStorage.setItem("theme", "dark");
-    }
-
-    document.body.setAttribute("data-theme", themeToApply);
-    updateThemeUI(themeToApply);
-
-    if (typeof themePresets !== "undefined") {
-      applyPresetToCSS(themeToApply);
-    } else {
-      setTimeout(() => applyPresetToCSS(themeToApply), 100);
-    }
-  })();
 
   // =============== PROFILE EDITING ===============
   async function saveAdminProfile(e) {
