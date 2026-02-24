@@ -80,9 +80,11 @@ function updateCustomerUI() {
     const guestMenu = document.getElementById('guest-menu-items');
     const loggedMenu = document.getElementById('logged-menu-items');
     const loggedInfo = document.getElementById('customer-logged-info');
-    const guestFields = document.getElementById('guest-fields');
+    const guestSection = document.getElementById('guest-booking-section');
+    const loggedSection = document.getElementById('logged-booking-section');
     const menuIcon = document.getElementById('user-menu-icon');
     const menuCustomerUsername = document.getElementById('menu-customer-username');
+    const badge = document.getElementById('notification-badge');
 
     if (isCustomerLoggedIn() && currentCustomer) {
         if (guestMenu) guestMenu.style.display = 'none';
@@ -94,26 +96,22 @@ function updateCustomerUI() {
             loggedInfo.style.display = 'block';
             document.getElementById('logged-customer-username').textContent = currentCustomer.username;
         }
-        if (guestFields) {
-            guestFields.style.display = 'none';
-            const nameInput = document.getElementById('customer-name');
-            const phoneInput = document.getElementById('customer-phone');
-            if (nameInput) nameInput.removeAttribute('required');
-            if (phoneInput) phoneInput.removeAttribute('required');
-        }
+        if (guestSection) guestSection.style.display = 'none';
+        if (loggedSection) loggedSection.style.display = 'block';
+
+        // Start notification polling
+        startNotificationPolling();
     } else {
         if (guestMenu) guestMenu.style.display = 'block';
         if (loggedMenu) loggedMenu.style.display = 'none';
         if (menuIcon) menuIcon.className = 'fa-solid fa-user';
 
         if (loggedInfo) loggedInfo.style.display = 'none';
-        if (guestFields) {
-            guestFields.style.display = 'block';
-            const nameInput = document.getElementById('customer-name');
-            const phoneInput = document.getElementById('customer-phone');
-            if (nameInput) nameInput.setAttribute('required', '');
-            if (phoneInput) phoneInput.setAttribute('required', '');
-        }
+        if (guestSection) guestSection.style.display = 'block';
+        if (loggedSection) loggedSection.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+
+        stopNotificationPolling();
     }
 }
 
@@ -168,7 +166,7 @@ let previousStep = null; // Track which step we came from
 
 function showAuthStep() {
     // Hide all other steps including history
-    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-history'];
+    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-history', 'step-notifications'];
     allSteps.forEach(id => {
         const step = document.getElementById(id);
         if (step && step.style.display !== 'none') {
@@ -249,9 +247,11 @@ function clearFieldError(inputId) {
 }
 
 function clearAuthErrors() {
-    ['auth-username', 'auth-password', 'auth-phone'].forEach(id => clearFieldError(id));
+    ['auth-username', 'auth-password', 'auth-phone', 'auth-email'].forEach(id => clearFieldError(id));
     const errorDiv = document.getElementById('auth-error');
     if (errorDiv) errorDiv.style.display = 'none';
+    const termsError = document.getElementById('auth-terms-error');
+    if (termsError) termsError.textContent = '';
 }
 
 function showAuthError(message) {
@@ -290,11 +290,30 @@ function validateAuthForm(isRegister) {
         isValid = false;
     }
 
-    // Phone validation (only when registering and phone is filled)
+    // Register-specific validations
     if (isRegister) {
+        // Email validation
+        const email = document.getElementById('auth-email').value.trim();
+        if (!email) {
+            showFieldError('auth-email', 'Email é obrigatório');
+            isValid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showFieldError('auth-email', 'Email inválido');
+            isValid = false;
+        }
+
+        // Phone validation
         const phoneRaw = document.getElementById('auth-phone').value.replace(/\D/g, '');
         if (phoneRaw.length > 0 && (phoneRaw.length < 10 || phoneRaw.length > 11)) {
             showFieldError('auth-phone', 'Telefone inválido');
+            isValid = false;
+        }
+
+        // Terms validation
+        const acceptTerms = document.getElementById('auth-accept-terms');
+        if (acceptTerms && !acceptTerms.checked) {
+            const termsError = document.getElementById('auth-terms-error');
+            if (termsError) termsError.textContent = 'Você deve aceitar os termos de uso';
             isValid = false;
         }
     }
@@ -328,8 +347,10 @@ async function handleAuthSubmit(e) {
 
     try {
         const endpoint = isRegister ? '/customer/register' : '/customer/login';
+        const email = isRegister ? document.getElementById('auth-email').value.trim() : null;
+        const acceptTerms = isRegister ? document.getElementById('auth-accept-terms').checked : false;
         const body = isRegister
-            ? { username, password, phone }
+            ? { username, password, phone, email, accept_terms: acceptTerms }
             : { username, password };
 
         const res = await fetch(endpoint, {
@@ -388,7 +409,7 @@ async function showHistoryStep() {
     if (!token) return;
 
     // Hide all other steps and track previous
-    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-auth'];
+    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-auth', 'step-notifications'];
     allSteps.forEach(id => {
         const step = document.getElementById(id);
         if (step && step.style.display !== 'none') {
@@ -2015,6 +2036,19 @@ function goBack() {
         return;
     }
 
+    // Check if we're on notifications step
+    const notifStep = document.getElementById('step-notifications');
+    if (notifStep && notifStep.style.display !== 'none') {
+        notifStep.style.display = 'none';
+        if (previousNotificationsStep) {
+            document.getElementById(previousNotificationsStep).style.display = 'block';
+            if (previousNotificationsStep === 'step-1' && backBtn) backBtn.classList.remove('show');
+        } else {
+            goToStep(1);
+        }
+        return;
+    }
+
     // If going back from Confirm (Step 4) to Slots (Step 3), clear the selection
     if (currentStep === 4) {
         selectedSlot = null;
@@ -2217,73 +2251,15 @@ function clearBookingErrors() {
 }
 
 async function confirmBooking() {
-    clearBookingErrors();
-
-    let name, phone, customerToken = getCustomerToken();
-    let accountCreated = false;
-
-    if (isCustomerLoggedIn() && currentCustomer) {
-        name = currentCustomer.username;
-        phone = currentCustomer.phone;
-    } else {
-        name = document.getElementById("customer-name").value.trim();
-        phone = document.getElementById("customer-phone").value.trim();
-        const password = document.getElementById("customer-password").value;
-
-        // Validation
-        let hasError = false;
-
-        if (!name || name.length < 3) {
-            showBookingFieldError('customer-name', 'Nome deve ter pelo menos 3 caracteres');
-            hasError = true;
-        }
-
-        if (!password || password.length < 6) {
-            showBookingFieldError('customer-password', 'Senha deve ter pelo menos 6 caracteres');
-            hasError = true;
-        }
-
-        // Phone validation
-        if (phone) {
-            const phoneDigits = phone.replace(/\D/g, '');
-            if (phoneDigits.length > 0 && (phoneDigits.length < 10 || phoneDigits.length > 11)) {
-                showBookingFieldError('customer-phone', 'Numero invalido');
-                hasError = true;
-            }
-        }
-
-        if (hasError) return;
-
-        // Try to register the user
-        try {
-            const regRes = await fetch('/customer/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: name, phone: phone || null, password })
-            });
-
-            if (regRes.ok) {
-                const data = await regRes.json();
-                customerToken = data.access_token;
-                localStorage.setItem(CUSTOMER_TOKEN_KEY, customerToken);
-                currentCustomer = data.customer;
-                accountCreated = true;
-            } else {
-                const err = await regRes.json();
-                if (err.detail && err.detail.includes('username')) {
-                    showBookingFieldError('customer-name', 'Este nome já está em uso');
-                } else if (err.detail && err.detail.includes('phone')) {
-                    showBookingFieldError('customer-phone', 'Este telefone já está cadastrado');
-                } else {
-                    showBookingFieldError('customer-name', err.detail || 'Erro ao criar conta');
-                }
-                return;
-            }
-        } catch (e) {
-            showBookingFieldError('customer-name', 'Erro de conexão');
-            return;
-        }
+    // This function is now only called for logged-in users
+    if (!isCustomerLoggedIn() || !currentCustomer) {
+        openRegisterBottomSheet();
+        return;
     }
+
+    const name = currentCustomer.username;
+    const phone = currentCustomer.phone;
+    const customerToken = getCustomerToken();
 
     const start_time = `${selectedDate}T${selectedSlot}:00`;
 
@@ -2337,11 +2313,6 @@ async function confirmBooking() {
 
         document.querySelectorAll('.step').forEach(el => el.style.display = 'none');
         document.getElementById('step-success').style.display = 'block';
-
-        if (accountCreated) {
-            const msg = document.getElementById('account-created-msg');
-            if (msg) msg.style.display = 'block';
-        }
 
         updateCustomerUI();
     } catch (e) {
@@ -2624,6 +2595,275 @@ function initializeDateLabel() {
     }
 }
 
+// =========== Bottom Sheet Registration ===========
+
+function openRegisterBottomSheet() {
+    const sheet = document.getElementById('register-bottom-sheet');
+    if (sheet) {
+        sheet.style.display = 'flex';
+        sheet.classList.remove('closing');
+    }
+}
+
+function closeRegisterBottomSheet() {
+    const sheet = document.getElementById('register-bottom-sheet');
+    if (!sheet) return;
+    sheet.classList.add('closing');
+    setTimeout(() => {
+        sheet.style.display = 'none';
+        sheet.classList.remove('closing');
+    }, 280);
+}
+
+async function handleSheetRegister(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('sheet-username').value.trim();
+    const email = document.getElementById('sheet-email').value.trim();
+    const phone = document.getElementById('sheet-phone').value || null;
+    const password = document.getElementById('sheet-password').value;
+    const acceptTerms = document.getElementById('sheet-accept-terms').checked;
+
+    const errorEl = document.getElementById('sheet-error');
+    const btn = document.getElementById('sheet-submit-btn');
+    const btnText = document.getElementById('sheet-btn-text');
+    const spinner = document.getElementById('sheet-btn-spinner');
+
+    // Basic validation
+    if (!username || username.length < 3) {
+        showSheetError('Nome deve ter pelo menos 3 caracteres');
+        return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showSheetError('Email inválido');
+        return;
+    }
+    if (!password || password.length < 6) {
+        showSheetError('Senha deve ter pelo menos 6 caracteres');
+        return;
+    }
+    if (!acceptTerms) {
+        showSheetError('Você deve aceitar os termos de uso');
+        return;
+    }
+
+    // Show loading
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'inline-block';
+    if (errorEl) errorEl.style.display = 'none';
+
+    try {
+        // Register
+        const regRes = await fetch('/customer/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, phone, password, accept_terms: acceptTerms })
+        });
+
+        if (!regRes.ok) {
+            const err = await regRes.json();
+            showSheetError(err.detail || 'Erro ao criar conta');
+            return;
+        }
+
+        const data = await regRes.json();
+        localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
+        currentCustomer = data.customer;
+
+        closeRegisterBottomSheet();
+        updateCustomerUI();
+
+        // Now confirm the booking automatically
+        await confirmBooking();
+
+    } catch (e) {
+        showSheetError('Erro de conexão. Tente novamente.');
+    } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        spinner.style.display = 'none';
+    }
+}
+
+function showSheetError(msg) {
+    const errorEl = document.getElementById('sheet-error');
+    if (errorEl) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+    }
+}
+
+// =========== Notification System ===========
+
+let notificationPollInterval = null;
+
+function startNotificationPolling() {
+    if (notificationPollInterval) return;
+    fetchUnreadCount();
+    notificationPollInterval = setInterval(fetchUnreadCount, 30000); // every 30s
+}
+
+function stopNotificationPolling() {
+    if (notificationPollInterval) {
+        clearInterval(notificationPollInterval);
+        notificationPollInterval = null;
+    }
+}
+
+async function fetchUnreadCount() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    try {
+        const res = await fetch(`/customer/notifications/unread-count?token=${token}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.unread_count || 0;
+
+        // Update badge
+        const badge = document.getElementById('notification-badge');
+        if (badge) badge.style.display = count > 0 ? 'block' : 'none';
+
+        // Update menu count
+        const menuCount = document.getElementById('menu-notification-count');
+        if (menuCount) {
+            menuCount.textContent = count;
+            menuCount.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+let previousNotificationsStep = null;
+
+function showNotificationsStep() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    // Close user menu
+    closeUserMenu();
+
+    // Hide all other steps and track previous
+    const allSteps = ['step-1', 'step-2', 'step-3', 'step-4', 'step-success', 'step-auth', 'step-history'];
+    allSteps.forEach(id => {
+        const step = document.getElementById(id);
+        if (step && step.style.display !== 'none') {
+            previousNotificationsStep = id;
+        }
+        if (step) step.style.display = 'none';
+    });
+
+    // Show notifications step
+    const notifStep = document.getElementById('step-notifications');
+    if (notifStep) notifStep.style.display = 'block';
+
+    // Show back button
+    const backBtn = document.getElementById('global-back-btn');
+    if (backBtn) backBtn.classList.add('show');
+
+    // Load notifications
+    fetchNotifications();
+    markNotificationsAsRead();
+}
+
+async function fetchNotifications() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    const listEl = document.getElementById('notification-list');
+    if (!listEl) return;
+
+    try {
+        const res = await fetch(`/customer/notifications?token=${token}&limit=20`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!data.notifications || data.notifications.length === 0) {
+            listEl.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    <p>Nenhuma notificação</p>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = data.notifications.map(n => {
+            const icon = getNotificationIcon(n.type);
+            const timeAgo = formatTimeAgo(n.created_at);
+            const unreadClass = n.is_read ? '' : 'unread';
+            return `
+                <div class="notification-item pop-in ${unreadClass}" onclick="markSingleNotificationRead(this)">
+                    <div class="notification-item-icon">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="notification-item-body">
+                        <div class="notification-item-title">${escapeHtml(n.title)}</div>
+                        <div class="notification-item-message">${escapeHtml(n.message)}</div>
+                        <div class="notification-item-time">${timeAgo}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+async function markNotificationsAsRead() {
+    const token = getCustomerToken();
+    if (!token) return;
+
+    try {
+        await fetch(`/customer/notifications/mark-read?token=${token}`, { method: 'POST' });
+        // Update badge after marking as read
+        const badge = document.getElementById('notification-badge');
+        if (badge) badge.style.display = 'none';
+        const menuCount = document.getElementById('menu-notification-count');
+        if (menuCount) menuCount.style.display = 'none';
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+function markSingleNotificationRead(el) {
+    if (el.classList.contains('unread')) {
+        el.classList.remove('unread');
+    }
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'booking_confirmation': return 'fa-solid fa-calendar-check';
+        case 'photo_notification': return 'fa-solid fa-camera';
+        case 'appointment_reminder': return 'fa-solid fa-bell';
+        default: return 'fa-solid fa-info-circle';
+    }
+}
+
+function formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Agora';
+    if (diffMins < 60) return `${diffMins}min atrás`;
+    if (diffHours < 24) return `${diffHours}h atrás`;
+    if (diffDays < 7) return `${diffDays}d atrás`;
+    return date.toLocaleDateString('pt-BR');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // =========== Initialization ===========
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2638,4 +2878,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Setup story hold-to-pause events
     setupStoryHoldEvents();
+
+    // Start notification polling if logged in
+    if (isCustomerLoggedIn()) {
+        startNotificationPolling();
+    }
 });

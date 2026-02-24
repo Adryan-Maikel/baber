@@ -29,6 +29,7 @@
         <div id="user-menu-container">
             <button class="icon-btn profile-btn" onclick="toggleUserMenu()" id="user-menu-btn">
                 <i class="fa-solid fa-user" id="user-menu-icon"></i>
+                <span class="notification-badge" id="notification-badge" style="display: none;"></span>
             </button>
 
             <div id="user-menu-dropdown" class="dropdown-menu">
@@ -47,6 +48,12 @@
                     <div class="menu-user-info">
                         <strong id="menu-customer-username">Usuário</strong>
                     </div>
+                    <button class="dropdown-item" onclick="showNotificationsStep()">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="label">Notificações</span>
+                        <span class="notification-count-badge" id="menu-notification-count"
+                            style="display: none;">0</span>
+                    </button>
                     <button class="dropdown-item" onclick="showHistoryStep()">
                         <i class="fa-solid fa-clock-rotate-left"></i>
                         <span class="label">Meu Histórico</span>
@@ -161,25 +168,18 @@
 
             <!-- Guest booking fields -->
             <div id="guest-booking-section">
-                <div id="guest-fields" class="booking-fields">
-                    <div class="input-group">
-                        <label for="customer-name">Nome de usuário</label>
-                        <input type="text" id="customer-name" placeholder="Seu nome de usuário">
-                        <span class="input-error-text" id="customer-name-error"></span>
-                    </div>
-                    <div class="input-group">
-                        <label for="customer-phone">Telefone <span class="optional-label">(opcional)</span></label>
-                        <input type="tel" id="customer-phone" placeholder="(11) 99999-1234"
-                            oninput="formatPhoneInput(this)">
-                        <span class="input-error-text" id="customer-phone-error"></span>
-                    </div>
-                    <div class="input-group">
-                        <label for="customer-password">Senha</label>
-                        <input type="password" id="customer-password" placeholder="Mínimo 6 caracteres">
-                        <span class="input-error-text" id="customer-password-error"></span>
-                    </div>
-                </div>
+                <p class="guest-booking-hint">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Crie uma conta para confirmar seu agendamento
+                </p>
+                <button type="button" class="btn btn-primary btn-compact" id="open-register-sheet-btn"
+                    onclick="openRegisterBottomSheet()">
+                    <i class="fa-solid fa-user-plus"></i> Criar Conta e Confirmar
+                </button>
+            </div>
 
+            <!-- Logged in: confirm button -->
+            <div id="logged-booking-section" style="display: none;">
                 <button type="button" class="btn btn-primary btn-compact" id="confirm-booking-btn"
                     onclick="confirmBooking()">
                     <i class="fa-solid fa-check"></i> Confirmar
@@ -221,10 +221,22 @@
             <!-- Register fields (hidden by default) -->
             <div id="register-fields" class="register-fields">
                 <div>
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" placeholder="seu@email.com" autocomplete="email">
+                    <span class="input-error-text" id="auth-email-error"></span>
+                </div>
+                <div>
                     <label for="auth-phone">Telefone <span class="optional-label">(opcional)</span></label>
                     <input type="tel" id="auth-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
                     <span class="input-error-text" id="auth-phone-error"></span>
                 </div>
+                <label class="flex checkbox-label" for="auth-accept-terms" tabindex="0">
+                    <input type="checkbox" id="auth-accept-terms">
+                    <i class="fa-solid fa-check"></i>
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>Aceito os <a href="/terms" target="_blank" class="terms-link">Termos de Uso</a></span>
+                </label>
+                <span class="input-error-text" id="auth-terms-error"></span>
             </div>
 
             <!-- Submit button -->
@@ -299,6 +311,56 @@
             <i class="fa-solid fa-user-check"></i> Sua conta foi criada!
         </p>
         <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
+    </div>
+
+    <!-- Register Bottom Sheet Modal -->
+    <div id="register-bottom-sheet" class="bottom-sheet-overlay" style="display: none;">
+        <div class="bottom-sheet-backdrop" onclick="closeRegisterBottomSheet()"></div>
+        <div class="bottom-sheet-content">
+            <div class="bottom-sheet-handle"></div>
+            <h3><i class="fa-solid fa-user-plus"></i> Criar Conta</h3>
+            <div id="sheet-error" class="auth-error" style="display: none;"></div>
+            <form id="sheet-register-form" onsubmit="handleSheetRegister(event)">
+                <div class="input-group">
+                    <label for="sheet-username">Nome de usuário</label>
+                    <input type="text" id="sheet-username" placeholder="Seu nome de usuário" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="sheet-email">Email</label>
+                    <input type="email" id="sheet-email" placeholder="seu@email.com" autocomplete="email">
+                </div>
+                <div class="input-group">
+                    <label for="sheet-phone">Telefone <span class="optional-label">(opcional)</span></label>
+                    <input type="tel" id="sheet-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
+                </div>
+                <div class="input-group">
+                    <label for="sheet-password">Senha</label>
+                    <input type="password" id="sheet-password" placeholder="Mínimo 6 caracteres"
+                        autocomplete="new-password">
+                </div>
+                <label class="flex checkbox-label" for="sheet-accept-terms" tabindex="0">
+                    <input type="checkbox" id="sheet-accept-terms">
+                    <i class="fa-solid fa-check"></i>
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>Aceito os <a href="/terms" target="_blank" class="terms-link">Termos de Uso</a></span>
+                </label>
+                <button type="submit" class="btn btn-primary" id="sheet-submit-btn">
+                    <span id="sheet-btn-text">Criar Conta e Confirmar</span>
+                    <i class="fa-solid fa-spinner fa-spin-pulse" id="sheet-btn-spinner" style="display: none;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Step Notifications -->
+    <div id="step-notifications" class="step fade-in" style="display: none;">
+        <h2><i class="fa-solid fa-bell"></i> Notificações</h2>
+        <div id="notification-list" class="notification-step-list">
+            <div class="notification-empty">
+                <i class="fa-regular fa-bell-slash"></i>
+                <p>Nenhuma notificação</p>
+            </div>
+        </div>
     </div>
 </div>
 

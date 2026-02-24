@@ -142,6 +142,38 @@ def upload_appointment_media(appointment_id):
     db.commit()
     db.refresh(media)
     
+    # === Notify customer about new photo ===
+    if appointment.customer_id:
+        try:
+            customer = db.query(models.Customer).filter(
+                models.Customer.id == appointment.customer_id
+            ).first()
+            if customer:
+                barber = appointment.barber
+                barber_name = barber.name if barber else "seu barbeiro"
+                
+                # Send email notification
+                if customer.email:
+                    from email_service import send_photo_notification
+                    send_photo_notification(
+                        to_email=customer.email,
+                        customer_name=customer.username,
+                        barber_name=barber_name
+                    )
+                
+                # Create in-app notification
+                from routers.notifications import create_notification
+                create_notification(
+                    db=db,
+                    customer_id=customer.id,
+                    notif_type="photo_posted",
+                    title="Nova Foto Publicada",
+                    message=f"{barber_name} publicou uma foto do seu atendimento!",
+                    data={"appointment_id": appointment_id, "media_url": media.media_url}
+                )
+        except Exception as e:
+            print(f"[NOTIFICATION ERROR] {e}")
+    
     return jsonify({
         "id": media.id,
         "media_url": media.media_url,

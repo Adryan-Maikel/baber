@@ -64,6 +64,12 @@ def register_customer():
     if not data.get('password') or len(data.get('password', '')) < 6:
         return jsonify({"detail": "Senha deve ter pelo menos 6 caracteres"}), 400
     
+    if not data.get('email') or not data.get('email', '').strip():
+        return jsonify({"detail": "Email é obrigatório"}), 400
+    
+    if not data.get('accept_terms'):
+        return jsonify({"detail": "Você deve aceitar os termos de uso"}), 400
+    
     try:
         customer = schemas.CustomerCreate(**data)
     except Exception as e:
@@ -177,31 +183,39 @@ def get_current_customer(token: str, db: Session):
 
 def get_auth_customer():
     """Helper to get customer from Request Authorization header"""
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        token = request.args.get("token") # fallback
-    else:
-        token = auth_header.split(" ")[1] if " " in auth_header else auth_header
-    
-    if not token:
+    try:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            token = request.args.get("token") # fallback
+        else:
+            token = auth_header.split(" ")[1] if " " in auth_header else auth_header
+        
+        if not token:
+            return None
+        
+        return get_current_customer(token, get_db())
+    except Exception as e:
+        print(f"[AUTH] Error getting customer: {e}")
         return None
-    
-    return get_current_customer(token, get_db())
 
 
 @customer_bp.route("/profile", methods=["GET"])
 def get_profile():
     """Get current customer profile"""
-    token = request.args.get('token')
-    if not token:
-        # Try header
-        customer = get_auth_customer()
-    else:
-        customer = get_current_customer(token, get_db())
-        
-    if not customer:
-        return jsonify({"detail": "não autenticado"}), 401
-    return jsonify_pydantic(customer, schemas.Customer)
+    try:
+        token = request.args.get('token')
+        if not token:
+            # Try header
+            customer = get_auth_customer()
+        else:
+            customer = get_current_customer(token, get_db())
+            
+        if not customer:
+            return jsonify({"detail": "não autenticado"}), 401
+        return jsonify_pydantic(customer, schemas.Customer)
+    except Exception as e:
+        print(f"[PROFILE] Error: {e}")
+        return jsonify({"detail": "Erro ao carregar perfil"}), 500
 
 @customer_bp.route("/profile", methods=["PUT"])
 def update_profile():

@@ -298,7 +298,7 @@
 
   .admin-layout {
     display: flex;
-    min-height: 100vh;
+    max-height: calc(100dvh - 60px);
   }
 
   .sidebar {
@@ -343,12 +343,6 @@
   .sidebar-menu i {
     width: 20px;
     text-align: center;
-  }
-
-  .content {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
   }
 
   .section {
@@ -2299,7 +2293,7 @@
   async function saveBarber(e, idArg = null) {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
-    let form = e.target;
+    let form = e.target.closest('form') || e.target;
 
     // Determine context: Inline (idArg present OR form has fields) or Modal (legacy)
     let isInline = idArg !== null;

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Termos de Uso e Política de Privacidade{% endblock %}
+
+{% block styles %}
+<style>
+    .terms-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+        color: var(--text-primary);
+    }
+
+    .terms-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+    }
+
+    .terms-container h2 {
+        font-size: 1.15rem;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+    }
+
+    .terms-container p,
+    .terms-container li {
+        font-size: 0.9rem;
+        line-height: 1.7;
+        color: var(--text-secondary);
+    }
+
+    .terms-container ul {
+        padding-left: 1.5rem;
+        margin: 0.5rem 0;
+    }
+
+    .terms-container li {
+        margin-bottom: 0.3rem;
+    }
+
+    .terms-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .terms-back:hover {
+        text-decoration: underline;
+    }
+
+    .terms-updated {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terms-container">
+    <a href="/" class="terms-back"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+
+    <h1>Termos de Uso e Política de Privacidade</h1>
+    <p class="terms-updated">Última atualização: Fevereiro de 2026</p>
+
+    <h2>1. Coleta de Dados</h2>
+    <p>Ao utilizar a plataforma da Barbearia Balhego, coletamos os seguintes dados pessoais:</p>
+    <ul>
+        <li><strong>Nome de usuário</strong> — para identificação na plataforma</li>
+        <li><strong>Email</strong> — para envio de confirmações de agendamento e notificações</li>
+        <li><strong>Telefone</strong> (opcional) — para contato caso necessário</li>
+        <li><strong>Senha</strong> — armazenada de forma criptografada (hash bcrypt)</li>
+    </ul>
+
+    <h2>2. Uso dos Dados</h2>
+    <p>Seus dados são utilizados exclusivamente para:</p>
+    <ul>
+        <li>Autenticação e login na plataforma</li>
+        <li>Envio de emails de confirmação de agendamento</li>
+        <li>Notificações sobre fotos publicadas do seu atendimento</li>
+        <li>Gestão do seu histórico de agendamentos</li>
+    </ul>
+
+    <h2>3. Proteção dos Dados</h2>
+    <p>Utilizamos medidas de segurança para proteger seus dados:</p>
+    <ul>
+        <li>Senhas criptografadas com algoritmo bcrypt</li>
+        <li>Autenticação via tokens JWT</li>
+        <li>Limitação de tentativas de login para prevenção de ataques</li>
+        <li>Comunicação via HTTPS</li>
+    </ul>
+
+    <h2>4. Compartilhamento</h2>
+    <p>Não compartilhamos, vendemos ou transferimos seus dados pessoais a terceiros.
+        Seus dados são utilizados somente dentro da plataforma da Barbearia Balhego.</p>
+
+    <h2>5. Emails e Notificações</h2>
+    <p>Ao se cadastrar, você concorda em receber emails de confirmação de agendamento
+        e notificações relevantes ao seu uso da plataforma. Esses emails são enviados
+        automaticamente e não possuem fins publicitários.</p>
+
+    <h2>6. Fotos e Mídia</h2>
+    <p>Fotos do seu atendimento podem ser publicadas nos stories da barbearia.
+        Você pode controlar a visibilidade das suas fotos a qualquer momento
+        através do seu histórico de agendamentos, marcando-as como privadas.</p>
+
+    <h2>7. Seus Direitos (LGPD)</h2>
+    <p>Em conformidade com a Lei Geral de Proteção de Dados (LGPD), você tem direito a:</p>
+    <ul>
+        <li>Acessar seus dados pessoais</li>
+        <li>Solicitar a correção de dados incorretos</li>
+        <li>Solicitar a exclusão dos seus dados</li>
+        <li>Revogar seu consentimento a qualquer momento</li>
+    </ul>
+    <p>Para exercer seus direitos, entre em contato conosco diretamente na barbearia.</p>
+
+    <h2>8. Alterações</h2>
+    <p>Estes termos podem ser atualizados periodicamente. Alterações significativas
+        serão comunicadas através da plataforma.</p>
+</div>
+{% endblock %}

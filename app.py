@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import models  # Ensure all models are registered before create_all
 Base.metadata.create_all(bind=engine)
 
 app = Flask(__name__)
@@ -32,6 +33,7 @@ from routers.user import user_bp
 from routers.customer import customer_bp
 from routers.upload import upload_bp
 from routers.stories import stories_bp
+from routers.notifications import notifications_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
@@ -39,6 +41,7 @@ app.register_blueprint(user_bp)
 app.register_blueprint(customer_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(stories_bp)
+app.register_blueprint(notifications_bp)
 
 
 @app.route("/")
@@ -55,6 +58,10 @@ def read_admin():
     if not token:
         return redirect(url_for('read_login'))
     return render_template("admin.html")
+
+@app.route("/terms")
+def read_terms():
+    return render_template("terms.html")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)

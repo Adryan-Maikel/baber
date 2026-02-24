@@ -22,9 +22,13 @@ def jsonify_pydantic(obj, schema=None):
 @user_bp.route("/barbers", methods=["GET"])
 def get_barbers():
     """Get all active barbers (public endpoint)"""
-    db = get_db()
-    barbers = db.query(models.Barber).filter(models.Barber.is_active == True).all()
-    return jsonify_pydantic(barbers, schemas.Barber)
+    try:
+        db = get_db()
+        barbers = db.query(models.Barber).filter(models.Barber.is_active == True).all()
+        return jsonify_pydantic(barbers, schemas.Barber)
+    except Exception as e:
+        print(f"[BARBERS] Error: {e}")
+        return jsonify([]), 200
 
 @user_bp.route("/barbers/<string:barber_id>", methods=["GET"])
 def get_barber(barber_id):
@@ -242,4 +246,56 @@ def book_appointment():
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)
+    
+    # === Send email confirmation & create notification ===
+    if customer_id:
+        try:
+            customer_obj = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
+            if customer_obj:
+                # Get service name and price
+                svc_name = "Serviço"
+                svc_price = ""
+                if appointment.barber_service_id:
+                    bs = db.query(models.BarberService).filter(
+                        models.BarberService.id == appointment.barber_service_id
+                    ).first()
+                    if bs:
+                        svc_name = bs.name
+                        svc_price = f"{bs.discount_price or bs.price:.2f}"
+                elif appointment.service_id:
+                    svc = db.query(models.Service).filter(models.Service.id == appointment.service_id).first()
+                    if svc:
+                        svc_name = svc.name
+                        svc_price = svc.price
+                
+                # Format date/time for display
+                date_display = appointment.start_time.strftime("%d/%m/%Y")
+                time_display = appointment.start_time.strftime("%H:%M")
+                
+                # Send email (non-blocking)
+                if customer_obj.email:
+                    from email_service import send_booking_confirmation
+                    send_booking_confirmation(
+                        to_email=customer_obj.email,
+                        customer_name=customer_obj.username,
+                        barber_name=barber.name,
+                        service_name=svc_name,
+                        date_str=date_display,
+                        time_str=time_display,
+                        price=svc_price
+                    )
+                
+                # Create in-app notification
+                from routers.notifications import create_notification
+                create_notification(
+                    db=db,
+                    customer_id=customer_id,
+                    notif_type="booking_confirmed",
+                    title="Agendamento Confirmado",
+                    message=f"{svc_name} com {barber.name} em {date_display} às {time_display}",
+                    data={"appointment_id": db_appointment.id, "barber_name": barber.name}
+                )
+        except Exception as e:
+            print(f"[NOTIFICATION ERROR] {e}")
+    
     return jsonify_pydantic(db_appointment, schemas.Appointment)

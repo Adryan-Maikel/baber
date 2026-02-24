@@ -8,9 +8,18 @@ const API_URL = "";
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon(newTheme);
+    setTheme(newTheme);
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    updateThemeIcon(theme);
+
+    // Update theme selector UI (admin panel)
+    document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+    const activeOption = document.getElementById('theme-' + theme);
+    if (activeOption) activeOption.classList.add('active');
 }
 
 function updateThemeIcon(theme) {
@@ -91,6 +100,9 @@ function formatPhoneInput(input) {
 document.addEventListener('DOMContentLoaded', function () {
     const theme = document.documentElement.getAttribute('data-theme');
     updateThemeIcon(theme);
+    // Mark active theme option (admin panel)
+    const activeOption = document.getElementById('theme-' + theme);
+    if (activeOption) activeOption.classList.add('active');
 });
 
 // Global Modal Helpers

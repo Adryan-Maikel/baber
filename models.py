@@ -174,3 +174,18 @@ class StoryReaction(Base):
     
     media = relationship("AppointmentMedia")
     user = relationship("Customer")
+
+class Notification(Base):
+    """In-app notifications for customers"""
+    __tablename__ = "notifications"
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid, index=True)
+    customer_id = Column(String(36), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(30), nullable=False)  # booking_confirmed, photo_posted, booking_cancelled, etc.
+    title = Column(String(200), nullable=False)
+    message = Column(String(500), nullable=False)
+    is_read = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    data = Column(String(1000), nullable=True)  # JSON string for extra metadata
+    
+    customer = relationship("Customer")

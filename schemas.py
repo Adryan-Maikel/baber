@@ -141,13 +141,28 @@ def validate_brazilian_phone(phone: str) -> str:
     else:
         return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
 
+# =============== Email Validation Helper ===============
+
+def validate_email_address(email: str) -> str:
+    """Validate email format"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(pattern, email.strip()):
+        raise ValueError('Email inválido')
+    return email.strip().lower()
+
 # =============== Customer Schemas ===============
 
 class CustomerCreate(BaseModel):
     username: str
     phone: Optional[str] = None
-    email: Optional[str] = None
+    email: str  # Required for notifications
     password: str
+    accept_terms: bool = False
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        return validate_email_address(v)
     
     @field_validator('phone')
     @classmethod
@@ -269,3 +284,17 @@ class AppointmentMedia(AppointmentMediaBase):
 class AppointmentWithMedia(Appointment):
     """Appointment with associated media"""
     media: List[AppointmentMedia] = []
+
+# =============== Notification Schemas ===============
+
+class NotificationOut(BaseModel):
+    id: str
+    type: str
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+    data: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
