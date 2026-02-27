@@ -925,13 +925,26 @@
       </div>
     </div>
 
-    <!-- Barbers Section (NEW) -->
+    <!-- Barbers Section -->
     <div id="barbers" class="section fade-in">
-      <h1 class="row gap-5px">
-        <i class="fa-solid fa-scissors"></i> Profissionais
-      </h1>
-      <div id="barbers-admin-list" class="card-dropdown-list">
-        <!-- Barbers loaded via JS -->
+      <!-- List View -->
+      <div id="barbers-list-view">
+        <h1 class="row gap-5px">
+          <i class="fa-solid fa-scissors"></i> Profissionais
+        </h1>
+        <div id="barbers-admin-list" class="card-dropdown-list">
+          <!-- Barbers loaded via JS -->
+        </div>
+      </div>
+      <!-- Panel View (hidden by default, shown when editing/creating) -->
+      <div id="barbers-panel-view" class="barber-panel-inline" style="display: none;">
+        <div class="barber-panel-header">
+          <h2 id="barber-panel-title"><i class="fa-solid fa-user-tie"></i> Profissional</h2>
+          <button type="button" class="barber-panel-close" onclick="closeBarberPanel()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="barber-panel-content"></div>
       </div>
     </div>
 
@@ -1152,231 +1165,230 @@
       </div>
     </form>
   </div>
-</div>
 
-<script src="/static/js/components.js"></script>
-<script>
-  // =============== ADMIN JS ===============
+  <script src="/static/js/components.js"></script>
+  <script>
+    // =============== ADMIN JS ===============
 
-  // =============== MOBILE SIDEBAR ===============
-  function toggleMobileSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    const hamburger = document.querySelector('.hamburger-btn');
+    // =============== MOBILE SIDEBAR ===============
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
 
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
-    hamburger.classList.toggle('active');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+      hamburger.classList.toggle('active');
 
-    // Prevent body scroll when sidebar is open
-    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
-  }
-
-  function closeMobileSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    const hamburger = document.querySelector('.hamburger-btn');
-
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
-    hamburger.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  function openMobileSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    const hamburger = document.querySelector('.hamburger-btn');
-
-    sidebar.classList.add('open');
-    overlay.classList.add('active');
-    hamburger.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  // Swipe gesture support for mobile
-  let touchStartX = 0;
-  let touchEndX = 0;
-
-  document.addEventListener('touchstart', function (e) {
-    touchStartX = e.changedTouches[0].screenX;
-  }, { passive: true });
-
-  document.addEventListener('touchend', function (e) {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipeGesture();
-  }, { passive: true });
-
-  function handleSwipeGesture() {
-    const swipeThreshold = 80;
-    const sidebar = document.querySelector('.sidebar');
-    const isOpen = sidebar.classList.contains('open');
-
-    // Swipe right to open (only from left edge)
-    if (touchEndX - touchStartX > swipeThreshold && touchStartX < 50 && !isOpen) {
-      openMobileSidebar();
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
     }
 
-    // Swipe left to close
-    if (touchStartX - touchEndX > swipeThreshold && isOpen) {
-      closeMobileSidebar();
-    }
-  }
+    function closeMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
 
-  // Close sidebar on escape key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      closeMobileSidebar();
-    }
-  });
-
-  // =============== END MOBILE SIDEBAR ===============
-
-  let autoRefreshInterval = null;
-  let barbersCache = [];
-
-
-
-  // Security & Helper Utility Functions
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return "";
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function parseJwt(token) {
-    if (!token) return null;
-    try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map(function (c) {
-            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-          })
-          .join("")
-      );
-      return JSON.parse(jsonPayload);
-    } catch (e) {
-      console.error("Invalid Token", e);
-      return null;
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", async function () {
-    // Check Role and Adjust UI
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+      hamburger.classList.remove('active');
+      document.body.style.overflow = '';
     }
 
-    // Get user info to check role (decode token)
-    // Get user info to check role (decode token)
-    const payload = parseJwt(token);
-    const role = payload.role || "admin";
+    function openMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      const hamburger = document.querySelector('.hamburger-btn');
 
-    if (role === "barber") {
-      // Hide Sidebar items
-      const menuBarbers = document.getElementById("menu-barbers");
-      if (menuBarbers) menuBarbers.style.display = "none";
-
-      // Hide "Novo Profissional" button in Barbers section if accessible
-      const btn = document.querySelector('button[onclick="openBarberModal()"]');
-      if (btn) btn.style.display = "none";
+      sidebar.classList.add('open');
+      overlay.classList.add('active');
+      hamburger.classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
 
-    // Load barbers for filter dropdowns
-    await loadBarbersForFilters();
+    // Swipe gesture support for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
 
-    // Set default dates
-    initializeDashboardDates();
-    initializeAppointmentsDate();
+    document.addEventListener('touchstart', function (e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
 
-    if (document.getElementById("dashboard").classList.contains("active")) {
-      loadDashboardStats();
-      startAutoRefresh();
-    }
-  });
+    document.addEventListener('touchend', function (e) {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipeGesture();
+    }, { passive: true });
 
-  async function loadBarbersForFilters() {
-    const token = localStorage.getItem("access_token");
-    try {
-      const res = await fetch("/panel/barbers", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (res.ok) {
-        barbersCache = await res.json();
-        populateBarberSelects();
+    function handleSwipeGesture() {
+      const swipeThreshold = 80;
+      const sidebar = document.querySelector('.sidebar');
+      const isOpen = sidebar.classList.contains('open');
+
+      // Swipe right to open (only from left edge)
+      if (touchEndX - touchStartX > swipeThreshold && touchStartX < 50 && !isOpen) {
+        openMobileSidebar();
       }
-    } catch (e) { }
-  }
 
-  // =============== MULTISELECT LOGIC ===============
-  const multiselectState = {
-    dashboard: new Set(),
-    appointments: new Set()
-  };
+      // Swipe left to close
+      if (touchStartX - touchEndX > swipeThreshold && isOpen) {
+        closeMobileSidebar();
+      }
+    }
 
-  function toggleMultiselect(context) {
-    const el = document.getElementById(`${context}-barber-multiselect`);
-    // Close others
-    document.querySelectorAll('.custom-multiselect.show').forEach(e => {
-      if (e.id !== el.id) e.classList.remove('show');
+    // Close sidebar on escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeMobileSidebar();
+      }
     });
-    el.classList.toggle('show');
-  }
 
-  // Close when clicking outside
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.custom-multiselect')) {
-      document.querySelectorAll('.custom-multiselect.show').forEach(el => el.classList.remove('show'));
+    // =============== END MOBILE SIDEBAR ===============
+
+    let autoRefreshInterval = null;
+    let barbersCache = [];
+
+
+
+    // Security & Helper Utility Functions
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
-  });
 
-  function populateBarberSelects() {
-    // Replaced by renderMultiselects, calling it here for compatibility with loadBarbersForFilters
-    renderMultiselects();
-  }
-
-  function renderMultiselects() {
-    renderMultiselectComponent('dashboard');
-    renderMultiselectComponent('appointments');
-  }
-
-  function renderMultiselectComponent(context) {
-    const container = document.getElementById(`${context}-barber-multiselect-list`);
-    if (!container) return;
-
-    // Determine state
-    const state = multiselectState[context];
-    const allIds = barbersCache.map(b => b.id.toString());
-    const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
-    const isNoneSelected = state.size === 0; // Treated as "All" for filter purposes
-
-    // Render "Select All" Header State
-    const headerIcon = document.querySelector(`#${context}-barber-multiselect .multiselect-header .multiselect-option .check-icon`);
-    if (headerIcon) {
-      // If isNoneSelected (initial) -> we can show "Checked" visually or handle logic 'empty = all'
-      // Visual preference: If empty, it means 'All', so checking 'All' makes sense.
-      const isEffectiveAll = isNoneSelected || isAllSelected;
-
-      if (isEffectiveAll) {
-        headerIcon.parentElement.classList.add('selected');
-        headerIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-      } else {
-        headerIcon.parentElement.classList.remove('selected');
-        headerIcon.innerHTML = '';
+    function parseJwt(token) {
+      if (!token) return null;
+      try {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map(function (c) {
+              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+        );
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        console.error("Invalid Token", e);
+        return null;
       }
     }
 
-    container.innerHTML = barbersCache.map(b => {
-      const isSelected = state.has(b.id.toString());
-      return `
+    document.addEventListener("DOMContentLoaded", async function () {
+      // Check Role and Adjust UI
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      // Get user info to check role (decode token)
+      // Get user info to check role (decode token)
+      const payload = parseJwt(token);
+      const role = payload.role || "admin";
+
+      if (role === "barber") {
+        // Hide Sidebar items
+        const menuBarbers = document.getElementById("menu-barbers");
+        if (menuBarbers) menuBarbers.style.display = "none";
+
+        // Hide "Novo Profissional" button in Barbers section if accessible
+        const btn = document.querySelector('button[onclick="openBarberModal()"]');
+        if (btn) btn.style.display = "none";
+      }
+
+      // Load barbers for filter dropdowns
+      await loadBarbersForFilters();
+
+      // Set default dates
+      initializeDashboardDates();
+      initializeAppointmentsDate();
+
+      if (document.getElementById("dashboard").classList.contains("active")) {
+        loadDashboardStats();
+        startAutoRefresh();
+      }
+    });
+
+    async function loadBarbersForFilters() {
+      const token = localStorage.getItem("access_token");
+      try {
+        const res = await fetch("/panel/barbers", {
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (res.ok) {
+          barbersCache = await res.json();
+          populateBarberSelects();
+        }
+      } catch (e) { }
+    }
+
+    // =============== MULTISELECT LOGIC ===============
+    const multiselectState = {
+      dashboard: new Set(),
+      appointments: new Set()
+    };
+
+    function toggleMultiselect(context) {
+      const el = document.getElementById(`${context}-barber-multiselect`);
+      // Close others
+      document.querySelectorAll('.custom-multiselect.show').forEach(e => {
+        if (e.id !== el.id) e.classList.remove('show');
+      });
+      el.classList.toggle('show');
+    }
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.custom-multiselect')) {
+        document.querySelectorAll('.custom-multiselect.show').forEach(el => el.classList.remove('show'));
+      }
+    });
+
+    function populateBarberSelects() {
+      // Replaced by renderMultiselects, calling it here for compatibility with loadBarbersForFilters
+      renderMultiselects();
+    }
+
+    function renderMultiselects() {
+      renderMultiselectComponent('dashboard');
+      renderMultiselectComponent('appointments');
+    }
+
+    function renderMultiselectComponent(context) {
+      const container = document.getElementById(`${context}-barber-multiselect-list`);
+      if (!container) return;
+
+      // Determine state
+      const state = multiselectState[context];
+      const allIds = barbersCache.map(b => b.id.toString());
+      const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
+      const isNoneSelected = state.size === 0; // Treated as "All" for filter purposes
+
+      // Render "Select All" Header State
+      const headerIcon = document.querySelector(`#${context}-barber-multiselect .multiselect-header .multiselect-option .check-icon`);
+      if (headerIcon) {
+        // If isNoneSelected (initial) -> we can show "Checked" visually or handle logic 'empty = all'
+        // Visual preference: If empty, it means 'All', so checking 'All' makes sense.
+        const isEffectiveAll = isNoneSelected || isAllSelected;
+
+        if (isEffectiveAll) {
+          headerIcon.parentElement.classList.add('selected');
+          headerIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else {
+          headerIcon.parentElement.classList.remove('selected');
+          headerIcon.innerHTML = '';
+        }
+      }
+
+      container.innerHTML = barbersCache.map(b => {
+        const isSelected = state.has(b.id.toString());
+        return `
             <div class="multiselect-option ${isSelected ? 'selected' : ''}" 
                  onclick="toggleBarberSelection('${context}', '${b.id}')">
                 <div class="check-icon">
@@ -1385,1058 +1397,879 @@
                 <span>${escapeHtml(b.name)}</span>
             </div>
         `;
-    }).join('');
+      }).join('');
 
-    updateMultiselectLabel(context);
-  }
+      updateMultiselectLabel(context);
+    }
 
-  function toggleBarberSelection(context, id) {
-    const state = multiselectState[context];
+    function toggleBarberSelection(context, id) {
+      const state = multiselectState[context];
 
-    // If state is empty (All), and we click one, we should probably:
-    // 1. If clicking to SELECT one specific? 
-    // Usually: Empty = All. 
-    // If I click one, do I want ONLY that one? Yes.
-    // But wait, if I had "All" (empty set), and I toggle one, I should probably select that ONE.
-    // OR, if I want to deselect one from All?
+      // If state is empty (All), and we click one, we should probably:
+      // 1. If clicking to SELECT one specific? 
+      // Usually: Empty = All. 
+      // If I click one, do I want ONLY that one? Yes.
+      // But wait, if I had "All" (empty set), and I toggle one, I should probably select that ONE.
+      // OR, if I want to deselect one from All?
 
-    // Let's stick to simple set logic.
-    // If empty, treating as "All" for backend.
-    // For UI: logic is simpler if we treat "Empty" as "None Selected" but backend treats as "All".
-    // But user wants "Select All" button.
+      // Let's stick to simple set logic.
+      // If empty, treating as "All" for backend.
+      // For UI: logic is simpler if we treat "Empty" as "None Selected" but backend treats as "All".
+      // But user wants "Select All" button.
 
-    if (state.has(id)) state.delete(id);
-    else state.add(id);
+      if (state.has(id)) state.delete(id);
+      else state.add(id);
 
-    renderMultiselectComponent(context);
+      renderMultiselectComponent(context);
 
-    // Trigger refresh
-    if (context === 'dashboard') refreshDashboard();
-    else loadAppointmentsAdmin();
-  }
+      // Trigger refresh
+      if (context === 'dashboard') refreshDashboard();
+      else loadAppointmentsAdmin();
+    }
 
-  function toggleSelectAll(context) {
-    const state = multiselectState[context];
-    const allIds = barbersCache.map(b => b.id.toString());
-    const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
-    const isNoneSelected = state.size === 0;
+    function toggleSelectAll(context) {
+      const state = multiselectState[context];
+      const allIds = barbersCache.map(b => b.id.toString());
+      const isAllSelected = state.size > 0 && allIds.every(id => state.has(id));
+      const isNoneSelected = state.size === 0;
 
-    if (isAllSelected || isNoneSelected) {
-      // If All (explicitly or implicitly empty), Clear everything? 
-      // Or Select All explicit?
+      if (isAllSelected || isNoneSelected) {
+        // If All (explicitly or implicitly empty), Clear everything? 
+        // Or Select All explicit?
 
-      if (isNoneSelected) {
-        // Currently "All". Click -> Select specific all? Or Deselect All (clear)?
-        // If I click "Select All" when "All" is active, maybe I want to Deselect All?
-        // But treating empty as All...
+        if (isNoneSelected) {
+          // Currently "All". Click -> Select specific all? Or Deselect All (clear)?
+          // If I click "Select All" when "All" is active, maybe I want to Deselect All?
+          // But treating empty as All...
 
-        // Let's try:
-        // Click Select All -> Selects ALL IDs explicitly
-        allIds.forEach(id => state.add(id));
+          // Let's try:
+          // Click Select All -> Selects ALL IDs explicitly
+          allIds.forEach(id => state.add(id));
+        } else {
+          // If all selected, clear -> Empty -> All
+          state.clear();
+        }
       } else {
-        // If all selected, clear -> Empty -> All
-        state.clear();
+        // Some selected -> Select All
+        allIds.forEach(id => state.add(id));
       }
-    } else {
-      // Some selected -> Select All
-      allIds.forEach(id => state.add(id));
+
+      renderMultiselectComponent(context);
+
+      if (context === 'dashboard') refreshDashboard();
+      else loadAppointmentsAdmin();
     }
 
-    renderMultiselectComponent(context);
+    function updateMultiselectLabel(context) {
+      const count = multiselectState[context].size;
+      // const total = barbersCache.length;
+      const labelEl = document.querySelector(`#${context}-barber-multiselect .multiselect-trigger span`);
 
-    if (context === 'dashboard') refreshDashboard();
-    else loadAppointmentsAdmin();
-  }
-
-  function updateMultiselectLabel(context) {
-    const count = multiselectState[context].size;
-    // const total = barbersCache.length;
-    const labelEl = document.querySelector(`#${context}-barber-multiselect .multiselect-trigger span`);
-
-    if (count === 0) {
-      labelEl.innerHTML = 'Todos Profissionais';
-    } else {
-      labelEl.innerHTML = `<i class="fa-solid fa-user-check"></i> ${count} Selecionado${count > 1 ? 's' : ''}`;
-    }
-  }
-
-  function getSelectedBarberIds(context) {
-    if (multiselectState[context].size === 0) return []; // Backend treats empty as All
-    return Array.from(multiselectState[context]);
-  }
-
-  function initializeDashboardDates() {
-    const today = new Date();
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 6);
-
-    document.getElementById("dashboard-start-date").value = weekAgo
-      .toISOString()
-      .split("T")[0];
-    document.getElementById("dashboard-end-date").value = today
-      .toISOString()
-      .split("T")[0];
-  }
-
-  function initializeAppointmentsDate() {
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("appointments-date-filter").value = today;
-  }
-
-  function setDashboardPeriod(days) {
-    const today = new Date();
-    const startDate = new Date(today);
-    if (days > 0) {
-      startDate.setDate(startDate.getDate() - (days - 1));
-    }
-    document.getElementById("dashboard-start-date").value = startDate
-      .toISOString()
-      .split("T")[0];
-    document.getElementById("dashboard-end-date").value = today
-      .toISOString()
-      .split("T")[0];
-    refreshDashboard();
-  }
-
-  function setAppointmentsToday() {
-    document.getElementById("appointments-date-filter").value = new Date()
-      .toISOString()
-      .split("T")[0];
-    loadAppointmentsAdmin();
-  }
-
-  function startAutoRefresh() {
-    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-    autoRefreshInterval = setInterval(() => {
-      if (document.getElementById("dashboard").classList.contains("active")) {
-        refreshDashboard();
+      if (count === 0) {
+        labelEl.innerHTML = 'Todos Profissionais';
+      } else {
+        labelEl.innerHTML = `<i class="fa-solid fa-user-check"></i> ${count} Selecionado${count > 1 ? 's' : ''}`;
       }
-    }, 30000); // 30 seconds
-  }
+    }
 
-  function refreshDashboard() {
-    const chart1 = Chart.getChart("appointmentsChart");
-    if (chart1) chart1.destroy();
-    const chart2 = Chart.getChart("servicesChart");
-    if (chart2) chart2.destroy();
-    loadDashboardStats();
-  }
+    function getSelectedBarberIds(context) {
+      if (multiselectState[context].size === 0) return []; // Backend treats empty as All
+      return Array.from(multiselectState[context]);
+    }
 
-  // =============== DASHBOARD ===============
+    function initializeDashboardDates() {
+      const today = new Date();
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 6);
 
-  async function loadDashboardStats() {
-    try {
-      const token = localStorage.getItem("access_token");
-      const barberIds = getSelectedBarberIds('dashboard');
-      const startDate =
-        document.getElementById("dashboard-start-date")?.value || "";
-      const endDate =
-        document.getElementById("dashboard-end-date")?.value || "";
+      document.getElementById("dashboard-start-date").value = weekAgo
+        .toISOString()
+        .split("T")[0];
+      document.getElementById("dashboard-end-date").value = today
+        .toISOString()
+        .split("T")[0];
+    }
 
-      let url = "/panel/dashboard-stats?";
-      if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
-      if (startDate) url += `start_date=${startDate}&`;
-      if (endDate) url += `end_date=${endDate}&`;
+    function initializeAppointmentsDate() {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("appointments-date-filter").value = today;
+    }
 
-      const response = await fetch(url, {
-        headers: { Authorization: "Bearer " + token },
-      });
+    function setDashboardPeriod(days) {
+      const today = new Date();
+      const startDate = new Date(today);
+      if (days > 0) {
+        startDate.setDate(startDate.getDate() - (days - 1));
+      }
+      document.getElementById("dashboard-start-date").value = startDate
+        .toISOString()
+        .split("T")[0];
+      document.getElementById("dashboard-end-date").value = today
+        .toISOString()
+        .split("T")[0];
+      refreshDashboard();
+    }
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = "/login";
+    function setAppointmentsToday() {
+      document.getElementById("appointments-date-filter").value = new Date()
+        .toISOString()
+        .split("T")[0];
+      loadAppointmentsAdmin();
+    }
+
+    function startAutoRefresh() {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      autoRefreshInterval = setInterval(() => {
+        if (document.getElementById("dashboard").classList.contains("active")) {
+          refreshDashboard();
+        }
+      }, 30000); // 30 seconds
+    }
+
+    function refreshDashboard() {
+      const chart1 = Chart.getChart("appointmentsChart");
+      if (chart1) chart1.destroy();
+      const chart2 = Chart.getChart("servicesChart");
+      if (chart2) chart2.destroy();
+      loadDashboardStats();
+    }
+
+    // =============== DASHBOARD ===============
+
+    async function loadDashboardStats() {
+      try {
+        const token = localStorage.getItem("access_token");
+        const barberIds = getSelectedBarberIds('dashboard');
+        const startDate =
+          document.getElementById("dashboard-start-date")?.value || "";
+        const endDate =
+          document.getElementById("dashboard-end-date")?.value || "";
+
+        let url = "/panel/dashboard-stats?";
+        if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
+        if (startDate) url += `start_date=${startDate}&`;
+        if (endDate) url += `end_date=${endDate}&`;
+
+        const response = await fetch(url, {
+          headers: { Authorization: "Bearer " + token },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
           return;
         }
-        return;
-      }
-      const data = await response.json();
+        const data = await response.json();
 
-      document.getElementById("count-today").textContent = data.count_today;
-      document.getElementById("count-period").textContent =
-        data.total_appointments || 0;
-      document.getElementById("total-revenue").textContent =
-        "R$ " + (data.total_revenue || 0).toFixed(2);
-      document.getElementById("barber-count").textContent =
-        data.barber_count || 0;
-      document.getElementById("last-refresh").textContent =
-        "Atualizado: " + new Date().toLocaleTimeString("pt-BR");
+        document.getElementById("count-today").textContent = data.count_today;
+        document.getElementById("count-period").textContent =
+          data.total_appointments || 0;
+        document.getElementById("total-revenue").textContent =
+          "R$ " + (data.total_revenue || 0).toFixed(2);
+        document.getElementById("barber-count").textContent =
+          data.barber_count || 0;
+        document.getElementById("last-refresh").textContent =
+          "Atualizado: " + new Date().toLocaleTimeString("pt-BR");
 
-      // Charts - Theme Aware Colors
-      const style = getComputedStyle(document.body);
-      const accent = style.getPropertyValue("--accent").trim() || "#3b82f6";
-      const success = style.getPropertyValue("--success").trim() || "#10b981";
-      const textSec =
-        style.getPropertyValue("--text-secondary").trim() || "#9ca3af";
+        // Charts - Theme Aware Colors
+        const style = getComputedStyle(document.body);
+        const accent = style.getPropertyValue("--accent").trim() || "#3b82f6";
+        const success = style.getPropertyValue("--success").trim() || "#10b981";
+        const textSec =
+          style.getPropertyValue("--text-secondary").trim() || "#9ca3af";
 
-      const ctxApp = document
-        .getElementById("appointmentsChart")
-        .getContext("2d");
+        const ctxApp = document
+          .getElementById("appointmentsChart")
+          .getContext("2d");
 
-      // Destroy existing if any (global tracking needed if strict, but recreating usually works with Chart.js 3+)
-      // Better to track instances if possible, but for now just create new.
-      // Actually, if we re-render, we should destroy.
-      if (window._myAppChart) window._myAppChart.destroy();
-      if (window._mySvcChart) window._mySvcChart.destroy();
+        // Destroy existing if any (global tracking needed if strict, but recreating usually works with Chart.js 3+)
+        // Better to track instances if possible, but for now just create new.
+        // Actually, if we re-render, we should destroy.
+        if (window._myAppChart) window._myAppChart.destroy();
+        if (window._mySvcChart) window._mySvcChart.destroy();
 
-      window._myAppChart = new Chart(ctxApp, {
-        type: "line",
-        data: {
-          labels: data.labels,
-          datasets: [
-            {
-              label: "Atendimentos",
-              data: data.appointments_data,
-              borderColor: accent,
-              backgroundColor: accent + "1A", // ~10% opacity
-              yAxisID: "y",
-              tension: 0.4,
-              fill: true,
-            },
-            {
-              label: "Receita (R$)",
-              data: data.revenue_data,
-              borderColor: success,
-              backgroundColor: success + "1A",
-              yAxisID: "y1",
-              tension: 0.4,
-              fill: true,
-            },
-            {
-              label: "Cancelados",
-              data: data.cancelled_data,
-              borderColor: textSec,
-              backgroundColor: textSec + "1A", // Reuse text-secondary as gray
-              yAxisID: "y",
-              tension: 0.4,
-              fill: true,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          interaction: { mode: "index", intersect: false },
-          scales: {
-            y: {
-              type: "linear",
-              display: true,
-              position: "left",
-              title: { display: true, text: "Qtd" },
-            },
-            y1: {
-              type: "linear",
-              display: true,
-              position: "right",
-              grid: { drawOnChartArea: false },
-              title: { display: true, text: "R$" },
+        window._myAppChart = new Chart(ctxApp, {
+          type: "line",
+          data: {
+            labels: data.labels,
+            datasets: [
+              {
+                label: "Atendimentos",
+                data: data.appointments_data,
+                borderColor: accent,
+                backgroundColor: accent + "1A", // ~10% opacity
+                yAxisID: "y",
+                tension: 0.4,
+                fill: true,
+              },
+              {
+                label: "Receita (R$)",
+                data: data.revenue_data,
+                borderColor: success,
+                backgroundColor: success + "1A",
+                yAxisID: "y1",
+                tension: 0.4,
+                fill: true,
+              },
+              {
+                label: "Cancelados",
+                data: data.cancelled_data,
+                borderColor: textSec,
+                backgroundColor: textSec + "1A", // Reuse text-secondary as gray
+                yAxisID: "y",
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              y: {
+                type: "linear",
+                display: true,
+                position: "left",
+                title: { display: true, text: "Qtd" },
+              },
+              y1: {
+                type: "linear",
+                display: true,
+                position: "right",
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: "R$" },
+              },
             },
           },
-        },
-      });
+        });
 
-      const ctxSvc = document.getElementById("servicesChart").getContext("2d");
-      window._mySvcChart = new Chart(ctxSvc, {
-        type: "doughnut",
-        data: {
-          labels: data.service_distribution.labels,
-          datasets: [
-            {
-              data: data.service_distribution.data,
-              backgroundColor: [
-                accent,
-                success,
-                "#f59e0b",
-                "#ef4444",
-                "#8b5cf6",
-              ],
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: "right" } },
-        },
-      });
-    } catch (error) {
-      console.error("Error loading dashboard stats:", error);
-    }
-  }
-
-  // =============== SECTION MANAGEMENT ===============
-
-  window.showSection = function (sectionId) {
-    document
-      .querySelectorAll(".section")
-      .forEach((s) => s.classList.remove("active"));
-    document
-      .querySelectorAll(".sidebar-menu a")
-      .forEach((a) => a.classList.remove("active"));
-
-    document.getElementById(sectionId).classList.add("active");
-    const link = document.querySelector(
-      `a[onclick="showSection('${sectionId}')"]`
-    );
-    if (link) link.classList.add("active");
-
-    if (sectionId === "dashboard") {
-      refreshDashboard();
-      startAutoRefresh();
-    } else if (sectionId === "barbers") {
-      loadBarbersAdmin();
-    } else if (sectionId === "appointments") {
-      loadAppointmentsAdmin();
-    } else if (sectionId === "settings") {
-      loadSettings();
-    }
-  };
-
-  let refreshInterval;
-  function startAutoRefresh() {
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(refreshDashboard, 30000); // 30s
-  }
-
-  window.logout = function () {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user_data"); // Clear extra data if any
-    window.location.href = "/";
-  };
-
-  // =============== SETTINGS & THEME ===============
-
-  function loadSettings() {
-    // Load user info
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      try {
-        const payload = parseJwt(token);
-
-        // Update Admin Card Header
-        const nameEl = document.getElementById("settings-card-user-name");
-        if (nameEl) nameEl.textContent = payload.sub;
-
-        const roleEl = document.getElementById("settings-card-user-role");
-        if (roleEl)
-          roleEl.textContent =
-            payload.role === "barber" ? "Profissional" : "Administrador";
-
-        // Populate Admin Edit Form
-        const usernameInput = document.getElementById("admin-username");
-        if (usernameInput) usernameInput.value = payload.sub;
-      } catch (e) { }
-    }
-
-    // Highlight current theme
-    const currentTheme = localStorage.getItem("theme") || "dark";
-    updateThemeUI(currentTheme);
-  }
-
-  // toggleSettingsCard and changePassword removed - replaced by new card logic
-
-
-
-  // =============== PROFILE EDITING ===============
-  async function saveAdminProfile(e) {
-    e.preventDefault();
-    const username = document.getElementById("admin-username").value;
-    const password = document.getElementById("admin-password").value;
-    const token = localStorage.getItem("access_token");
-
-    const body = { username };
-    if (password) body.password = password;
-
-    try {
-      const res = await fetch("/panel/admin/me", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Erro ao atualizar perfil");
+        const ctxSvc = document.getElementById("servicesChart").getContext("2d");
+        window._mySvcChart = new Chart(ctxSvc, {
+          type: "doughnut",
+          data: {
+            labels: data.service_distribution.labels,
+            datasets: [
+              {
+                data: data.service_distribution.data,
+                backgroundColor: [
+                  accent,
+                  success,
+                  "#f59e0b",
+                  "#ef4444",
+                  "#8b5cf6",
+                ],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: "right" } },
+          },
+        });
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error);
       }
+    }
 
-      await showAlertModal(
-        "Perfil atualizado com sucesso! Por favor, faça login novamente."
+    // =============== SECTION MANAGEMENT ===============
+
+    window.showSection = function (sectionId) {
+      document
+        .querySelectorAll(".section")
+        .forEach((s) => s.classList.remove("active"));
+      document
+        .querySelectorAll(".sidebar-menu a")
+        .forEach((a) => a.classList.remove("active"));
+
+      document.getElementById(sectionId).classList.add("active");
+      const link = document.querySelector(
+        `a[onclick="showSection('${sectionId}')"]`
       );
-      logout();
-    } catch (error) {
-      await showAlertModal("Erro: " + error.message);
-    }
-  }
+      if (link) link.classList.add("active");
 
-  // Toggle card expansion
-  window.toggleCardDropdown = function (header) {
-    const card = header.closest(".card-dropdown");
-    card.classList.toggle("expanded");
-  };
-
-  async function loadBarbersAdmin() {
-    const container = document.getElementById("barbers-admin-list");
-    const token = localStorage.getItem("access_token");
-
-    try {
-      const res = await fetch("/panel/barbers", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (!res.ok) throw new Error("Failed to load");
-      const barbers = await res.json();
-
-      // Always start with the new barber card
-      container.innerHTML =
-        renderNewBarberCardHTML() +
-        barbers
-          .map(
-            (b) => `
-  <div class="card-dropdown" id="barber-card-${b.id}">
-    <!-- Header (Collapsed View) -->
-    <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
-      <div class="barber-summary-left">
-        <div class="barber-avatar-small">
-          ${b.avatar_url
-                ? `<img src="${b.avatar_url
-                }" alt="${escapeHtml(b.name)}">`
-                : `<i class="fa-solid fa-user-tie"></i>`
-              }
-        </div>
-        <div class="barber-summary-info">
-          <h3>${escapeHtml(b.name)}</h3>
-          <p><i class="fa-solid fa-clock" style="font-size:0.8rem; margin-right:4px;"></i> ${b.start_time.slice(
-                0,
-                5
-              )} - ${b.end_time.slice(0, 5)}</p>
-        </div>
-      </div>
-
-      <div class="barber-summary-right">
-        <span class="barber-status-badge">
-          <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: ${b.is_active
-                ? " var(--success)" : "var(--danger)"};"></i>
-          ${b.is_active ? "Ativo" : "Inativo"}
-        </span>
-        <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
-          <div>${b.services?.length || 0} Serviços</div>
-        </div>
-        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
-      </div>
-    </div>
-
-    <!-- Body (Expanded View - Edit Form) -->
-    <div class="card-dropdown-body">
-      <form onsubmit="saveBarber(event, '${b.id}')" class="card-dropdown-form">
-
-        <div class="card-dropdown-scroll-container">
-          <!-- Row 1: Profile & Info -->
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
-
-            <!-- Avatar Column -->
-            <div class="column gap-05" style="width: 180px">
-              <div class="avatar-upload-trigger" onclick="triggerAvatarUpload('${b.id}')" style="width: 180px; height: 180px;">
-                ${b.avatar_url
-                ? `<img src="${b.avatar_url}" alt="${escapeHtml(b.name)}">`
-                : `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>`
-              }
-                <div class="overlay">
-                  <i class="fa-solid fa-pencil"></i>
-                </div>
-              </div>
-              <button type="button" class="btn btn-sm btn-danger remove-avatar-btn ${b.avatar_url ? " fade-in" : ""}"
-                  onclick="removeAvatar('${b.id}')"
-                  style="${b.avatar_url ? "" : " display: none;"}">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-
-              <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                <i class="fa-solid fa-clock"></i> Jornada de Trabalho*
-              </h4>
-              <div class="row gap-05">
-                ${createTimeInput({ name: "start_time", id: `start_time_${b.id}`, value: b.start_time, required: true })}
-                <span style="color: var(--text-secondary);">até</span>
-                ${createTimeInput({ name: "end_time", id: `end_time_${b.id}`, value: b.end_time, required: true })}
-              </div>
-
-              <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                <i class="fa-solid fa-clock"></i> Intervalo
-              </h4>
-              <div class="row gap-05">
-                ${createTimeInput({ name: "start_interval", id: `start_interval_${b.id}`, value: b.start_interval || "" })}
-                <span style="color: var(--text-secondary);">até</span>
-                ${createTimeInput({ name: "end_interval", id: `end_interval_${b.id}`, value: b.end_interval || "" })}
-              </div>
-            </div>
-
-            <!-- Right Column: Info + Schedule -->
-            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
-
-              <!-- Inputs Grid -->
-              <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
-                <div class="settings-form-group">
-                  <label>Nome</label>
-                  <input type="text" name="name" value="${escapeHtml(b.name)}" required>
-                </div>
-                <div class="settings-form-group">
-                  <label>Telefone</label>
-                  <input type="tel" name="phone" value="${formatPhone(b.phone) || ""}" oninput="formatPhoneInput(this)">
-                </div>
-                <div class="settings-form-group">
-                  <label>Usuário (Login)</label>
-                  <input type="text" name="username" value="${escapeHtml(b.username || "")}" placeholder="Opcional">
-                </div>
-                <div class="settings-form-group">
-                  <label>Instagram (@)</label>
-                  <input type="text" name="instagram" value="${escapeHtml(b.instagram || "")}" placeholder="sem o @">
-                </div>
-                <div class="settings-form-group">
-                  <label>Twitter (@)</label>
-                  <input type="text" name="twitter" value="${escapeHtml(b.twitter || "")}" placeholder="sem o @">
-                </div>
-                <div class="settings-form-group">
-                  <label>Email</label>
-                  <input type="email" name="email" value="${escapeHtml(b.email || "")}" placeholder="email@exemplo.com">
-                </div>
-                <div class="settings-form-group">
-                  <label>Nova Senha</label>
-                  <input type="password" name="password" placeholder="Deixe em branco para manter">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 3: Services -->
-          <div class="services-inline-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-              <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços</h4>
-              <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
-                <i class="fa-solid fa-plus"></i> Adicionar
-              </button>
-            </div>
-
-            <div class="inline-services-container">
-              ${(b.services || []).map(s => `
-              <div class="service-form-item" data-service-id="${s.id}">
-                <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
-                  <i class="fa-solid fa-times"></i>
-                </button>
-
-                <!-- Row 1: Icon + Name -->
-                <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
-                  <div style="width: auto;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
-                    <div class="icon-select-wrapper" onclick="event.stopPropagation()">
-                      <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
-                        <i class="fa-solid ${s.icon || 'fa-scissors'}"></i>
-                      </div>
-                      <input type="hidden" class="svc-icon" value="${s.icon || 'fa-scissors'}">
-                      <div class="icon-select-dropdown">
-                        <div class="icon-option ${s.icon == 'fa-scissors' ? 'selected' : ''}"
-                          onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
-                        <div class="icon-option ${s.icon == 'fa-bolt' ? 'selected' : ''}"
-                          onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
-                        <div class="icon-option ${s.icon == 'fa-leaf' ? 'selected' : ''}"
-                          onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
-                        <div class="icon-option ${s.icon == 'fa-paint-roller' ? 'selected' : ''}"
-                          onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
-                        <div class="icon-option ${s.icon == 'fa-seedling' ? 'selected' : ''}"
-                          onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
-                    <input type="text" class="svc-name" value="${escapeHtml(s.name)}" required autocomplete="off">
-                  </div>
-                </div>
-
-                <!-- Row 2: Duration, Price, Discount (Compact) -->
-                <div class="form-row" style="gap: 0.5rem;">
-                  <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
-                    <input type="tel" class="svc-duration" value="${s.duration_minutes}" required autocomplete="off"
-                      style="text-align:center;">
-                  </div>
-                  <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
-                    <input type="tel" class="svc-price" value="${formatCurrency(s.price)}" required autocomplete="off"
-                      oninput="formatCurrencyInput(this)">
-                  </div>
-                  <div style="flex: 1;">
-                    <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
-                    <input type="tel" class="svc-discount"
-                      value="${s.discount_price ? formatCurrency(s.discount_price) : ''}" autocomplete="off"
-                      oninput="formatCurrencyInput(this)">
-                  </div>
-                </div>
-              </div>
-              `).join('')}
-            </div>
-          </div>
-
-        </div>
-
-        <div class="card-dropdown-footer">
-          <button type="button" class="btn btn-danger" onclick="deleteBarber('${b.id}')">
-            <i class="fa-solid fa-trash"></i> Excluir
-          </button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-solid fa-save"></i> Salvar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  `
-          )
-          .join("");
-    } catch (e) {
-      container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais: ${e.message}</p>`;
-    }
-  }
-
-  async function deleteBarber(id) {
-    const confirmed = await showConfirmModal(
-      "Tem certeza que deseja excluir este profissional?",
-      "Excluir Profissional"
-    );
-    if (!confirmed) return;
-    const token = localStorage.getItem("access_token");
-    try {
-      const res = await fetch(`/panel/barbers/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (res.ok) {
-        await showAlertModal("Profissional excluído com sucesso!");
+      if (sectionId === "dashboard") {
+        refreshDashboard();
+        startAutoRefresh();
+      } else if (sectionId === "barbers") {
         loadBarbersAdmin();
-      } else {
-        throw new Error("Falha ao excluir");
+      } else if (sectionId === "appointments") {
+        loadAppointmentsAdmin();
+      } else if (sectionId === "settings") {
+        loadSettings();
       }
-    } catch (e) {
-      await showAlertModal("Erro: " + e.message);
+    };
+
+    let refreshInterval;
+    function startAutoRefresh() {
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(refreshDashboard, 30000); // 30s
     }
-  }
 
-  function addServiceField() {
-    const container = document.getElementById("services-container");
-    const div = document.createElement("div");
-    div.className = "service-form-item";
-    div.innerHTML = `
-  <button type="button" class="remove-service-btn" onclick="removeServiceItem(this)">
-    <i class="fa-solid fa-times"></i>
-  </button>
-  <div class="form-row compact">
-    <input type="text" class="svc-name" placeholder="Nome (Ex: Corte)" required style="flex:2;">
-    <input type="number" class="svc-duration" placeholder="Min" required style="flex:1;">
-    <input type="number" step="0.01" class="svc-price" placeholder="R$" required style="flex:1;">
-    <input type="number" step="0.01" class="svc-discount" placeholder="Desc R$" style="flex:1;">
-  </div>
-  `;
-    container.appendChild(div);
-  }
+    window.logout = function () {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_data"); // Clear extra data if any
+      window.location.href = "/";
+    };
 
-  function removeServiceItem(btn) {
-    // For Modal: just remove from DOM (re-sync on save will create/update, keeping missing ones?
-    // Issue: Previous logic didn't delete.
-    // TODO: Ideally track deletions. For now keep simple behavior.)
-    btn.closest(".service-form-item").remove();
-  }
+    // =============== SETTINGS & THEME ===============
 
-  // Modal Avatar Helpers
-  function handleModalAvatarClick() {
-    triggerModalAvatarUpload();
-  }
+    function loadSettings() {
+      // Load user info
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          const payload = parseJwt(token);
 
-  function setModalAvatarPreview(src, isFile) {
-    const preview = document.getElementById("modal-avatar-preview");
-    if (src) {
-      preview.innerHTML = `<img src="${src}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
-  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
-    } else resetModalAvatarPreview();
-  }
+          // Update Admin Card Header
+          const nameEl = document.getElementById("settings-card-user-name");
+          if (nameEl) nameEl.textContent = payload.sub;
 
-  function resetModalAvatarPreview() {
-    const preview = document.getElementById("modal-avatar-preview");
-    preview.innerHTML = `<i class="fa-solid fa-user-tie"></i>
-  <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>`;
-  }
+          const roleEl = document.getElementById("settings-card-user-role");
+          if (roleEl)
+            roleEl.textContent =
+              payload.role === "barber" ? "Profissional" : "Administrador";
 
-  // =============== BARBER MANAGEMENT (INLINE REFACTOR) ===============
-
-  // showNewBarberCard is no longer needed as the card is permanent
-  // keeping it empty or removing to avoid errors if called from console/legacy
-  function showNewBarberCard() {
-    document
-      .getElementById("barber-card-new")
-      .scrollIntoView({ behavior: "smooth" });
-  }
-
-  function clearNewBarberForm() {
-    const card = document.getElementById("barber-card-new");
-    if (card) {
-      const form = card.querySelector("form");
-      if (form) form.reset();
-      // Clear inline services
-      const servicesContainer = card.querySelector(
-        ".inline-services-container"
-      );
-      if (servicesContainer) servicesContainer.innerHTML = "";
-
-      // Clear pending avatar and reset preview
-      pendingNewBarberFile = null;
-      const previewContainer = card.querySelector(".avatar-upload-trigger");
-      if (previewContainer) {
-        previewContainer.innerHTML = `<div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-  <div class="overlay"><i class="fa-solid fa-camera"></i></div>`;
+          // Populate Admin Edit Form
+          const usernameInput = document.getElementById("admin-username");
+          if (usernameInput) usernameInput.value = payload.sub;
+        } catch (e) { }
       }
+
+      // Highlight current theme
+      const currentTheme = localStorage.getItem("theme") || "dark";
+      updateThemeUI(currentTheme);
     }
-  }
-  // Expose to global scope for HTML onclick
-  window.showNewBarberCard = showNewBarberCard;
-  window.clearNewBarberForm = clearNewBarberForm;
 
-  // Global variable to hold pending avatar for new barber
-  let pendingNewBarberFile = null;
+    // toggleSettingsCard and changePassword removed - replaced by new card logic
 
-  function handleNewBarberAvatarSelect(input) {
-    if (input.files && input.files[0]) {
-      pendingNewBarberFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const previewContainer = document.querySelector(
-          "#barber-card-new .avatar-upload-trigger"
+
+
+    // =============== PROFILE EDITING ===============
+    async function saveAdminProfile(e) {
+      e.preventDefault();
+      const username = document.getElementById("admin-username").value;
+      const password = document.getElementById("admin-password").value;
+      const token = localStorage.getItem("access_token");
+
+      const body = { username };
+      if (password) body.password = password;
+
+      try {
+        const res = await fetch("/panel/admin/me", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Erro ao atualizar perfil");
+        }
+
+        await showAlertModal(
+          "Perfil atualizado com sucesso! Por favor, faça login novamente."
         );
-        previewContainer.innerHTML = `
-  <img src="${e.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
-  <div class="overlay"><i class="fa-solid fa-camera"></i></div>
-  `;
-      };
-      reader.readAsDataURL(input.files[0]);
-
-      // Show Remove Button
-      const btn = document.querySelector("#barber-card-new .remove-avatar-btn");
-      if (btn) {
-        btn.style.display = "";
-        btn.classList.add("fade-in");
+        logout();
+      } catch (error) {
+        await showAlertModal("Erro: " + error.message);
       }
     }
-  }
 
-  function removeNewBarberAvatar() {
-    pendingNewBarberFile = null;
-    document.getElementById("file-input-new").value = "";
-    const previewContainer = document.querySelector(
-      "#barber-card-new .avatar-upload-trigger"
-    );
-    if (previewContainer) {
-      previewContainer.innerHTML = `
-  <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-  <div class="overlay">
-    <i class="fa-solid fa-pencil"></i>
-  </div>
-  `;
-    }
+    // Toggle card expansion
+    window.toggleCardDropdown = function (header) {
+      const card = header.closest(".card-dropdown");
+      card.classList.toggle("expanded");
+    };
 
-    // Hide Remove Button
-    const btn = document.querySelector("#barber-card-new .remove-avatar-btn");
-    if (btn) btn.style.display = "none";
-  }
+    async function loadBarbersAdmin() {
+      const container = document.getElementById("barbers-admin-list");
+      const token = localStorage.getItem("access_token");
 
-  function renderNewBarberCardHTML() {
-    return `
-  <div class="card-dropdown" id="barber-card-new">
-    <!-- Header (Collapsed - acts as title) -->
-    <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
+      try {
+        const res = await fetch("/panel/barbers", {
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (!res.ok) throw new Error("Failed to load");
+        const barbers = await res.json();
+
+        // Store barbers data for panel access
+        window._barbersData = barbers;
+
+        // Render cards: "New" card first, then existing barbers
+        container.innerHTML = `
+  <div class="card-dropdown" id="barber-card-new" onclick="openBarberPanel(null)" style="cursor:pointer;">
+    <div class="card-dropdown-header">
       <div class="barber-summary-left">
         <div class="barber-avatar-small">
           <i class="fa-solid fa-user-plus"></i>
         </div>
         <div class="barber-summary-info">
           <h3>Novo Profissional</h3>
-          <p>Preencha os dados abaixo</p>
+          <p>Clique para cadastrar</p>
         </div>
       </div>
       <div class="barber-summary-right">
         <span class="barber-status-badge">
-          <i class="fa-solid fa-circle" style="color: var(--text-secondary);"></i> Criar
+          <i class="fa-solid fa-plus" style="font-size: 0.6rem; color: var(--accent);"></i> Criar
         </span>
-        <i class="fa-solid fa-chevron-down card-expand-icon"></i>
+        <i class="fa-solid fa-chevron-right card-expand-icon"></i>
       </div>
     </div>
+  </div>
+  ` + barbers.map(b => `
+  <div class="card-dropdown" onclick="openBarberPanel('${b.id}')" style="cursor:pointer;">
+    <div class="card-dropdown-header">
+      <div class="barber-summary-left">
+        <div class="barber-avatar-small">
+          ${b.avatar_url
+            ? `<img src="${b.avatar_url}" alt="${escapeHtml(b.name)}">`
+            : `<i class="fa-solid fa-user-tie"></i>`
+          }
+        </div>
+        <div class="barber-summary-info">
+          <h3>${escapeHtml(b.name)}</h3>
+          <p><i class="fa-solid fa-clock" style="font-size:0.8rem; margin-right:4px;"></i> ${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</p>
+        </div>
+      </div>
+      <div class="barber-summary-right">
+        <span class="barber-status-badge">
+          <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: ${b.is_active ? "var(--success)" : "var(--danger)"};"></i>
+          ${b.is_active ? "Ativo" : "Inativo"}
+        </span>
+        <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
+          <div>${b.services?.length || 0} Serviços</div>
+        </div>
+        <i class="fa-solid fa-chevron-right card-expand-icon"></i>
+      </div>
+    </div>
+  </div>
+  `).join("");
+      } catch (e) {
+        container.innerHTML = `<p style="color: var(--danger);">Erro ao carregar profissionais: ${e.message}</p>`;
+      }
+    }
 
-    <!--Body(Expanded Form) -->
-    <div class="card-dropdown-body">
-      <form class="card-dropdown-form">
+    async function deleteBarber(id) {
+      const confirmed = await showConfirmModal(
+        "Tem certeza que deseja excluir este profissional?",
+        "Excluir Profissional"
+      );
+      if (!confirmed) return;
+      const token = localStorage.getItem("access_token");
+      try {
+        const res = await fetch(`/panel/barbers/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (res.ok) {
+          closeBarberPanel();
+          await showAlertModal("Profissional excluído com sucesso!");
+          loadBarbersAdmin();
+        } else {
+          throw new Error("Falha ao excluir");
+        }
+      } catch (e) {
+        await showAlertModal("Erro: " + e.message);
+      }
+    }
 
-        <div class="card-dropdown-scroll-container">
-          <!-- Row 1 & 2 Combined: Profile & Schedule -->
-          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap">
+    // =============== BARBER PANEL ===============
 
-            <!-- New Barber Avatar Column -->
-            <div style="width: 140px;heigth: 140px">
-              <input type="file" id="file-input-new" style="display:none" accept="image/*"
-                onchange="handleNewBarberAvatarSelect(this)">
-              <div class="avatar-upload-trigger" onclick="document.getElementById('file-input-new').click()"
-                style="width: 140px; height: 140px;">
-                <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-                <div class="overlay">
-                  <i class="fa-solid fa-pencil"></i>
-                </div>
+    function openBarberPanel(barberId) {
+      const panelView = document.getElementById("barbers-panel-view");
+      const titleEl = document.getElementById("barber-panel-title");
+      const contentEl = document.getElementById("barber-panel-content");
+
+      let b = null;
+      const isNew = barberId === null;
+
+      if (!isNew) {
+        b = (window._barbersData || []).find(x => String(x.id) === String(barberId));
+        if (!b) return;
+      }
+
+      // Reset avatar buffers for this panel session
+      pendingNewBarberFile = null;
+
+      titleEl.innerHTML = isNew
+        ? '<i class="fa-solid fa-user-plus"></i> Novo Profissional'
+        : `<i class="fa-solid fa-user-tie"></i> ${escapeHtml(b.name)}`;
+
+      const avatarId = isNew ? 'new' : b.id;
+
+      contentEl.innerHTML = `
+    <form id="barber-panel-form" data-barber-id="${isNew ? '' : b.id}" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+      <div class="barber-panel-body">
+
+        <!-- PERFIL -->
+        <fieldset>
+          <legend><i class="fa-solid fa-user"></i> Perfil</legend>
+          <div class="panel-profile-row">
+            <div class="column gap-05" style="align-items: center;">
+              <input type="file" id="file-input-panel" style="display:none" accept="image/*"
+                onchange="handlePanelAvatarSelect(this)">
+              <div class="avatar-upload-trigger" onclick="document.getElementById('file-input-panel').click()"
+                style="width: 120px; height: 120px;">
+                ${isNew || !b.avatar_url
+          ? `<div class="panel-avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>`
+          : `<img src="${b.avatar_url}" alt="${escapeHtml(b.name)}">`
+        }
+                <div class="overlay"><i class="fa-solid fa-pencil"></i></div>
               </div>
-              <button type="button" class="btn btn-sm btn-danger remove-avatar-btn" onclick="removeNewBarberAvatar()"
-                style="display: none;">
+              <button type="button" class="btn btn-sm btn-danger remove-avatar-btn"
+                onclick="removePanelAvatar()"
+                style="${(isNew || !b.avatar_url) ? 'display: none;' : ''}">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
-
-            <!-- Right Column: Info + Schedule -->
-            <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem;">
-
-              <!-- Inputs Grid -->
-              <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-content: start;">
-                <div class="settings-form-group">
-                  <label>Nome *</label>
-                  <input type="text" name="name" required placeholder="Nome do profissional">
-                </div>
-                <div class="settings-form-group">
-                  <label>Telefone</label>
-                  <input type="tel" name="phone" oninput="formatPhoneInput(this)" placeholder="(00) 00000-0000">
-                </div>
-                <div class="settings-form-group">
-                  <label>Usuário (Login)</label>
-                  <input type="text" name="username" placeholder="Usuário para acesso">
-                </div>
-                <div class="settings-form-group">
-                  <label>Instagram (@)</label>
-                  <input type="text" name="instagram" placeholder="sem o @">
-                </div>
-                <div class="settings-form-group">
-                  <label>Twitter (@)</label>
-                  <input type="text" name="twitter" placeholder="sem o @">
-                </div>
-                <div class="settings-form-group">
-                  <label>Email</label>
-                  <input type="email" name="email" placeholder="email@exemplo.com">
-                </div>
-                <div class="settings-form-group">
-                  <label>Senha</label>
-                  <input type="password" name="password" placeholder="Senha inicial">
-                </div>
+            <div class="panel-fields-grid" style="align-self: center;">
+              <div class="settings-form-group">
+                <label>Nome *</label>
+                <input type="text" name="name" value="${isNew ? '' : escapeHtml(b.name)}" required placeholder="Nome do profissional">
               </div>
-
-              <!-- Schedule Section (Merged) -->
-              <div class="column">
-                <h4 style="font-size: 0.95rem; color: var(--text-secondary);">
-                  <i class="fa-solid fa-clock"></i> Jornada de Trabalho
-                </h4>
-                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;">
-                  <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Expediente:</label>
-                    ${createTimeInput({
-      name: "start_time",
-      id: "start_time_new",
-    })}
-                    <span style="color: var(--text-secondary);">até</span>
-                    ${createTimeInput({
-      name: "end_time",
-      id: "end_time_new",
-    })}
-                  </div>
-
-                  <div style="width: 1px; height: 24px; background: var(--border);"></div>
-
-                  <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <label style="font-size: 0.85rem; color: var(--text-secondary);">Intervalo:</label>
-                    ${createTimeInput({
-      name: "start_interval",
-      id: "start_interval_new",
-    })}
-                    <span style="color: var(--text-secondary);">até</span>
-                    ${createTimeInput({
-      name: "end_interval",
-      id: "end_interval_new",
-    })}
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
+        </fieldset>
 
-          <!-- Row 3: Services -->
+        <!-- TRABALHO -->
+        <fieldset>
+          <legend><i class="fa-solid fa-briefcase"></i> Trabalho</legend>
+          <div class="panel-schedule-row">
+            <div class="panel-schedule-group">
+              <label>Expediente:</label>
+              ${createTimeInput({ name: "start_time", id: "start_time_panel", value: isNew ? '' : b.start_time, required: !isNew })}
+              <span style="color: var(--text-secondary);">até</span>
+              ${createTimeInput({ name: "end_time", id: "end_time_panel", value: isNew ? '' : b.end_time, required: !isNew })}
+            </div>
+            <div style="width: 1px; height: 24px; background: var(--border);"></div>
+            <div class="panel-schedule-group">
+              <label>Intervalo:</label>
+              ${createTimeInput({ name: "start_interval", id: "start_interval_panel", value: isNew ? '' : (b.start_interval || '') })}
+              <span style="color: var(--text-secondary);">até</span>
+              ${createTimeInput({ name: "end_interval", id: "end_interval_panel", value: isNew ? '' : (b.end_interval || '') })}
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- LOGIN -->
+        <fieldset>
+          <legend><i class="fa-solid fa-key"></i> Login</legend>
+          <div class="panel-fields-grid">
+            <div class="settings-form-group">
+              <label>Usuário</label>
+              <input type="text" name="username" value="${isNew ? '' : escapeHtml(b.username || '')}" placeholder="Usuário para acesso">
+            </div>
+            <div class="settings-form-group">
+              <label>${isNew ? 'Senha' : 'Nova Senha'}</label>
+              <input type="password" name="password" placeholder="${isNew ? 'Senha inicial' : 'Deixe em branco para manter'}">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- REDES E CONTATO -->
+        <fieldset>
+          <legend><i class="fa-solid fa-share-nodes"></i> Contato & Redes</legend>
+          <div class="panel-contact-row">
+            <div class="panel-contact-item">
+              <label><i class="fa-brands fa-whatsapp"></i> Telefone</label>
+              <input type="tel" name="phone" value="${isNew ? '' : (formatPhone(b.phone) || '')}" oninput="formatPhoneInput(this)" placeholder="(00) 00000-0000">
+            </div>
+            <div class="panel-contact-item">
+              <label><i class="fa-solid fa-envelope"></i> Email</label>
+              <input type="email" name="email" value="${isNew ? '' : escapeHtml(b.email || '')}" placeholder="email@exemplo.com">
+            </div>
+            <div class="panel-contact-item">
+              <label><i class="fa-brands fa-instagram"></i> Instagram</label>
+              <input type="text" name="instagram" value="${isNew ? '' : escapeHtml(b.instagram || '')}" placeholder="sem o @">
+            </div>
+            <div class="panel-contact-item">
+              <label><i class="fa-brands fa-x-twitter"></i> Twitter</label>
+              <input type="text" name="twitter" value="${isNew ? '' : escapeHtml(b.twitter || '')}" placeholder="sem o @">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- SERVIÇOS -->
+        <fieldset>
+          <legend><i class="fa-solid fa-scissors"></i> Serviços</legend>
           <div class="services-inline-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-              <h4 style="margin:0;"><i class="fa-solid fa-scissors"></i> Serviços Iniciais</h4>
-              <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.8rem;">
-                <i class="fa-solid fa-plus"></i> Adicionar
+            <div class="panel-services-grid">
+              ${!isNew && b.services ? b.services.map(s => renderServiceItemHTML(s)).join('') : ''}
+            </div>
+            <div style="display:flex; justify-content:center; margin-top:0.75rem;">
+              <button type="button" class="btn btn-sm" onclick="addInlineServiceField(this)" style="font-size:0.85rem;">
+                <i class="fa-solid fa-plus"></i> Adicionar Serviço
               </button>
             </div>
-            <div class="inline-services-container">
-              <!-- Empty initially -->
+          </div>
+        </fieldset>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="barber-panel-footer">
+        <div>
+          ${!isNew ? '<button type="button" class="btn btn-danger" onclick="deleteBarber(\'' + b.id + '\')">' +
+          '<i class="fa-solid fa-trash"></i> Excluir</button>' : ''}
+        </div>
+        <div class="barber-panel-footer-right">
+          <button type="button" class="btn" onclick="closeBarberPanel()">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="savePanelBarber(event)">
+            <i class="fa-solid fa-save"></i> ${isNew ? 'Criar' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </form>
+      `;
+
+      // Show panel on top of list
+      const barbersSection = document.getElementById('barbers');
+      barbersSection.classList.add('panel-open');
+      panelView.style.display = '';
+      barbersSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderServiceItemHTML(s) {
+      return `
+    <div class="panel-service-card service-form-item" data-service-id="${s.id || ''}">
+      <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
+        <i class="fa-solid fa-times"></i>
+      </button>
+      <div class="panel-service-fields">
+        <div>
+          <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
+          <div class="icon-select-wrapper" onclick="event.stopPropagation()">
+            <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
+              <i class="fa-solid ${s.icon || 'fa-scissors'}"></i>
+            </div>
+            <input type="hidden" class="svc-icon" value="${s.icon || 'fa-scissors'}">
+            <div class="icon-select-dropdown">
+              <div class="icon-option ${s.icon == 'fa-scissors' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
+              <div class="icon-option ${s.icon == 'fa-bolt' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
+              <div class="icon-option ${s.icon == 'fa-leaf' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
+              <div class="icon-option ${s.icon == 'fa-paint-roller' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
+              <div class="icon-option ${s.icon == 'fa-seedling' ? 'selected' : ''}" onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
             </div>
           </div>
         </div>
-
-        <div class="card-dropdown-footer">
-          <button type="button" class="btn" onclick="clearNewBarberForm()">Limpar</button>
-          <button type="button" class="btn btn-primary" onclick="saveBarber(event)">Criar Profissional</button>
+        <div>
+          <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
+          <input type="text" class="svc-name" value="${escapeHtml(s.name)}" required autocomplete="off">
         </div>
-      </form>
+      </div>
+      <div class="panel-service-fields-row" style="margin-top: 0.75rem;">
+        <div>
+          <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
+          <input type="tel" class="svc-duration" value="${s.duration_minutes}" required autocomplete="off" style="text-align:center;">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
+          <input type="tel" class="svc-price" value="${formatCurrency(s.price)}" required autocomplete="off" oninput="formatCurrencyInput(this)">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
+          <input type="tel" class="svc-discount" value="${s.discount_price ? formatCurrency(s.discount_price) : ''}" autocomplete="off" oninput="formatCurrencyInput(this)">
+        </div>
+      </div>
     </div>
-  </div>
-  `;
-  }
-
-  async function saveBarber(e, idArg = null) {
-    e.preventDefault();
-    const token = localStorage.getItem("access_token");
-    let form = e.target.closest('form') || e.target;
-
-    // Determine context: Inline (idArg present OR form has fields) or Modal (legacy)
-    let isInline = idArg !== null;
-
-    // Auto-detect inline form even if creating (idArg=null)
-    if (!isInline && form.querySelector('[name="name"]')) {
-      isInline = true;
+      `;
     }
 
-    let id = idArg;
+    window.closeBarberPanel = function () {
+      const panelView = document.getElementById("barbers-panel-view");
+      const barbersSection = document.getElementById('barbers');
+      panelView.style.display = 'none';
+      barbersSection.classList.remove('panel-open');
+      document.getElementById("barber-panel-content").innerHTML = '';
 
-    if (!isInline) {
-      // Legacy/Modal flow (unlikely to be used now but kept for safety)
-      const hiddenId = document.getElementById("barber-id").value;
-      if (hiddenId) id = hiddenId;
-    }
-
-    // Collect data based on context
-    const name = isInline
-      ? form.querySelector('[name="name"]').value
-      : document.getElementById("barber-name").value;
-    const phone = isInline
-      ? form.querySelector('[name="phone"]').value
-      : document.getElementById("barber-phone").value;
-    const username = isInline
-      ? form.querySelector('[name="username"]')?.value
-      : document.getElementById("barber-username").value;
-    const instagram = isInline
-      ? form.querySelector('[name="instagram"]')?.value
-      : "";
-    const twitter = isInline
-      ? form.querySelector('[name="twitter"]')?.value
-      : "";
-    const email = isInline ? form.querySelector('[name="email"]')?.value : "";
-    const password = isInline
-      ? form.querySelector('[name="password"]')?.value
-      : document.getElementById("barber-password").value;
-
-    const startTime = isInline
-      ? form.querySelector('[name="start_time"]').value
-      : document.getElementById("barber-start-time").value;
-    const endTime = isInline
-      ? form.querySelector('[name="end_time"]').value
-      : document.getElementById("barber-end-time").value;
-    const startInterval = isInline
-      ? form.querySelector('[name="start_interval"]')?.value
-      : document.getElementById("barber-start-time-interval").value;
-    const endInterval = isInline
-      ? form.querySelector('[name="end_interval"]')?.value
-      : document.getElementById("barber-end-time-interval").value;
-
-    let avatarUrl = null;
-    if (!isInline) {
-      avatarUrl = document.getElementById("barber-avatar-url").value;
-    }
-
-    const barberData = {
-      name,
-      phone,
-      start_time: startTime,
-      end_time: endTime,
-      start_interval: startInterval || null,
-      end_interval: endInterval || null,
-      is_active: true,
-      username: username || null,
-      instagram: instagram || null,
-      twitter: twitter || null,
-      email: email || null,
-      password: password || null,
+      // Clear avatar buffers
+      pendingNewBarberFile = null;
+      pendingDeletionSet.clear();
+      pendingAvatarMap = {};
     };
 
-    // Collect services
-    let services = [];
-    const serviceItems = isInline
-      ? form.querySelectorAll(".inline-service-item")
-      : document.querySelectorAll("#services-container .service-form-item");
 
-    for (let item of serviceItems) {
-      const svcName = item.querySelector(".svc-name").value;
-      const svcDuration = parseInt(item.querySelector(".svc-duration").value);
-      const svcPriceInput = item.querySelector(".svc-price").value;
-      const svcPrice = parseCurrency(svcPriceInput);
+    // Panel-specific avatar handlers
+    let pendingPanelAvatarFile = null;
+    let panelAvatarDeleted = false;
 
-      const svcDiscountVal = item.querySelector(".svc-discount").value;
-      const svcDiscount = svcDiscountVal ? parseCurrency(svcDiscountVal) : null;
+    function handlePanelAvatarSelect(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      pendingPanelAvatarFile = file;
+      panelAvatarDeleted = false;
 
-      const svcId = item.dataset.serviceId; // From dataset
-      const svcIconInput = item.querySelector('.svc-icon');
-      const svcIcon = svcIconInput ? svcIconInput.value : 'fa-scissors';
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const container = document.querySelector('#barber-panel-content .avatar-upload-trigger');
+        if (container) {
+          container.innerHTML = `
+            <img src="${e.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover;">
+            <div class="overlay"><i class="fa-solid fa-camera"></i></div>
+          `;
+        }
+      };
+      reader.readAsDataURL(file);
 
-      if (!svcName || isNaN(svcDuration) || isNaN(svcPrice)) continue;
-
-      // Check discount validation
-      if (svcDiscount !== null && svcDiscount > svcPrice) {
-        await showAlertModal("Desconto não pode ser maior que o preço!");
-        return;
+      // Show Remove Button
+      const btn = document.querySelector('#barber-panel-content .remove-avatar-btn');
+      if (btn) {
+        btn.style.display = '';
+        btn.classList.add('fade-in');
       }
 
-      services.push({
-        id: svcId ? parseInt(svcId) : null,
-        name: svcName,
-        duration_minutes: svcDuration,
-        price: svcPrice,
-        discount_price: svcDiscount,
-        icon: svcIcon
-      });
+      // Reset input
+      input.value = '';
     }
 
-    try {
-      let barberId = id;
-      if (id) {
-        // Update barber (PUT)
-        await fetch(`/panel/barbers/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
-          body: JSON.stringify(barberData),
-        });
-      } else {
-        // Create barber (POST)
-        const res = await fetch("/panel/barbers", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
-          body: JSON.stringify(barberData),
-        });
-        if (!res.ok) throw new Error("Falha ao criar profissional");
-        const newBarber = await res.json();
-        barberId = newBarber.id;
+    function removePanelAvatar() {
+      pendingPanelAvatarFile = null;
+      panelAvatarDeleted = true;
+      const fileInput = document.getElementById('file-input-panel');
+      if (fileInput) fileInput.value = '';
+
+      const container = document.querySelector('#barber-panel-content .avatar-upload-trigger');
+      if (container) {
+        container.innerHTML = `
+          <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+          <div class="overlay"><i class="fa-solid fa-pencil"></i></div>
+        `;
       }
 
-      // Save services (Parallel)
-      await Promise.all(
-        services.map(async (svc) => {
-          if (svc.id) {
-            const r = await fetch(
-              `/panel/barbers/${barberId}/services/${svc.id}`,
-              {
-                method: "PUT",
+      const btn = document.querySelector('#barber-panel-content .remove-avatar-btn');
+      if (btn) btn.style.display = 'none';
+    }
+
+    window.openBarberPanel = openBarberPanel;
+    window.handlePanelAvatarSelect = handlePanelAvatarSelect;
+    window.removePanelAvatar = removePanelAvatar;
+
+    async function savePanelBarber(e) {
+      e.preventDefault();
+      const token = localStorage.getItem("access_token");
+      const form = document.getElementById('barber-panel-form');
+      if (!form) return;
+
+      const id = form.dataset.barberId || null;
+      const isNew = !id;
+
+      // Collect data
+      const name = form.querySelector('[name="name"]').value;
+      const phone = form.querySelector('[name="phone"]').value;
+      const username = form.querySelector('[name="username"]')?.value;
+      const instagram = form.querySelector('[name="instagram"]')?.value;
+      const twitter = form.querySelector('[name="twitter"]')?.value;
+      const email = form.querySelector('[name="email"]')?.value;
+      const password = form.querySelector('[name="password"]')?.value;
+      const startTime = form.querySelector('[name="start_time"]').value;
+      const endTime = form.querySelector('[name="end_time"]').value;
+      const startInterval = form.querySelector('[name="start_interval"]')?.value;
+      const endInterval = form.querySelector('[name="end_interval"]')?.value;
+
+      const barberData = {
+        name,
+        phone,
+        start_time: startTime,
+        end_time: endTime,
+        start_interval: startInterval || null,
+        end_interval: endInterval || null,
+        is_active: true, // Default to active for new barbers
+        username: username || null,
+        instagram: instagram || null,
+        twitter: twitter || null,
+        email: email || null,
+        password: password || null,
+      };
+
+      // Collect services
+      let services = [];
+      const serviceItems = form.querySelectorAll(".inline-service-item");
+
+      for (let item of serviceItems) {
+        const svcName = item.querySelector(".svc-name").value;
+        const svcDuration = parseInt(item.querySelector(".svc-duration").value);
+        const svcPriceInput = item.querySelector(".svc-price").value;
+        const svcPrice = parseCurrency(svcPriceInput);
+
+        const svcDiscountVal = item.querySelector(".svc-discount").value;
+        const svcDiscount = svcDiscountVal ? parseCurrency(svcDiscountVal) : null;
+
+        const svcId = item.dataset.serviceId;
+        const svcIconInput = item.querySelector('.svc-icon');
+        const svcIcon = svcIconInput ? svcIconInput.value : 'fa-scissors';
+
+        if (!svcName || isNaN(svcDuration) || isNaN(svcPrice)) continue;
+
+        if (svcDiscount !== null && svcDiscount > svcPrice) {
+          await showAlertModal("Desconto não pode ser maior que o preço!");
+          return;
+        }
+
+        services.push({
+          id: svcId ? parseInt(svcId) : null,
+          name: svcName,
+          duration_minutes: svcDuration,
+          price: svcPrice,
+          discount_price: svcDiscount,
+          icon: svcIcon
+        });
+      }
+
+      try {
+        let barberId = id;
+        if (id) {
+          await fetch(`/panel/barbers/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+            body: JSON.stringify(barberData),
+          });
+        } else {
+          const res = await fetch("/panel/barbers", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+            body: JSON.stringify(barberData),
+          });
+          if (!res.ok) throw new Error("Falha ao criar profissional");
+          const newBarber = await res.json();
+          barberId = newBarber.id;
+        }
+
+        // Save services
+        await Promise.all(
+          services.map(async (svc) => {
+            if (svc.id) {
+              const r = await fetch(
+                `/panel/barbers/${barberId}/services/${svc.id}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token,
+                  },
+                  body: JSON.stringify({
+                    name: svc.name,
+                    duration_minutes: svc.duration_minutes,
+                    price: svc.price,
+                    discount_price: svc.discount_price,
+                    icon: svc.icon
+                  }),
+                }
+              );
+              if (!r.ok) throw new Error(`Erro ao atualizar serviço ${svc.name}`);
+            } else {
+              const r = await fetch(`/panel/barbers/${barberId}/services`, {
+                method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: "Bearer " + token,
@@ -2448,85 +2281,60 @@
                   discount_price: svc.discount_price,
                   icon: svc.icon
                 }),
-              }
-            );
-            if (!r.ok) throw new Error(`Erro ao atualizar serviço ${svc.name}`);
-          } else {
-            const r = await fetch(`/panel/barbers/${barberId}/services`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + token,
-              },
-              body: JSON.stringify({
-                name: svc.name,
-                duration_minutes: svc.duration_minutes,
-                price: svc.price,
-                discount_price: svc.discount_price,
-                icon: svc.icon
-              }),
+              });
+              if (!r.ok) throw new Error(`Erro ao criar serviço ${svc.name}`);
+            }
+          })
+        );
+
+        // Handle Avatar
+        if (id) {
+          // Existing barber
+          if (panelAvatarDeleted) {
+            const res = await fetch(`/panel/barbers/${id}/avatar`, {
+              method: "DELETE",
+              headers: { Authorization: "Bearer " + token },
             });
-            if (!r.ok) throw new Error(`Erro ao criar serviço ${svc.name}`);
+            if (!res.ok) throw new Error("Falha ao excluir avatar");
           }
-        })
-      );
-
-      // Process Buffered Avatar Changes (Existing Barbers)
-      if (id) {
-        // 1. Deletion
-        if (pendingDeletionSet.has(id)) {
-          const res = await fetch(`/panel/barbers/${id}/avatar`, {
-            method: "DELETE",
-            headers: { Authorization: "Bearer " + token },
-          });
-          if (!res.ok) throw new Error("Falha ao excluir avatar");
-          pendingDeletionSet.delete(id);
+          if (pendingPanelAvatarFile) {
+            await uploadBarberAvatar(id, pendingPanelAvatarFile);
+          }
+        } else {
+          // New barber
+          if (pendingPanelAvatarFile) {
+            await uploadBarberAvatar(barberId, pendingPanelAvatarFile);
+          }
         }
 
-        // 2. Upload
-        if (pendingAvatarMap[id]) {
-          await uploadBarberAvatar(id, pendingAvatarMap[id]);
-          delete pendingAvatarMap[id];
-        }
-      }
+        // Reset
+        pendingPanelAvatarFile = null;
+        panelAvatarDeleted = false;
 
-      // Process New Barber Avatar
-      // New Logic: Upload if creation and pendingNewBarberFile exists
-      if (!id && pendingNewBarberFile) {
-        await uploadBarberAvatar(barberId, pendingNewBarberFile);
-        pendingNewBarberFile = null;
+        closeBarberPanel();
+        await showAlertModal("Profissional salvo com sucesso!");
+        loadBarbersAdmin();
+      } catch (error) {
+        console.error(error);
+        await showAlertModal("Erro ao salvar: " + error.message);
       }
-      // Also handle Modal Avatar if that flow is still active
-      else if (!isInline && pendingModalAvatarFile) {
-        await uploadBarberAvatar(barberId, pendingModalAvatarFile);
-        pendingModalAvatarFile = null;
-      }
-
-      if (!isInline) closeBarberModal();
-
-      await showAlertModal("Profissional salvo com sucesso!");
-      loadBarbersAdmin();
-    } catch (error) {
-      console.error(error);
-      await showAlertModal("Erro ao salvar: " + error.message);
     }
-  }
 
-  // Helpers for inline services
-  function addInlineServiceField(btn) {
-    const container = btn
-      .closest(".services-inline-section")
-      .querySelector(".inline-services-container");
-    const div = document.createElement("div");
-    div.className = "service-form-item inline-service-item";
-    div.innerHTML = `
+    window.savePanelBarber = savePanelBarber;
+
+    // Helpers for inline services
+    function addInlineServiceField(btn) {
+      const container = btn
+        .closest(".services-inline-section")
+        .querySelector(".panel-services-grid");
+      const div = document.createElement("div");
+      div.className = "panel-service-card service-form-item";
+      div.innerHTML = `
   <button type="button" class="remove-service-btn" onclick="removeInlineServiceItem(this)">
     <i class="fa-solid fa-times"></i>
   </button>
-
-  <!-- Row 1: Icon + Name -->
-  <div class="form-row" style="margin-bottom: 0.5rem; gap: 0.5rem;">
-    <div style="width: auto;">
+  <div class="panel-service-fields">
+    <div>
       <label style="font-size: 0.8rem; margin-bottom: 2px;">Ícone</label>
       <div class="icon-select-wrapper" onclick="event.stopPropagation()">
         <div class="icon-select-trigger" onclick="toggleIconDropdown(this)">
@@ -2534,292 +2342,288 @@
         </div>
         <input type="hidden" class="svc-icon" value="fa-scissors">
         <div class="icon-select-dropdown">
-          <div class="icon-option selected" onclick="selectIcon(this, 'fa-scissors')"><i
-              class="fa-solid fa-scissors"></i></div>
+          <div class="icon-option selected" onclick="selectIcon(this, 'fa-scissors')"><i class="fa-solid fa-scissors"></i></div>
           <div class="icon-option" onclick="selectIcon(this, 'fa-bolt')"><i class="fa-solid fa-bolt"></i></div>
           <div class="icon-option" onclick="selectIcon(this, 'fa-leaf')"><i class="fa-solid fa-leaf"></i></div>
-          <div class="icon-option" onclick="selectIcon(this, 'fa-paint-roller')"><i
-              class="fa-solid fa-paint-roller"></i></div>
+          <div class="icon-option" onclick="selectIcon(this, 'fa-paint-roller')"><i class="fa-solid fa-paint-roller"></i></div>
           <div class="icon-option" onclick="selectIcon(this, 'fa-seedling')"><i class="fa-solid fa-seedling"></i></div>
         </div>
       </div>
     </div>
-    <div style="flex: 1;">
+    <div>
       <label style="font-size: 0.8rem; margin-bottom: 2px;">Nome do Serviço</label>
       <input type="text" class="svc-name" required autocomplete="off">
     </div>
   </div>
-
-  <!-- Row 2: Duration, Price, Discount (Compact) -->
-  <div class="form-row" style="gap: 0.5rem;">
-    <div style="flex: 1;">
+  <div class="panel-service-fields-row" style="margin-top: 0.75rem;">
+    <div>
       <label style="font-size: 0.8rem; margin-bottom: 2px;">Duração (min)</label>
       <input type="tel" class="svc-duration" required autocomplete="off" style="text-align:center;">
     </div>
-    <div style="flex: 1;">
+    <div>
       <label style="font-size: 0.8rem; margin-bottom: 2px;">Preço</label>
       <input type="tel" class="svc-price" required autocomplete="off" oninput="formatCurrencyInput(this)">
     </div>
-    <div style="flex: 1;">
+    <div>
       <label style="font-size: 0.8rem; margin-bottom: 2px;">Desconto</label>
       <input type="tel" class="svc-discount" autocomplete="off" oninput="formatCurrencyInput(this)">
     </div>
   </div>
   `;
-    container.appendChild(div);
-  }
-
-  function removeInlineServiceItem(btn) {
-    btn.closest(".service-form-item").remove();
-  }
-
-  // Currency Helpers
-  window.formatCurrency = function (value) {
-    if (value === null || value === undefined) return '';
-    return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
-  };
-
-  window.parseCurrency = function (str) {
-    if (!str) return 0;
-    // Remove R$ and whitespace, replace comma with dot
-    const clean = str.replace(/[^\d,]/g, '').replace(',', '.');
-    return parseFloat(clean);
-  };
-
-  window.formatCurrencyInput = function (input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value === '') {
-      input.value = '';
-      return;
+      container.appendChild(div);
     }
-    // Convert to float (e.g. 123 -> 1.23)
-    value = (parseInt(value) / 100).toFixed(2);
-    // Format to R$
-    input.value = 'R$ ' + value.replace('.', ',');
-  };
 
-  // Icon Selector Logic
-  window.toggleIconDropdown = function (element) {
-    const dropdown = element.parentElement.querySelector('.icon-select-dropdown');
-    // Close others
-    document.querySelectorAll('.icon-select-dropdown.show').forEach(d => {
-      if (d !== dropdown) d.classList.remove('show');
+    function removeInlineServiceItem(btn) {
+      btn.closest(".service-form-item").remove();
+    }
+
+    // Currency Helpers
+    window.formatCurrency = function (value) {
+      if (value === null || value === undefined) return '';
+      return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
+    };
+
+    window.parseCurrency = function (str) {
+      if (!str) return 0;
+      // Remove R$ and whitespace, replace comma with dot
+      const clean = str.replace(/[^\d,]/g, '').replace(',', '.');
+      return parseFloat(clean);
+    };
+
+    window.formatCurrencyInput = function (input) {
+      let value = input.value.replace(/\D/g, '');
+      if (value === '') {
+        input.value = '';
+        return;
+      }
+      // Convert to float (e.g. 123 -> 1.23)
+      value = (parseInt(value) / 100).toFixed(2);
+      // Format to R$
+      input.value = 'R$ ' + value.replace('.', ',');
+    };
+
+    // Icon Selector Logic
+    window.toggleIconDropdown = function (element) {
+      const dropdown = element.parentElement.querySelector('.icon-select-dropdown');
+      // Close others
+      document.querySelectorAll('.icon-select-dropdown.show').forEach(d => {
+        if (d !== dropdown) d.classList.remove('show');
+      });
+      dropdown.classList.toggle('show');
+    };
+
+    window.selectIcon = function (element, iconClass) {
+      // Robust traversal
+      const wrapper = element.closest('.icon-select-wrapper');
+      if (!wrapper) {
+        console.error('Icon selector wrapper not found');
+        return;
+      }
+
+      const input = wrapper.querySelector('input.svc-icon');
+      const triggerIcon = wrapper.querySelector('.icon-select-trigger i');
+
+      if (input) {
+        input.value = iconClass;
+        // Trigger change event manually if needed
+      }
+
+      if (triggerIcon) {
+        // Reset class list completely to ensure no conflicts
+        triggerIcon.className = 'fa-solid ' + iconClass;
+      }
+
+      // Update selection UI
+      wrapper.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
+      element.classList.add('selected');
+
+      // Close dropdown
+      const dropdown = wrapper.querySelector('.icon-select-dropdown');
+      if (dropdown) dropdown.classList.remove('show');
+    };
+
+    // Close dropdowns on click outside
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.icon-select-wrapper')) {
+        document.querySelectorAll('.icon-select-dropdown.show').forEach(d => d.classList.remove('show'));
+      }
     });
-    dropdown.classList.toggle('show');
-  };
 
-  window.selectIcon = function (element, iconClass) {
-    // Robust traversal
-    const wrapper = element.closest('.icon-select-wrapper');
-    if (!wrapper) {
-      console.error('Icon selector wrapper not found');
-      return;
+    async function removeInlineServiceItem(btn) {
+      const item = btn.closest(".service-form-item");
+      const svcId = item.dataset.serviceId;
+
+      // If it has an ID, we should (ideally) delete from DB or mark for deletion?
+      // Current existing app logic: "delete service" was implicit or missing in the save loop?
+      // Ah, looking back at previous code, "removeServiceItem" just removed from DOM.
+      // But wait, there was NO explicit service deletion endpoint call in the save loop.
+      // So previously, removing a service from the modal form *did not* delete it from the DB?
+      // Checking `admin.html` (previous state): yes, `removeServiceItem` just did `btn.parentElement.remove()`.
+      // This suggests services were never deleted from DB, just hidden?
+      // Or maybe the user didn't notice.
+      // To be safe, I will implement explicit deletion here using the endpoint if it exists.
+      // The API likely supports DELETE /panel/barbers/{id}/services/{svcId}.
+
+      if (svcId) {
+        const confirmed = await showConfirmModal(
+          "Deseja excluir este serviço permanentemente?",
+          "Excluir Serviço"
+        );
+        if (!confirmed) return;
+
+        // Get barber ID from somewhere context
+        // We can find it from the card ID
+        const card = btn.closest(".card-dropdown");
+        const barberId = card.id.replace("barber-card-", "");
+        const token = localStorage.getItem("access_token");
+
+        try {
+          const res = await fetch(
+            `/panel/barbers/${barberId}/services/${svcId}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: "Bearer " + token },
+            }
+          );
+          if (!res.ok) throw new Error("Falha ao excluir");
+          item.remove();
+        } catch (e) {
+          alert("Erro ao excluir serviço: " + e.message);
+        }
+      } else {
+        item.remove();
+      }
     }
 
-    const input = wrapper.querySelector('input.svc-icon');
-    const triggerIcon = wrapper.querySelector('.icon-select-trigger i');
+    // =============== APPOINTMENTS ===============
 
-    if (input) {
-      input.value = iconClass;
-      // Trigger change event manually if needed
-    }
+    let adminAppointmentsCache = []; // Cache for modal access
 
-    if (triggerIcon) {
-      // Reset class list completely to ensure no conflicts
-      triggerIcon.className = 'fa-solid ' + iconClass;
-    }
-
-    // Update selection UI
-    wrapper.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
-    element.classList.add('selected');
-
-    // Close dropdown
-    const dropdown = wrapper.querySelector('.icon-select-dropdown');
-    if (dropdown) dropdown.classList.remove('show');
-  };
-
-  // Close dropdowns on click outside
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.icon-select-wrapper')) {
-      document.querySelectorAll('.icon-select-dropdown.show').forEach(d => d.classList.remove('show'));
-    }
-  });
-
-  async function removeInlineServiceItem(btn) {
-    const item = btn.closest(".service-form-item");
-    const svcId = item.dataset.serviceId;
-
-    // If it has an ID, we should (ideally) delete from DB or mark for deletion?
-    // Current existing app logic: "delete service" was implicit or missing in the save loop?
-    // Ah, looking back at previous code, "removeServiceItem" just removed from DOM.
-    // But wait, there was NO explicit service deletion endpoint call in the save loop.
-    // So previously, removing a service from the modal form *did not* delete it from the DB?
-    // Checking `admin.html` (previous state): yes, `removeServiceItem` just did `btn.parentElement.remove()`.
-    // This suggests services were never deleted from DB, just hidden?
-    // Or maybe the user didn't notice.
-    // To be safe, I will implement explicit deletion here using the endpoint if it exists.
-    // The API likely supports DELETE /panel/barbers/{id}/services/{svcId}.
-
-    if (svcId) {
-      const confirmed = await showConfirmModal(
-        "Deseja excluir este serviço permanentemente?",
-        "Excluir Serviço"
-      );
-      if (!confirmed) return;
-
-      // Get barber ID from somewhere context
-      // We can find it from the card ID
-      const card = btn.closest(".card-dropdown");
-      const barberId = card.id.replace("barber-card-", "");
+    async function loadAppointmentsAdmin() {
+      const container = document.getElementById("appointment-list");
       const token = localStorage.getItem("access_token");
 
+      const dateFilter =
+        document.getElementById("appointments-date-filter")?.value || "";
+      const barberIds = getSelectedBarberIds('appointments');
+
       try {
-        const res = await fetch(
-          `/panel/barbers/${barberId}/services/${svcId}`,
-          {
-            method: "DELETE",
-            headers: { Authorization: "Bearer " + token },
-          }
-        );
-        if (!res.ok) throw new Error("Falha ao excluir");
-        item.remove();
-      } catch (e) {
-        alert("Erro ao excluir serviço: " + e.message);
-      }
-    } else {
-      item.remove();
-    }
-  }
+        let url = "/panel/appointments?";
+        if (dateFilter) url += `date_filter=${dateFilter}&`;
+        if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
 
-  // =============== APPOINTMENTS ===============
+        const res = await fetch(url, {
+          headers: { Authorization: "Bearer " + token },
+        });
+        const apps = await res.json();
+        adminAppointmentsCache = apps; // Store in cache
 
-  let adminAppointmentsCache = []; // Cache for modal access
-
-  async function loadAppointmentsAdmin() {
-    const container = document.getElementById("appointment-list");
-    const token = localStorage.getItem("access_token");
-
-    const dateFilter =
-      document.getElementById("appointments-date-filter")?.value || "";
-    const barberIds = getSelectedBarberIds('appointments');
-
-    try {
-      let url = "/panel/appointments?";
-      if (dateFilter) url += `date_filter=${dateFilter}&`;
-      if (barberIds.length > 0) url += `barber_ids=${barberIds.join(',')}&`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: "Bearer " + token },
-      });
-      const apps = await res.json();
-      adminAppointmentsCache = apps; // Store in cache
-
-      if (apps.length === 0) {
-        container.innerHTML = `
+        if (apps.length === 0) {
+          container.innerHTML = `
   <li style="text-align: center; padding: 2rem; color: var(--text-secondary);">
     <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem;"></i>
     <p>Nenhum agendamento encontrado para esta data.</p>
   </li>`;
-        return;
-      }
+          return;
+        }
 
-      container.innerHTML = apps
-        .map((a) => {
-          const startTime = new Date(a.start_time);
-          const isPast = startTime < new Date();
+        container.innerHTML = apps
+          .map((a) => {
+            const startTime = new Date(a.start_time);
+            const isPast = startTime < new Date();
 
-          const statusColors = {
-            scheduled: "var(--accent)",
-            completed: "var(--success)",
-            no_show: "var(--danger)",
-          };
+            const statusColors = {
+              scheduled: "var(--accent)",
+              completed: "var(--success)",
+              no_show: "var(--danger)",
+            };
 
-          const statusLabels = {
-            scheduled: "Agendado",
-            completed: "Concluído",
-            no_show: "Não Compareceu",
-          };
+            const statusLabels = {
+              scheduled: "Agendado",
+              completed: "Concluído",
+              no_show: "Não Compareceu",
+            };
 
-          // WhatsApp button
-          const phoneDigits = a.customer_phone ? a.customer_phone.replace(/\D/g, "") : "";
-          const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
-          const whatsappUrl = hasValidPhone ? `https://wa.me/55${phoneDigits}` : null;
+            // WhatsApp button
+            const phoneDigits = a.customer_phone ? a.customer_phone.replace(/\D/g, "") : "";
+            const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
+            const whatsappUrl = hasValidPhone ? `https://wa.me/55${phoneDigits}` : null;
 
-          // Check if has media
-          const hasMedia = a.media && a.media.length > 0;
+            // Check if has media
+            const hasMedia = a.media && a.media.length > 0;
 
-          const noteIcon =
-            a.feedback_notes || a.rating
-              ? '<i class="fa-solid fa-comment-dots" style="margin-left:5px; color:var(--accent);"></i>'
-              : "";
+            const noteIcon =
+              a.feedback_notes || a.rating
+                ? '<i class="fa-solid fa-comment-dots" style="margin-left:5px; color:var(--accent);"></i>'
+                : "";
 
-          let actionBtn = "";
-          if (a.status === "scheduled") {
-            actionBtn = `
+            let actionBtn = "";
+            if (a.status === "scheduled") {
+              actionBtn = `
       <button class="btn btn-primary" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
         <i class="fa-solid fa-check"></i> Feedback / Baixa
       </button>`;
-          } else if (a.status === "completed") {
-            actionBtn = `
+            } else if (a.status === "completed") {
+              actionBtn = `
       <button class="btn" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--success); color: var(--success);">
         <i class="fa-solid fa-check-double"></i> Ver / Editar ${noteIcon}
       </button>`;
-          } else {
-            actionBtn = `
+            } else {
+              actionBtn = `
       <button class="btn" onclick="openFeedbackModal('${a.id}')"
         style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);">
         <i class="fa-solid fa-user-xmark"></i> Ver / Editar ${noteIcon}
       </button>`;
-          }
+            }
 
-          return `
+            return `
       <li
         style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border);">
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div
             style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 0.5rem; text-align: center; min-width: 60px;">
             <div style="font-weight: bold; color: var(--accent);">${startTime.toLocaleTimeString(
-            "pt-BR",
-            { hour: "2-digit", minute: "2-digit" }
-          )}</div>
+              "pt-BR",
+              { hour: "2-digit", minute: "2-digit" }
+            )}</div>
             <div style="font-size: 0.75rem; color: var(--text-secondary);">${startTime.toLocaleDateString(
-            "pt-BR"
-          )}</div>
+              "pt-BR"
+            )}</div>
           </div>
           <div>
             <div style="font-weight: bold;">${escapeHtml(
-            a.customer_name
-          )} ${hasMedia
-            ? '<i class="fa-solid fa-photo-film" style="color:var(--accent); font-size:0.8rem; margin-left:5px;"></i>'
-            : ""
-            }</div>
+              a.customer_name
+            )} ${hasMedia
+              ? '<i class="fa-solid fa-photo-film" style="color:var(--accent); font-size:0.8rem; margin-left:5px;"></i>'
+              : ""
+              }</div>
             <div style="font-size: 0.875rem; color: var(--text-secondary);">
               <i class="fa-solid fa-scissors"></i> ${escapeHtml(
-              a.service?.name ||
-              a.barber_service?.name ||
-              "Serviço"
-            )}
+                a.service?.name ||
+                a.barber_service?.name ||
+                "Serviço"
+              )}
               <span style="margin: 0 0.5rem;">•</span>
               <i class="fa-solid fa-user-tie"></i> ${escapeHtml(
-              a.barber?.name || "Barbeiro"
-            )}
+                a.barber?.name || "Barbeiro"
+              )}
             </div>
             <div style="font-size: 0.8rem; margin-top: 0.25rem;">
               <span style="color: ${statusColors[a.status] ||
-            " var(--text-secondary)"}; background: rgba(0,0,0,0.05); padding: 0.1rem 0.4rem; border-radius: 4px;">
+              " var(--text-secondary)"}; background: rgba(0,0,0,0.05); padding: 0.1rem 0.4rem; border-radius: 4px;">
                 ${statusLabels[a.status] || a.status}
               </span>
               ${a.customer_phone
-              ? `<span style="color: var(--text-secondary); margin-left: 0.5rem;">
+                ? `<span style="color: var(--text-secondary); margin-left: 0.5rem;">
                 <a href="${whatsappUrl}" target="_blank" style="color:inherit; text-decoration:none;"><i
                     class="fa-brands fa-whatsapp"></i> ${formatPhone(
-                a.customer_phone
-              )}</a>
+                  a.customer_phone
+                )}</a>
               </span>`
-              : ""
-            }
+                : ""
+              }
             </div>
           </div>
         </div>
@@ -2828,595 +2632,595 @@
         </div>
       </li>
       `;
-        })
-        .join("");
-    } catch (e) {
-      container.innerHTML =
-        '<li style="color: var(--danger);">Erro ao carregar agendamentos.</li>';
-    }
-  }
-
-  async function markNoShow(id) {
-    const confirmed = await showConfirmModal(
-      "Marcar como Não Compareceu?",
-      "Confirmar Falta"
-    );
-    if (!confirmed) return;
-    try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(`/panel/appointments/${id}/feedback`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: "no_show",
-          notes: "Marcado via botão rápido",
-        }),
-      });
-
-      if (res.ok) {
-        await showAlertModal("Status atualizado para Não Compareceu");
-        loadAppointmentsAdmin();
-      } else {
-        throw new Error("Falha ao atualizar status");
+          })
+          .join("");
+      } catch (e) {
+        container.innerHTML =
+          '<li style="color: var(--danger);">Erro ao carregar agendamentos.</li>';
       }
-    } catch (e) {
-      await showAlertModal("Erro: " + e.message);
     }
-  }
 
-  // Feedback Functions
-  function updateNoShowToggle() {
-    const checkbox = document.getElementById("feedback-no-show");
-    const icon = document.getElementById("no-show-icon");
-    const text = document.getElementById("no-show-text");
+    async function markNoShow(id) {
+      const confirmed = await showConfirmModal(
+        "Marcar como Não Compareceu?",
+        "Confirmar Falta"
+      );
+      if (!confirmed) return;
+      try {
+        const token = localStorage.getItem("access_token");
+        const res = await fetch(`/panel/appointments/${id}/feedback`, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "no_show",
+            notes: "Marcado via botão rápido",
+          }),
+        });
 
-    if (checkbox.checked) {
-      // No Show (Red)
-      icon.className = "admin-toggle-icon fa-solid fa-user-xmark";
-      text.textContent = "Cliente Faltou";
-      text.style.color = "var(--danger)";
-    } else {
-      // Present (Green)
-      icon.className = "admin-toggle-icon fa-solid fa-user-check";
-      text.textContent = "Cliente Presente";
-      text.style.color = "var(--success)";
+        if (res.ok) {
+          await showAlertModal("Status atualizado para Não Compareceu");
+          loadAppointmentsAdmin();
+        } else {
+          throw new Error("Falha ao atualizar status");
+        }
+      } catch (e) {
+        await showAlertModal("Erro: " + e.message);
+      }
     }
-  }
 
-  function openFeedbackModal(appointmentId) {
-    document.getElementById("feedback-appointment-id").value = appointmentId; // Keeping ID for submit
+    // Feedback Functions
+    function updateNoShowToggle() {
+      const checkbox = document.getElementById("feedback-no-show");
+      const icon = document.getElementById("no-show-icon");
+      const text = document.getElementById("no-show-text");
 
-    // Find data in cache
-    const appt = adminAppointmentsCache.find((a) => a.id === appointmentId);
-
-    // 1. Setup Status
-    const checkbox = document.getElementById("feedback-no-show");
-    if (appt) {
-      checkbox.checked = appt.status === "no_show";
-    } else {
-      checkbox.checked = false;
+      if (checkbox.checked) {
+        // No Show (Red)
+        icon.className = "admin-toggle-icon fa-solid fa-user-xmark";
+        text.textContent = "Cliente Faltou";
+        text.style.color = "var(--danger)";
+      } else {
+        // Present (Green)
+        icon.className = "admin-toggle-icon fa-solid fa-user-check";
+        text.textContent = "Cliente Presente";
+        text.style.color = "var(--success)";
+      }
     }
-    updateNoShowToggle();
 
-    // 2. Setup Notes (Admin/User notes) - pre-fill
-    document.getElementById("feedback-notes").value =
-      appt && appt.feedback_notes ? appt.feedback_notes : "";
-    document.getElementById("feedback-media").value = "";
+    function openFeedbackModal(appointmentId) {
+      document.getElementById("feedback-appointment-id").value = appointmentId; // Keeping ID for submit
 
-    // 3. User Rating Display
-    const ratingContainer = document.getElementById("customer-rating-display");
-    if (ratingContainer) ratingContainer.remove(); // Clear old
+      // Find data in cache
+      const appt = adminAppointmentsCache.find((a) => a.id === appointmentId);
 
-    if (appt && appt.rating) {
-      const starsGroup = document.createElement("div");
-      starsGroup.id = "customer-rating-display";
-      starsGroup.style.marginBottom = "1rem";
-      starsGroup.style.background = "rgba(255, 255, 255, 0.05)";
-      starsGroup.style.padding = "0.75rem";
-      starsGroup.style.borderRadius = "0.5rem";
-      starsGroup.innerHTML = `
+      // 1. Setup Status
+      const checkbox = document.getElementById("feedback-no-show");
+      if (appt) {
+        checkbox.checked = appt.status === "no_show";
+      } else {
+        checkbox.checked = false;
+      }
+      updateNoShowToggle();
+
+      // 2. Setup Notes (Admin/User notes) - pre-fill
+      document.getElementById("feedback-notes").value =
+        appt && appt.feedback_notes ? appt.feedback_notes : "";
+      document.getElementById("feedback-media").value = "";
+
+      // 3. User Rating Display
+      const ratingContainer = document.getElementById("customer-rating-display");
+      if (ratingContainer) ratingContainer.remove(); // Clear old
+
+      if (appt && appt.rating) {
+        const starsGroup = document.createElement("div");
+        starsGroup.id = "customer-rating-display";
+        starsGroup.style.marginBottom = "1rem";
+        starsGroup.style.background = "rgba(255, 255, 255, 0.05)";
+        starsGroup.style.padding = "0.75rem";
+        starsGroup.style.borderRadius = "0.5rem";
+        starsGroup.innerHTML = `
       <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Avaliação do Cliente:</div>
       <div style="color: #FFD700; font-size: 1.1rem;">
         ${Array(5)
-          .fill(0)
-          .map((_, i) =>
-            i < appt.rating ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>').join("")} <span
+            .fill(0)
+            .map((_, i) =>
+              i < appt.rating ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>').join("")} <span
           style="color: var(--text-primary); margin-left: 0.5rem; font-weight: bold;">${appt.rating
-        }.0</span>
+          }.0</span>
       </div>
       `;
-      // Insert before form actions or at top
-      const form = document.getElementById("feedback-form");
-      form.insertBefore(starsGroup, form.firstChild);
+        // Insert before form actions or at top
+        const form = document.getElementById("feedback-form");
+        form.insertBefore(starsGroup, form.firstChild);
+      }
+
+      // 4. Existing Media Display
+      const preview = document.getElementById("feedback-media-preview");
+      preview.style.display = "none";
+      preview.innerHTML = "";
+
+      if (appt && appt.media && appt.media.length > 0) {
+        // Show latest media
+        const latest = appt.media[appt.media.length - 1]; // Assuming order or just pick last
+        preview.style.display = "flex";
+
+        if (latest.media_type === "video") {
+          preview.innerHTML = `<video src="${latest.media_url}" controls style="max-width:100%; max-height:100%;"></video>`;
+        } else {
+          preview.innerHTML = `<img src="${latest.media_url}"
+        style="max-width:100%; max-height:100%; object-fit: contain;">`;
+        }
+      }
+
+      document.getElementById("feedback-modal").classList.add("show");
     }
 
-    // 4. Existing Media Display
-    const preview = document.getElementById("feedback-media-preview");
-    preview.style.display = "none";
-    preview.innerHTML = "";
+    function closeFeedbackModal() {
+      document.getElementById("feedback-modal").classList.remove("show");
+    }
 
-    if (appt && appt.media && appt.media.length > 0) {
-      // Show latest media
-      const latest = appt.media[appt.media.length - 1]; // Assuming order or just pick last
-      preview.style.display = "flex";
-
-      if (latest.media_type === "video") {
-        preview.innerHTML = `<video src="${latest.media_url}" controls style="max-width:100%; max-height:100%;"></video>`;
+    function previewFeedbackMedia(input) {
+      const preview = document.getElementById("feedback-media-preview");
+      preview.innerHTML = "";
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.style.display = "flex";
+          if (file.type.startsWith("image/")) {
+            preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:100%;">`;
+          } else if (file.type.startsWith("video/")) {
+            preview.innerHTML = `<video src="${e.target.result}" controls style="max-width:100%; max-height:100%;"></video>`;
+          }
+        };
+        reader.readAsDataURL(file);
       } else {
-        preview.innerHTML = `<img src="${latest.media_url}"
-        style="max-width:100%; max-height:100%; object-fit: contain;">`;
+        preview.style.display = "none";
       }
     }
 
-    document.getElementById("feedback-modal").classList.add("show");
-  }
+    async function submitAppointmentFeedback(e) {
+      e.preventDefault();
+      const id = document.getElementById("feedback-appointment-id").value;
+      const noShow = document.getElementById("feedback-no-show").checked;
+      const notes = document.getElementById("feedback-notes").value;
+      const mediaInput = document.getElementById("feedback-media");
+      const token = localStorage.getItem("access_token");
 
-  function closeFeedbackModal() {
-    document.getElementById("feedback-modal").classList.remove("show");
-  }
+      try {
+        // 1. Submit Feedback (Notes + Status)
+        const feedbackBody = {
+          status: noShow ? "no_show" : "completed",
+          notes: notes,
+        };
 
-  function previewFeedbackMedia(input) {
-    const preview = document.getElementById("feedback-media-preview");
-    preview.innerHTML = "";
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        preview.style.display = "flex";
-        if (file.type.startsWith("image/")) {
-          preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:100%;">`;
-        } else if (file.type.startsWith("video/")) {
-          preview.innerHTML = `<video src="${e.target.result}" controls style="max-width:100%; max-height:100%;"></video>`;
-        }
-      };
-      reader.readAsDataURL(file);
-    } else {
-      preview.style.display = "none";
-    }
-  }
-
-  async function submitAppointmentFeedback(e) {
-    e.preventDefault();
-    const id = document.getElementById("feedback-appointment-id").value;
-    const noShow = document.getElementById("feedback-no-show").checked;
-    const notes = document.getElementById("feedback-notes").value;
-    const mediaInput = document.getElementById("feedback-media");
-    const token = localStorage.getItem("access_token");
-
-    try {
-      // 1. Submit Feedback (Notes + Status)
-      const feedbackBody = {
-        status: noShow ? "no_show" : "completed",
-        notes: notes,
-      };
-
-      const resFeedback = await fetch(`/panel/appointments/${id}/feedback`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(feedbackBody),
-      });
-
-      if (!resFeedback.ok) throw new Error("Failed to submit notes");
-
-      // 2. Upload Media if present
-      if (mediaInput.files && mediaInput.files[0]) {
-        const formData = new FormData();
-        formData.append("file", mediaInput.files[0]);
-
-        const resMedia = await fetch(`/upload/appointment/${id}/media`, {
+        const resFeedback = await fetch(`/panel/appointments/${id}/feedback`, {
           method: "POST",
-          headers: { Authorization: "Bearer " + token },
-          body: formData,
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(feedbackBody),
         });
 
-        if (!resMedia.ok)
-          alert("Aviso: Feedback salvo, mas erro ao enviar mídia.");
+        if (!resFeedback.ok) throw new Error("Failed to submit notes");
+
+        // 2. Upload Media if present
+        if (mediaInput.files && mediaInput.files[0]) {
+          const formData = new FormData();
+          formData.append("file", mediaInput.files[0]);
+
+          const resMedia = await fetch(`/upload/appointment/${id}/media`, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token },
+            body: formData,
+          });
+
+          if (!resMedia.ok)
+            alert("Aviso: Feedback salvo, mas erro ao enviar mídia.");
+        }
+
+        closeFeedbackModal();
+        loadAppointmentsAdmin();
+        refreshDashboard();
+      } catch (err) {
+        alert("Erro ao salvar feedback: " + err.message);
       }
-
-      closeFeedbackModal();
-      loadAppointmentsAdmin();
-      refreshDashboard();
-    } catch (err) {
-      alert("Erro ao salvar feedback: " + err.message);
     }
-  }
 
-  // =============== AVATAR UPLOAD ===============
+    // =============== AVATAR UPLOAD ===============
 
-  // Global Buffers for Avatar Management
-  let pendingAvatarMap = {}; // { barberId: File }
-  let pendingDeletionSet = new Set(); // Set<barberId>
-  let currentAvatarBarberId = null;
+    // Global Buffers for Avatar Management
+    let pendingAvatarMap = {}; // { barberId: File }
+    let pendingDeletionSet = new Set(); // Set<barberId>
+    let currentAvatarBarberId = null;
 
-  // Create hidden file input for list view uploads
-  const avatarInput = document.createElement("input");
-  avatarInput.type = "file";
-  avatarInput.accept = "image/*";
-  avatarInput.className = "avatar-upload-input";
-  avatarInput.id = "avatar-upload-input";
-  avatarInput.style.display = "none";
-  document.body.appendChild(avatarInput);
+    // Create hidden file input for list view uploads
+    const avatarInput = document.createElement("input");
+    avatarInput.type = "file";
+    avatarInput.accept = "image/*";
+    avatarInput.className = "avatar-upload-input";
+    avatarInput.id = "avatar-upload-input";
+    avatarInput.style.display = "none";
+    document.body.appendChild(avatarInput);
 
-  // Legacy Modal Avatar Support (preserving if needed)
-  const modalAvatarInput = document.createElement("input");
-  modalAvatarInput.type = "file";
-  modalAvatarInput.accept = "image/*";
-  modalAvatarInput.className = "avatar-upload-input";
-  modalAvatarInput.id = "modal-avatar-input";
-  document.body.appendChild(modalAvatarInput);
-  let pendingModalAvatarFile = null;
+    // Legacy Modal Avatar Support (preserving if needed)
+    const modalAvatarInput = document.createElement("input");
+    modalAvatarInput.type = "file";
+    modalAvatarInput.accept = "image/*";
+    modalAvatarInput.className = "avatar-upload-input";
+    modalAvatarInput.id = "modal-avatar-input";
+    document.body.appendChild(modalAvatarInput);
+    let pendingModalAvatarFile = null;
 
-  // List view avatar upload handler (Preview & Buffer only)
-  avatarInput.addEventListener("change", function (e) {
-    if (!e.target.files || !e.target.files[0]) return;
-    if (!currentAvatarBarberId) return;
+    // List view avatar upload handler (Preview & Buffer only)
+    avatarInput.addEventListener("change", function (e) {
+      if (!e.target.files || !e.target.files[0]) return;
+      if (!currentAvatarBarberId) return;
 
-    const file = e.target.files[0];
+      const file = e.target.files[0];
 
-    // Buffer
-    pendingAvatarMap[currentAvatarBarberId] = file;
-    pendingDeletionSet.delete(currentAvatarBarberId); // Undo deletion if present
+      // Buffer
+      pendingAvatarMap[currentAvatarBarberId] = file;
+      pendingDeletionSet.delete(currentAvatarBarberId); // Undo deletion if present
 
-    // Preview
-    const card = document.getElementById(
-      `barber-card-${currentAvatarBarberId}`
-    );
-    if (card) {
-      const imgContainer = card.querySelector(".avatar-upload-trigger");
-      if (imgContainer) {
-        // Keep overlay
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          imgContainer.innerHTML = `
+      // Preview
+      const card = document.getElementById(
+        `barber-card-${currentAvatarBarberId}`
+      );
+      if (card) {
+        const imgContainer = card.querySelector(".avatar-upload-trigger");
+        if (imgContainer) {
+          // Keep overlay
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            imgContainer.innerHTML = `
         <img src="${evt.target.result}" alt="Preview" style="width:100%; height:100%; object-fit:cover;">
         <div class="overlay"><i class="fa-solid fa-camera"></i></div>
         `;
-        };
-        reader.readAsDataURL(file);
+          };
+          reader.readAsDataURL(file);
 
-        // Show Remove Button
-        const btn = card.querySelector(".remove-avatar-btn");
-        if (btn) {
-          btn.style.display = "";
-          btn.classList.add("fade-in");
+          // Show Remove Button
+          const btn = card.querySelector(".remove-avatar-btn");
+          if (btn) {
+            btn.style.display = "";
+            btn.classList.add("fade-in");
+          }
         }
       }
+
+      // Reset input
+      avatarInput.value = "";
+      currentAvatarBarberId = null;
+    });
+
+    // Modal handler (Legacy)
+    modalAvatarInput.addEventListener("change", function (e) {
+      if (!e.target.files || !e.target.files[0]) return;
+      pendingModalAvatarFile = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        setModalAvatarPreview(evt.target.result, true);
+      };
+      reader.readAsDataURL(e.target.files[0]);
+      modalAvatarInput.value = "";
+    });
+
+    function triggerAvatarUpload(barberId) {
+      currentAvatarBarberId = barberId;
+      avatarInput.click();
     }
 
-    // Reset input
-    avatarInput.value = "";
-    currentAvatarBarberId = null;
-  });
+    // Implemented Missing Function
+    function removeAvatar(barberId) {
+      // Buffer Deletion
+      pendingDeletionSet.add(barberId);
+      delete pendingAvatarMap[barberId];
 
-  // Modal handler (Legacy)
-  modalAvatarInput.addEventListener("change", function (e) {
-    if (!e.target.files || !e.target.files[0]) return;
-    pendingModalAvatarFile = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function (evt) {
-      setModalAvatarPreview(evt.target.result, true);
-    };
-    reader.readAsDataURL(e.target.files[0]);
-    modalAvatarInput.value = "";
-  });
-
-  function triggerAvatarUpload(barberId) {
-    currentAvatarBarberId = barberId;
-    avatarInput.click();
-  }
-
-  // Implemented Missing Function
-  function removeAvatar(barberId) {
-    // Buffer Deletion
-    pendingDeletionSet.add(barberId);
-    delete pendingAvatarMap[barberId];
-
-    // Preview Placeholder
-    const card = document.getElementById(`barber-card-${barberId}`);
-    if (card) {
-      const imgContainer = card.querySelector(".avatar-upload-trigger");
-      if (imgContainer) {
-        imgContainer.innerHTML = `
+      // Preview Placeholder
+      const card = document.getElementById(`barber-card-${barberId}`);
+      if (card) {
+        const imgContainer = card.querySelector(".avatar-upload-trigger");
+        if (imgContainer) {
+          imgContainer.innerHTML = `
         <div class="avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
         <div class="overlay"><i class="fa-solid fa-pencil"></i></div>
         `;
+        }
+
+        // Hide Remove Button
+        const btn = card.querySelector(".remove-avatar-btn");
+        if (btn) btn.style.display = "none";
       }
-
-      // Hide Remove Button
-      const btn = card.querySelector(".remove-avatar-btn");
-      if (btn) btn.style.display = "none";
     }
-  }
 
-  function triggerModalAvatarUpload() {
-    modalAvatarInput.click();
-  }
+    function triggerModalAvatarUpload() {
+      modalAvatarInput.click();
+    }
 
-  async function uploadBarberAvatar(barberId, file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    const token = localStorage.getItem("access_token");
-    const res = await fetch(`/upload/barber/${barberId}/avatar`, {
-      method: "POST",
-      headers: { Authorization: "Bearer " + token },
-      body: formData,
-    });
-    if (!res.ok) throw new Error("Falha no upload da imagem");
-    return await res.json();
-  }
+    async function uploadBarberAvatar(barberId, file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`/upload/barber/${barberId}/avatar`, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Falha no upload da imagem");
+      return await res.json();
+    }
 
-  // =============== HELPERS ===============
+    // =============== HELPERS ===============
 
-  function formatPhoneInput(input) {
-    let value = input.value.replace(/\D/g, "");
-    if (value.length > 11) value = value.slice(0, 11);
-    if (value.length > 0) {
-      if (value.length <= 2) {
-        value = `(${value}`;
-      } else if (value.length <= 6) {
-        value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
-      } else if (value.length <= 10) {
-        value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+    function formatPhoneInput(input) {
+      let value = input.value.replace(/\D/g, "");
+      if (value.length > 11) value = value.slice(0, 11);
+      if (value.length > 0) {
+        if (value.length <= 2) {
+          value = `(${value}`;
+        } else if (value.length <= 6) {
+          value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+        } else if (value.length <= 10) {
+          value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+        } else {
+          value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+        }
+      }
+      input.value = value;
+    }
+
+    function formatPhone(phone) {
+      if (!phone) return null;
+      const value = phone.replace(/\D/g, "");
+      if (value.length > 11) return value;
+      if (value.length <= 2) return `(${value}`;
+      if (value.length <= 10) return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
+      return `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+    }
+
+    // =============== CALENDAR COMPONENT LOGIC ===============
+
+    const calendarState = {
+      dashboard: {
+        currentDate: new Date(),
+        selectionState: 'complete', // 'selecting' or 'complete'
+        tempStartDate: null
+      },
+      appointments: {
+        currentDate: new Date(),
+        selectionState: 'complete'
+      }
+    };
+
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+
+    function toggleCalendarDropdown(context) {
+      const dropdown = document.getElementById(`${context}-calendar-dropdown`);
+      const backdrop = document.getElementById('calendar-backdrop'); // Mobile only
+
+      // Close others
+      document.querySelectorAll('.calendar-dropdown.show').forEach(el => {
+        if (el.id !== `${context}-calendar-dropdown`) el.classList.remove('show');
+      });
+
+      if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        if (backdrop) backdrop.classList.remove('show');
       } else {
-        value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+        dropdown.classList.add('show');
+        if (backdrop) backdrop.classList.add('show');
+        renderCalendar(context);
       }
     }
-    input.value = value;
-  }
 
-  function formatPhone(phone) {
-    if (!phone) return null;
-    const value = phone.replace(/\D/g, "");
-    if (value.length > 11) return value;
-    if (value.length <= 2) return `(${value}`;
-    if (value.length <= 10) return `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`;
-    return `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
-  }
-
-  // =============== CALENDAR COMPONENT LOGIC ===============
-
-  const calendarState = {
-    dashboard: {
-      currentDate: new Date(),
-      selectionState: 'complete', // 'selecting' or 'complete'
-      tempStartDate: null
-    },
-    appointments: {
-      currentDate: new Date(),
-      selectionState: 'complete'
-    }
-  };
-
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ];
-
-  function toggleCalendarDropdown(context) {
-    const dropdown = document.getElementById(`${context}-calendar-dropdown`);
-    const backdrop = document.getElementById('calendar-backdrop'); // Mobile only
-
-    // Close others
-    document.querySelectorAll('.calendar-dropdown.show').forEach(el => {
-      if (el.id !== `${context}-calendar-dropdown`) el.classList.remove('show');
+    // Close calendars when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.calendar-dropdown') && !e.target.closest('.icon-btn')) {
+        document.querySelectorAll('.calendar-dropdown.show').forEach(el => el.classList.remove('show'));
+      }
     });
 
-    if (dropdown.classList.contains('show')) {
-      dropdown.classList.remove('show');
-      if (backdrop) backdrop.classList.remove('show');
-    } else {
-      dropdown.classList.add('show');
-      if (backdrop) backdrop.classList.add('show');
+    function navigateCalendarMonth(context, delta) {
+      calendarState[context].currentDate.setMonth(calendarState[context].currentDate.getMonth() + delta);
       renderCalendar(context);
     }
-  }
 
-  // Close calendars when clicking outside
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.calendar-dropdown') && !e.target.closest('.icon-btn')) {
-      document.querySelectorAll('.calendar-dropdown.show').forEach(el => el.classList.remove('show'));
-    }
-  });
+    function renderCalendar(context) {
+      const state = calendarState[context];
+      const year = state.currentDate.getFullYear();
+      const month = state.currentDate.getMonth();
 
-  function navigateCalendarMonth(context, delta) {
-    calendarState[context].currentDate.setMonth(calendarState[context].currentDate.getMonth() + delta);
-    renderCalendar(context);
-  }
+      // Header
+      document.getElementById(`${context}-calendar-month-year`).textContent = `${monthNames[month]} ${year}`;
 
-  function renderCalendar(context) {
-    const state = calendarState[context];
-    const year = state.currentDate.getFullYear();
-    const month = state.currentDate.getMonth();
+      const daysContainer = document.getElementById(`${context}-calendar-days`);
+      daysContainer.innerHTML = "";
 
-    // Header
-    document.getElementById(`${context}-calendar-month-year`).textContent = `${monthNames[month]} ${year}`;
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const prevLastDay = new Date(year, month, 0).getDate();
 
-    const daysContainer = document.getElementById(`${context}-calendar-days`);
-    daysContainer.innerHTML = "";
-
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const prevLastDay = new Date(year, month, 0).getDate();
-
-    // Previous month days
-    for (let i = firstDayIndex; i > 0; i--) {
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "calendar-day other-month";
-      dayDiv.textContent = prevLastDay - i + 1;
-      daysContainer.appendChild(dayDiv);
-    }
-
-    // Current days
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Get current selection
-    let startDate, endDate;
-    if (context === 'dashboard') {
-      const startVal = document.getElementById('dashboard-start-date').value;
-      const endVal = document.getElementById('dashboard-end-date').value;
-      startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
-      endDate = endVal ? new Date(endVal + 'T00:00:00') : null;
-
-      if (state.selectionState === 'selecting' && state.tempStartDate) {
-        startDate = state.tempStartDate;
-        endDate = null; // Highlighting logic handles range visuals
-      }
-    } else {
-      const dateVal = document.getElementById('appointments-date-filter').value;
-      startDate = dateVal ? new Date(dateVal + 'T00:00:00') : null;
-    }
-
-    for (let i = 1; i <= lastDay; i++) {
-      const date = new Date(year, month, i);
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "calendar-day";
-      dayDiv.textContent = i;
-
-      // Weekend check
-      if (date.getDay() === 0 || date.getDay() === 6) {
-        // dayDiv.classList.add("weekend"); // Optional style
+      // Previous month days
+      for (let i = firstDayIndex; i > 0; i--) {
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "calendar-day other-month";
+        dayDiv.textContent = prevLastDay - i + 1;
+        daysContainer.appendChild(dayDiv);
       }
 
-      // Today check
-      if (date.getTime() === today.getTime()) {
-        dayDiv.classList.add("today");
-      }
+      // Current days
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      // Selection Check
+      // Get current selection
+      let startDate, endDate;
       if (context === 'dashboard') {
-        if (startDate && date.getTime() === startDate.getTime()) dayDiv.classList.add("selected");
-        if (endDate && date.getTime() === endDate.getTime()) dayDiv.classList.add("selected");
+        const startVal = document.getElementById('dashboard-start-date').value;
+        const endVal = document.getElementById('dashboard-end-date').value;
+        startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
+        endDate = endVal ? new Date(endVal + 'T00:00:00') : null;
 
-        // Range check
-        if (startDate && endDate && date > startDate && date < endDate) {
-          dayDiv.classList.add("selected");
-          dayDiv.style.opacity = "0.7";
+        if (state.selectionState === 'selecting' && state.tempStartDate) {
+          startDate = state.tempStartDate;
+          endDate = null; // Highlighting logic handles range visuals
         }
       } else {
-        if (startDate && date.getTime() === startDate.getTime()) {
-          dayDiv.classList.add("selected");
-        }
+        const dateVal = document.getElementById('appointments-date-filter').value;
+        startDate = dateVal ? new Date(dateVal + 'T00:00:00') : null;
       }
 
-      dayDiv.onclick = () => selectCalendarDate(context, i);
-      daysContainer.appendChild(dayDiv);
-    }
+      for (let i = 1; i <= lastDay; i++) {
+        const date = new Date(year, month, i);
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "calendar-day";
+        dayDiv.textContent = i;
 
-    // Next month days to fill grid (42 cells usually 6 rows)
-    const totalCells = daysContainer.children.length;
-    const nextDays = 42 - totalCells;
+        // Weekend check
+        if (date.getDay() === 0 || date.getDay() === 6) {
+          // dayDiv.classList.add("weekend"); // Optional style
+        }
 
-    for (let i = 1; i <= nextDays; i++) {
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "calendar-day other-month";
-      dayDiv.textContent = i;
-      daysContainer.appendChild(dayDiv);
-    }
-  }
+        // Today check
+        if (date.getTime() === today.getTime()) {
+          dayDiv.classList.add("today");
+        }
 
-  function selectCalendarDate(context, day) {
-    const state = calendarState[context];
-    const selectedDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth(), day);
-    const dateStr = selectedDate.toISOString().split('T')[0];
+        // Selection Check
+        if (context === 'dashboard') {
+          if (startDate && date.getTime() === startDate.getTime()) dayDiv.classList.add("selected");
+          if (endDate && date.getTime() === endDate.getTime()) dayDiv.classList.add("selected");
 
-    if (context === 'dashboard') {
-      const startInput = document.getElementById('dashboard-start-date');
-      const endInput = document.getElementById('dashboard-end-date');
-
-      if (state.selectionState === 'complete') {
-        // Start new selection
-        state.tempStartDate = selectedDate;
-        state.selectionState = 'selecting';
-        startInput.value = dateStr;
-        endInput.value = ""; // Clear end
-        renderCalendar(context); // Re-render to show start
-      } else {
-        // Complete selection
-        const startDate = state.tempStartDate;
-
-        if (selectedDate < startDate) {
-          // Swap if needed
-          startInput.value = dateStr;
-          endInput.value = startDate.toISOString().split('T')[0];
+          // Range check
+          if (startDate && endDate && date > startDate && date < endDate) {
+            dayDiv.classList.add("selected");
+            dayDiv.style.opacity = "0.7";
+          }
         } else {
-          endInput.value = dateStr;
+          if (startDate && date.getTime() === startDate.getTime()) {
+            dayDiv.classList.add("selected");
+          }
         }
 
-        state.selectionState = 'complete';
-        state.tempStartDate = null;
-        toggleCalendarDropdown(context); // Close
-        refreshDashboard();
+        dayDiv.onclick = () => selectCalendarDate(context, i);
+        daysContainer.appendChild(dayDiv);
       }
-    } else {
-      // Appointments - Single Date
-      document.getElementById('appointments-date-filter').value = dateStr;
-      toggleCalendarDropdown(context); // Close
+
+      // Next month days to fill grid (42 cells usually 6 rows)
+      const totalCells = daysContainer.children.length;
+      const nextDays = 42 - totalCells;
+
+      for (let i = 1; i <= nextDays; i++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "calendar-day other-month";
+        dayDiv.textContent = i;
+        daysContainer.appendChild(dayDiv);
+      }
+    }
+
+    function selectCalendarDate(context, day) {
+      const state = calendarState[context];
+      const selectedDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth(), day);
+      const dateStr = selectedDate.toISOString().split('T')[0];
+
+      if (context === 'dashboard') {
+        const startInput = document.getElementById('dashboard-start-date');
+        const endInput = document.getElementById('dashboard-end-date');
+
+        if (state.selectionState === 'complete') {
+          // Start new selection
+          state.tempStartDate = selectedDate;
+          state.selectionState = 'selecting';
+          startInput.value = dateStr;
+          endInput.value = ""; // Clear end
+          renderCalendar(context); // Re-render to show start
+        } else {
+          // Complete selection
+          const startDate = state.tempStartDate;
+
+          if (selectedDate < startDate) {
+            // Swap if needed
+            startInput.value = dateStr;
+            endInput.value = startDate.toISOString().split('T')[0];
+          } else {
+            endInput.value = dateStr;
+          }
+
+          state.selectionState = 'complete';
+          state.tempStartDate = null;
+          toggleCalendarDropdown(context); // Close
+          refreshDashboard();
+        }
+      } else {
+        // Appointments - Single Date
+        document.getElementById('appointments-date-filter').value = dateStr;
+        toggleCalendarDropdown(context); // Close
+        loadAppointmentsAdmin();
+      }
+    }
+
+    function selectCalendarToday(context) {
+      const today = new Date().toISOString().split('T')[0];
+      if (context === 'dashboard') {
+        document.getElementById('dashboard-start-date').value = today;
+        document.getElementById('dashboard-end-date').value = today;
+        calendarState.dashboard.selectionState = 'complete';
+        refreshDashboard();
+      } else {
+        document.getElementById('appointments-date-filter').value = today;
+        loadAppointmentsAdmin();
+      }
+      toggleCalendarDropdown(context);
+
+      // Visual update for quick buttons
+      updateQuickButtons(context, 0);
+    }
+
+    function clearCalendarSelection(context) {
+      if (context === 'dashboard') {
+        document.getElementById('dashboard-start-date').value = "";
+        document.getElementById('dashboard-end-date').value = "";
+        refreshDashboard();
+      } else {
+        // For appointments, clearing might mean 'today' or 'all' depending on business logic
+        // Defaulting to today for safety
+        selectCalendarToday(context);
+      }
+      toggleCalendarDropdown(context);
+    }
+
+    function setAppointmentsDate(offset) {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      document.getElementById('appointments-date-filter').value = date.toISOString().split('T')[0];
       loadAppointmentsAdmin();
+      updateQuickButtons('appointments', offset);
     }
-  }
 
-  function selectCalendarToday(context) {
-    const today = new Date().toISOString().split('T')[0];
-    if (context === 'dashboard') {
-      document.getElementById('dashboard-start-date').value = today;
-      document.getElementById('dashboard-end-date').value = today;
-      calendarState.dashboard.selectionState = 'complete';
-      refreshDashboard();
-    } else {
-      document.getElementById('appointments-date-filter').value = today;
-      loadAppointmentsAdmin();
+    // Override existing setDashboardPeriod to update UI
+    const originalSetDashboardPeriod = setDashboardPeriod;
+    setDashboardPeriod = function (days) {
+      originalSetDashboardPeriod(days);
+      updateQuickButtons('dashboard', days);
+    };
+
+    // Override setAppointmentsToday
+    const originalSetAppointmentsToday = setAppointmentsToday;
+    setAppointmentsToday = function () {
+      originalSetAppointmentsToday();
+      updateQuickButtons('appointments', 0);
     }
-    toggleCalendarDropdown(context);
 
-    // Visual update for quick buttons
-    updateQuickButtons(context, 0);
-  }
-
-  function clearCalendarSelection(context) {
-    if (context === 'dashboard') {
-      document.getElementById('dashboard-start-date').value = "";
-      document.getElementById('dashboard-end-date').value = "";
-      refreshDashboard();
-    } else {
-      // For appointments, clearing might mean 'today' or 'all' depending on business logic
-      // Defaulting to today for safety
-      selectCalendarToday(context);
+    function updateQuickButtons(context, value) {
+      // Optional: specific logic to highlight quick buttons based on value
+      // Implementation depends on uniquely identifying the buttons
     }
-    toggleCalendarDropdown(context);
-  }
 
-  function setAppointmentsDate(offset) {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-    document.getElementById('appointments-date-filter').value = date.toISOString().split('T')[0];
-    loadAppointmentsAdmin();
-    updateQuickButtons('appointments', offset);
-  }
-
-  // Override existing setDashboardPeriod to update UI
-  const originalSetDashboardPeriod = setDashboardPeriod;
-  setDashboardPeriod = function (days) {
-    originalSetDashboardPeriod(days);
-    updateQuickButtons('dashboard', days);
-  };
-
-  // Override setAppointmentsToday
-  const originalSetAppointmentsToday = setAppointmentsToday;
-  setAppointmentsToday = function () {
-    originalSetAppointmentsToday();
-    updateQuickButtons('appointments', 0);
-  }
-
-  function updateQuickButtons(context, value) {
-    // Optional: specific logic to highlight quick buttons based on value
-    // Implementation depends on uniquely identifying the buttons
-  }
-
-</script>
-{% endblock %}
+  </script>
+  {% endblock %}
