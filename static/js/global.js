@@ -6,13 +6,13 @@ const API_URL = "";
 
 // Theme Management
 function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const currentTheme = document.documentElement.getAttribute('theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
 }
 
 function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('theme', theme);
     localStorage.setItem('theme', theme);
     updateThemeIcon(theme);
 
@@ -98,7 +98,7 @@ function formatPhoneInput(input) {
 
 // Sync theme icon on load
 document.addEventListener('DOMContentLoaded', function () {
-    const theme = document.documentElement.getAttribute('data-theme');
+    const theme = document.documentElement.getAttribute('theme');
     updateThemeIcon(theme);
     // Mark active theme option (admin panel)
     const activeOption = document.getElementById('theme-' + theme);

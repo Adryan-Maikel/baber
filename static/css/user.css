@@ -41,19 +41,17 @@
   padding: 0.75rem 0.5rem;
   width: 100px;
   font-size: 16px;
+  word-wrap: break-word;
   text-align: center;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* Time slots */
-.slot-btn {
-  /* background-color: var(--card-bg); */
-  /* border: 1px solid var(--accent); */
-  color: var(--text-primary);
-  /* padding: 0.5rem; */
-  /* border-radius: 0.5rem; */
-  /* cursor: pointer; */
-  /* transition: all 0.2s; */
+@media (max-width: 480px) {
+  .slot-btn {
+    padding: 0.65rem 0.4rem;
+    font-size: 0.85rem;
+  }
 }
 
 .main-header {
@@ -489,13 +487,6 @@
 
   .service-card p {
     font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .slot-btn {
-    padding: 0.65rem 0.4rem;
-    font-size: 0.85rem;
   }
 }
 

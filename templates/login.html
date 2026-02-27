@@ -87,10 +87,11 @@
     }
 
     /* Logo styling */
-    .login-logo {
-        width: 100px;
-        height: 100px;
+    .logo {
+        width: 100%;
+        height: 250px;
         object-fit: contain;
+        pointer-events: none;
     }
 
     /* Validação de campos */
@@ -174,12 +175,8 @@
 </div>
 
 <div class="h-100dvh column center pd-1">
-    <div class="login-card fade-in mb-5">
-        <div class="text-center">
-            <img src="/static/img/icon.png" alt="Logo" class="login-logo">
-            <h1 class="frufru">Barbearia Balhego</h1>
-            <p>Acesse o painel administrativo</p>
-        </div>
+    <div class="login-card fade-in">
+        <img src="/static/img/icon.png" alt="Barberia Balhego" class="logo">
 
         <div id="error-message" class="error-message">
             Usuário ou senha incorretos

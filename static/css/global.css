@@ -3,7 +3,7 @@
    ============================================ */
 
 /* Theme System - Dark and Light Palettes */
-html[data-theme="dark"] {
+html[theme="dark"] {
     /* Backgrounds: Deep Warm Black */
     --bg-color: #0A0806;
     --bg-secondary: #110E0A;
@@ -47,10 +47,11 @@ html[data-theme="dark"] {
     --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html[data-theme="light"] {
+html,
+html[theme="light"] {
     --bg-color: #FDF8F3;
     --bg-secondary: #F5EDE4;
-    --card-bg: #FFFAF5;
+    --card-bg: #F3E6DC;
     --card-hover: #F0E6DA;
 
     --text-primary: #1A1410;
