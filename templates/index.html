@@ -173,7 +173,7 @@
                     Crie uma conta para confirmar seu agendamento
                 </p>
                 <button type="button" class="btn btn-primary btn-compact" id="open-register-sheet-btn"
-                    onclick="openRegisterBottomSheet()">
+                    onclick="showAuthStepRegister()">
                     <i class="fa-solid fa-user-plus"></i> Criar Conta e Confirmar
                 </button>
             </div>
@@ -313,44 +313,7 @@
         <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 2rem;">Voltar ao início</button>
     </div>
 
-    <!-- Register Bottom Sheet Modal -->
-    <div id="register-bottom-sheet" class="bottom-sheet-overlay" style="display: none;">
-        <div class="bottom-sheet-backdrop" onclick="closeRegisterBottomSheet()"></div>
-        <div class="bottom-sheet-content">
-            <div class="bottom-sheet-handle"></div>
-            <h3><i class="fa-solid fa-user-plus"></i> Criar Conta</h3>
-            <div id="sheet-error" class="auth-error" style="display: none;"></div>
-            <form id="sheet-register-form" onsubmit="handleSheetRegister(event)">
-                <div class="input-group">
-                    <label for="sheet-username">Nome de usuário</label>
-                    <input type="text" id="sheet-username" placeholder="Seu nome de usuário" autocomplete="username">
-                </div>
-                <div class="input-group">
-                    <label for="sheet-email">Email</label>
-                    <input type="email" id="sheet-email" placeholder="seu@email.com" autocomplete="email">
-                </div>
-                <div class="input-group">
-                    <label for="sheet-phone">Telefone <span class="optional-label">(opcional)</span></label>
-                    <input type="tel" id="sheet-phone" placeholder="(11) 99999-1234" oninput="formatPhoneInput(this)">
-                </div>
-                <div class="input-group">
-                    <label for="sheet-password">Senha</label>
-                    <input type="password" id="sheet-password" placeholder="Mínimo 6 caracteres"
-                        autocomplete="new-password">
-                </div>
-                <label class="flex checkbox-label" for="sheet-accept-terms" tabindex="0">
-                    <input type="checkbox" id="sheet-accept-terms">
-                    <i class="fa-solid fa-check"></i>
-                    <i class="fa-solid fa-xmark"></i>
-                    <span>Aceito os <a href="/terms" target="_blank" class="terms-link">Termos de Uso</a></span>
-                </label>
-                <button type="submit" class="btn btn-primary" id="sheet-submit-btn">
-                    <span id="sheet-btn-text">Criar Conta e Confirmar</span>
-                    <i class="fa-solid fa-spinner fa-spin-pulse" id="sheet-btn-spinner" style="display: none;"></i>
-                </button>
-            </form>
-        </div>
-    </div>
+
 
     <!-- Step Notifications -->
     <div id="step-notifications" class="step fade-in" style="display: none;">

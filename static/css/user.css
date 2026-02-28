@@ -155,7 +155,7 @@
 
 .dropdown-item {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.7rem;
   text-wrap: nowrap;
   display: flex;
   align-items: center;
@@ -167,6 +167,8 @@
   transform-origin: left;
   background: transparent;
   border: none;
+  padding-right: 1rem;
+  opacity: .8;
 
   &>* {
     color: var(--text-primary);
@@ -176,10 +178,12 @@
   &:focus,
   &:focus-visible {
     scale: 1.05;
+    opacity: 1;
   }
 
   &:active {
     scale: 0.95;
+    opacity: .7;
   }
 
   &:focus,
@@ -1861,112 +1865,6 @@
   margin-left: auto;
   min-width: 18px;
   text-align: center;
-}
-
-/* =========================================
-   BOTTOM SHEET (Registration Modal)
-   ========================================= */
-
-.bottom-sheet-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.bottom-sheet-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.bottom-sheet-content {
-  position: relative;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 20px 20px 0 0;
-  padding: 1.5rem;
-  max-height: 85vh;
-  overflow-y: auto;
-  transform: translateY(100%);
-  animation: sheet-slide-up 0.35s ease-out forwards;
-}
-
-.bottom-sheet-overlay.closing .bottom-sheet-content {
-  animation: sheet-slide-down 0.25s ease-in forwards;
-}
-
-@keyframes sheet-slide-up {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes sheet-slide-down {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(100%);
-  }
-}
-
-.bottom-sheet-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  margin: 0 auto 1rem;
-}
-
-.bottom-sheet-content h3 {
-  font-size: 1.15rem;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-}
-
-.bottom-sheet-content .input-group {
-  margin-bottom: 0.8rem;
-}
-
-.bottom-sheet-content .input-group label {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.3rem;
-}
-
-.bottom-sheet-content .input-group input {
-  width: 100%;
-  padding: 0.65rem 0.75rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.bottom-sheet-content .input-group input:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
-.bottom-sheet-content .checkbox-label {
-  margin: 0.8rem 0;
-}
-
-.bottom-sheet-content .btn {
-  width: 100%;
-  margin-top: 0.5rem;
 }
 
 /* =========================================

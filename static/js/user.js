@@ -375,7 +375,16 @@ async function handleAuthSubmit(e) {
 
         hideAuthStep();
         updateCustomerUI();
-        goToStep(1)
+
+        if (previousStep && previousStep.startsWith('step-')) {
+            const stepNum = parseInt(previousStep.replace('step-', ''));
+            if (!isNaN(stepNum)) {
+                goToStep(stepNum);
+                return;
+            }
+        }
+
+        goToStep(1);
 
     } catch (e) {
         showAuthError('Erro de conexão. Tente novamente.');
@@ -2592,105 +2601,6 @@ function initializeDateLabel() {
     if (dateInput && dateInput.value) {
         const selectedDate = new Date(dateInput.value + 'T00:00:00');
         updateDateRelativeLabel(selectedDate);
-    }
-}
-
-// =========== Bottom Sheet Registration ===========
-
-function openRegisterBottomSheet() {
-    const sheet = document.getElementById('register-bottom-sheet');
-    if (sheet) {
-        sheet.style.display = 'flex';
-        sheet.classList.remove('closing');
-    }
-}
-
-function closeRegisterBottomSheet() {
-    const sheet = document.getElementById('register-bottom-sheet');
-    if (!sheet) return;
-    sheet.classList.add('closing');
-    setTimeout(() => {
-        sheet.style.display = 'none';
-        sheet.classList.remove('closing');
-    }, 280);
-}
-
-async function handleSheetRegister(e) {
-    e.preventDefault();
-
-    const username = document.getElementById('sheet-username').value.trim();
-    const email = document.getElementById('sheet-email').value.trim();
-    const phone = document.getElementById('sheet-phone').value || null;
-    const password = document.getElementById('sheet-password').value;
-    const acceptTerms = document.getElementById('sheet-accept-terms').checked;
-
-    const errorEl = document.getElementById('sheet-error');
-    const btn = document.getElementById('sheet-submit-btn');
-    const btnText = document.getElementById('sheet-btn-text');
-    const spinner = document.getElementById('sheet-btn-spinner');
-
-    // Basic validation
-    if (!username || username.length < 3) {
-        showSheetError('Nome deve ter pelo menos 3 caracteres');
-        return;
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showSheetError('Email inválido');
-        return;
-    }
-    if (!password || password.length < 6) {
-        showSheetError('Senha deve ter pelo menos 6 caracteres');
-        return;
-    }
-    if (!acceptTerms) {
-        showSheetError('Você deve aceitar os termos de uso');
-        return;
-    }
-
-    // Show loading
-    btn.disabled = true;
-    btnText.style.display = 'none';
-    spinner.style.display = 'inline-block';
-    if (errorEl) errorEl.style.display = 'none';
-
-    try {
-        // Register
-        const regRes = await fetch('/customer/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, phone, password, accept_terms: acceptTerms })
-        });
-
-        if (!regRes.ok) {
-            const err = await regRes.json();
-            showSheetError(err.detail || 'Erro ao criar conta');
-            return;
-        }
-
-        const data = await regRes.json();
-        localStorage.setItem(CUSTOMER_TOKEN_KEY, data.access_token);
-        currentCustomer = data.customer;
-
-        closeRegisterBottomSheet();
-        updateCustomerUI();
-
-        // Now confirm the booking automatically
-        await confirmBooking();
-
-    } catch (e) {
-        showSheetError('Erro de conexão. Tente novamente.');
-    } finally {
-        btn.disabled = false;
-        btnText.style.display = 'inline';
-        spinner.style.display = 'none';
-    }
-}
-
-function showSheetError(msg) {
-    const errorEl = document.getElementById('sheet-error');
-    if (errorEl) {
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
     }
 }
 
