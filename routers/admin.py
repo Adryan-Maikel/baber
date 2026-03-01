@@ -666,3 +666,202 @@ def change_password():
     db.commit()
     
     return jsonify({"ok": True, "message": "Senha alterada com sucesso"})
+
+
+# =============== EMAIL CONFIGURATION (Google OAuth) ===============
+
+import google.oauth2.credentials
+import google_auth_oauthlib.flow
+from googleapiclient.discovery import build
+
+# Ideally these should be set in .env or the DB, we will check .env first, then DB
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+# Define the exact scopes required for sending emails via Gmail
+SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/userinfo.email']
+
+# Prevent scope errors if Google injects 'openid'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
+def get_google_auth_flow(request):
+    """Helper to initialize the OAuth flow"""
+    # Create the client secrets dictionary required by google_auth_oauthlib
+    client_config = {
+        "web": {
+            "client_id": GOOGLE_CLIENT_ID,
+            "project_id": "barbearia-balhego",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_secret": GOOGLE_CLIENT_SECRET
+        }
+    }
+    
+    # We dynamically generate the redirect URI based on the request host
+    redirect_uri = f"{request.url_root.rstrip('/')}/panel/config/email/callback"
+    
+    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+        client_config, 
+        scopes=SCOPES,
+        redirect_uri=redirect_uri
+    )
+    return flow
+
+@admin_bp.route("/config/email", methods=["GET"])
+def get_email_config():
+    """Get the current email configuration status"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    db = get_db()
+    config = db.query(models.AppConfig).filter(models.AppConfig.id == "default").first()
+    
+    if not config:
+        return jsonify({
+            "is_connected": False,
+            "email_address": None,
+            "is_client_configured": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+        })
+        
+    return jsonify({
+        "is_connected": bool(config.google_refresh_token),
+        "email_address": config.email_address,
+        "is_client_configured": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+    })
+
+from flask import session
+
+@admin_bp.route("/config/email/auth-url", methods=["POST"])
+def get_google_auth_url():
+    """Generate the Google OAuth authorization URL"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+    
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return jsonify({"detail": "Client ID e Client Secret não configurados no servidor."}), 400
+        
+    flow = get_google_auth_flow(request)
+    
+    # Indicate where the API server will redirect the user after the user completes
+    # the authorization flow. The redirect_uri is required.
+    authorization_url, state = flow.authorization_url(
+        # Enable offline access so that you can refresh an access token without
+        # re-prompting the user for permission. Recommended for web server apps.
+        access_type='offline',
+        # Enable incremental authorization. Recommended as a best practice.
+        include_granted_scopes='true',
+        # Force prompt to always get a refresh token
+        prompt='consent'
+    )
+    
+    # Save the state and code verifier to the user's session
+    session['google_oauth_state'] = state
+    # google_auth_oauthlib dynamically creates a code_verifier when authorization_url is called
+    if hasattr(flow, 'code_verifier'):
+        session['code_verifier'] = flow.code_verifier
+    
+    return jsonify({"url": authorization_url})
+
+@admin_bp.route("/config/email/callback", methods=["GET"])
+def google_auth_callback():
+    """Handle the OAuth callback from Google"""
+    # Note: This is usually loaded via browser redirect, not AJAX
+    
+    code = request.args.get('code')
+    error = request.args.get('error')
+    
+    if error:
+        return f"Erro de Autorização: {error}", 400
+        
+    if not code:
+        return "Código de autorização não encontrado", 400
+        
+    try:
+        # Reconstruct the flow using the saved state
+        state = session.get('google_oauth_state')
+        
+        flow = get_google_auth_flow(request)
+        
+        # Inject the saved code_verifier if it exists
+        code_verifier = session.get('code_verifier')
+        if code_verifier and hasattr(flow, 'code_verifier'):
+            flow.code_verifier = code_verifier
+            
+        kwargs = {}
+        if code_verifier:
+            kwargs['code_verifier'] = code_verifier
+            
+        # Exchange auth code for access token, refresh token, and id token
+        flow.fetch_token(authorization_response=request.url, **kwargs)
+        credentials = flow.credentials
+        
+        # Build the userinfo service to get the email address
+        user_info_service = build('oauth2', 'v2', credentials=credentials)
+        user_info = user_info_service.userinfo().get().execute()
+        user_email = user_info.get('email')
+        
+        db = get_db()
+        config = db.query(models.AppConfig).filter(models.AppConfig.id == "default").first()
+        
+        if not config:
+            config = models.AppConfig(id="default")
+            db.add(config)
+            
+        config.email_address = user_email
+        config.google_access_token = credentials.token
+        config.google_refresh_token = credentials.refresh_token
+        # token_expiry could be computed if we needed to, but we can rely on google auth lib to refresh it
+        
+        db.commit()
+        
+        # Redirect back to the admin panel settings tab
+        return '<script>window.location.href="/admin#settings"; window.location.reload();</script>'
+        
+    except Exception as e:
+        return f"Erro processando autenticação: {str(e)}", 500
+
+@admin_bp.route("/config/email", methods=["DELETE"])
+def disconnect_email():
+    """Disconnect the currently configured email"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    db = get_db()
+    config = db.query(models.AppConfig).filter(models.AppConfig.id == "default").first()
+    
+    if config:
+        config.email_address = None
+        config.google_access_token = None
+        config.google_refresh_token = None
+        db.commit()
+        
+    return jsonify({"ok": True, "message": "Email desconectado com sucesso"})
+
+@admin_bp.route("/config/email/test", methods=["POST"])
+def send_test_email():
+    """Send a test email using the configured credentials"""
+    current_user = get_current_admin_user()
+    if not current_user:
+        return jsonify({"detail": "Not authenticated or not admin"}), 403
+        
+    data = request.json
+    to_email = data.get('to_email')
+    subject = data.get('subject', 'Teste de Configuração de Email')
+    body = data.get('body', 'Este é um email de teste gerado pelo sistema.')
+    
+    if not to_email:
+        return jsonify({"detail": "Destinatário é obrigatório"}), 400
+        
+    # We delay the import to avoid circular dependencies if any
+    from email_service import send_email, _base_template
+    from email_service import _send_email_background
+    
+    # We will trigger the email synchronously for testing so we can return immediate errors
+    try:
+        _send_email_background(to_email, subject, _base_template(body))
+        return jsonify({"ok": True, "message": "Email de teste enviado. Verifique a caixa de entrada."})
+    except Exception as e:
+        return jsonify({"detail": f"Erro ao enviar email: {str(e)}"}), 500

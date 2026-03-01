@@ -1054,6 +1054,99 @@
             </form>
           </div>
         </div>
+
+        <!-- Google OAuth Email Config Card -->
+        <div class="card-dropdown" id="barber-card-email">
+          <!-- Header (Collapsed) -->
+          <div class="card-dropdown-header" onclick="toggleCardDropdown(this)">
+            <div class="barber-summary-left">
+              <div class="barber-avatar-small" style="background: rgba(234, 67, 53, 0.1); color: #ea4335;">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+              <div class="barber-summary-info">
+                <h3>Configuração de Email</h3>
+                <p id="email-config-status-text">Carregando status...</p>
+              </div>
+            </div>
+            <div class="barber-summary-right">
+              <div style="text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
+                <div>Notificações</div>
+              </div>
+              <i class="fa-solid fa-chevron-down card-expand-icon"></i>
+            </div>
+          </div>
+
+          <!-- Body (Expanded) -->
+          <div class="card-dropdown-body">
+            <div class="card-dropdown-scroll-container">
+
+              <!-- OAuth Connection Section -->
+              <div
+                style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border);">
+                <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                  <div style="font-size: 2rem; color: #ea4335;">
+                    <i class="fa-brands fa-google"></i>
+                  </div>
+                  <div style="flex: 1;">
+                    <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Conectar com Google</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5;">
+                      Conecte uma conta do Gmail para enviar lembretes e confirmações de agendamento aos clientes
+                      automaticamente. Usa autenticação segura OAuth 2.0.
+                    </p>
+
+                    <div id="email-oauth-actions" style="display: flex; gap: 1rem; align-items: center;">
+                      <!-- Buttons will be injected by JS based on status -->
+                      <button type="button" class="btn btn-primary" onclick="initiateGoogleOAuth()"
+                        id="btn-connect-google"
+                        style="display: none; align-items: center; gap: 0.5rem; background-color: #ffffff; color: #1f1f1f; border: 1px solid #d1d5db;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo"
+                          style="width: 18px; height: 18px;">
+                        Fazer login com o Google
+                      </button>
+                      <button type="button" class="btn btn-danger" onclick="disconnectGoogleEmail()"
+                        id="btn-disconnect-google" style="display: none;">
+                        <i class="fa-solid fa-unlink"></i> Desconectar Conta
+                      </button>
+                      <span id="oauth-loading-spinner" style="display: none;"><i
+                          class="fa-solid fa-spinner fa-spin"></i></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Test Email Section -->
+              <div id="test-email-section"
+                style="display: none; padding: 1.5rem; border: 1px solid var(--border); border-radius: 0.75rem;">
+                <h4 style="margin-bottom: 1rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Testar Envio
+                </h4>
+                <form onsubmit="sendTestEmail(event)">
+                  <div class="settings-form-group" style="margin-bottom: 1rem;">
+                    <label>Email de Destino</label>
+                    <input type="email" id="test-email-to" required placeholder="seu-email@exemplo.com" />
+                  </div>
+                  <div class="settings-form-group" style="margin-bottom: 1rem;">
+                    <label>Assunto</label>
+                    <input type="text" id="test-email-subject" required
+                      value="Teste de Configuração - Barbearia Balhego" />
+                  </div>
+                  <div class="settings-form-group" style="margin-bottom: 1.5rem;">
+                    <label>Mensagem</label>
+                    <textarea id="test-email-body" rows="3"
+                      style="width: 100%; border-radius: 0.5rem; padding: 0.75rem; background: var(--bg-color); border: 1px solid var(--border); color: var(--text-primary); resize: vertical;">Esta é uma mensagem de teste enviada pelo painel administrativo para confirmar se a configuração do Google OAuth está funcionando corretamente.</textarea>
+                  </div>
+                  <div style="text-align: right;">
+                    <button type="submit" class="btn btn-primary" id="btn-send-test-email">
+                      <i class="fa-solid fa-paper-plane"></i> Enviar Teste
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -1698,6 +1791,9 @@
         loadAppointmentsAdmin();
       } else if (sectionId === "settings") {
         loadSettings();
+        if (window.loadEmailConfigStatus) {
+          window.loadEmailConfigStatus();
+        }
       }
     };
 
@@ -1722,24 +1818,24 @@
         try {
           const payload = parseJwt(token);
 
-          // Update Admin Card Header
-          const nameEl = document.getElementById("settings-card-user-name");
-          if (nameEl) nameEl.textContent = payload.sub;
+          if (payload) {
+            // Update Admin Card Header
+            const nameEl = document.getElementById("settings-card-user-name");
+            if (nameEl) nameEl.textContent = payload.sub;
 
-          const roleEl = document.getElementById("settings-card-user-role");
-          if (roleEl)
-            roleEl.textContent =
-              payload.role === "barber" ? "Profissional" : "Administrador";
+            const roleEl = document.getElementById("settings-card-user-role");
+            if (roleEl)
+              roleEl.textContent =
+                payload.role === "barber" ? "Profissional" : "Administrador";
 
-          // Populate Admin Edit Form
-          const usernameInput = document.getElementById("admin-username");
-          if (usernameInput) usernameInput.value = payload.sub;
-        } catch (e) { }
+            // Populate Admin Edit Form
+            const usernameInput = document.getElementById("admin-username");
+            if (usernameInput) usernameInput.value = payload.sub;
+          }
+        } catch (e) {
+          console.error("Error loading settings payload", e);
+        }
       }
-
-      // Highlight current theme
-      const currentTheme = localStorage.getItem("theme") || "dark";
-      updateThemeUI(currentTheme);
     }
 
     // toggleSettingsCard and changePassword removed - replaced by new card logic

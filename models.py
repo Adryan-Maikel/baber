@@ -187,5 +187,23 @@ class Notification(Base):
     is_read = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     data = Column(String(1000), nullable=True)  # JSON string for extra metadata
-    
     customer = relationship("Customer")
+
+class AppConfig(Base):
+    """Store application configuration like email OAuth tokens"""
+    __tablename__ = "app_config"
+    
+    # We will only use a single row for global config, so ID can be fixed
+    id = Column(String(36), primary_key=True, default="default", index=True)
+    
+    # Email settings via Google OAuth
+    email_address = Column(String(100), nullable=True)
+    google_access_token = Column(String(500), nullable=True)
+    google_refresh_token = Column(String(500), nullable=True)
+    token_expiry = Column(DateTime, nullable=True)
+    
+    # Optional: store client ID and Secret here if user doesn't want to use .env
+    client_id = Column(String(200), nullable=True)
+    client_secret = Column(String(200), nullable=True)
+    
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

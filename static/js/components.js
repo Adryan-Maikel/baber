@@ -241,4 +241,149 @@ window.createTimeInput = createTimeInput;
 window.createTimeInputElement = createTimeInputElement;
 
 // Legacy support (noop or simple wrapper if needed, but we removed usage)
-window.initializeTimeInputs = function () { }; 
+window.initializeTimeInputs = function () { };
+
+// =============== EMAIL CONFIGURATION (Google OAuth) ===============
+
+// These functions will be called from admin.html
+
+window.loadEmailConfigStatus = async function () {
+    try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await fetch("/panel/config/email", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            const statusText = document.getElementById("email-config-status-text");
+            const btnConnect = document.getElementById("btn-connect-google");
+            const btnDisconnect = document.getElementById("btn-disconnect-google");
+            const testSection = document.getElementById("test-email-section");
+
+            if (data.is_connected) {
+                statusText.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-check-circle"></i> Conectado como: ${data.email_address}</span>`;
+                btnConnect.style.display = "none";
+                btnDisconnect.style.display = "flex";
+                testSection.style.display = "block";
+            } else {
+                if (data.is_client_configured) {
+                    statusText.innerHTML = `<span style="color: var(--text-secondary);"><i class="fa-solid fa-circle-xmark"></i> Não conectado</span>`;
+                    btnConnect.style.display = "flex";
+                    btnDisconnect.style.display = "none";
+                    testSection.style.display = "none";
+                } else {
+                    statusText.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Chaves API não configuradas no servidor</span>`;
+                    btnConnect.style.display = "none";
+                    btnDisconnect.style.display = "none";
+                    testSection.style.display = "none";
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao carregar status do email", e);
+    }
+};
+
+window.initiateGoogleOAuth = async function () {
+    try {
+        const token = localStorage.getItem("access_token");
+        const spinner = document.getElementById("oauth-loading-spinner");
+        const btnConnect = document.getElementById("btn-connect-google");
+
+        btnConnect.disabled = true;
+        spinner.style.display = "inline-block";
+
+        const res = await fetch("/panel/config/email/auth-url", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            // Redirect to Google Authorization page
+            window.location.href = data.url;
+        } else {
+            const err = await res.json();
+            alert(err.detail || "Erro ao solicitar URL de autorização.");
+            btnConnect.disabled = false;
+            spinner.style.display = "none";
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Erro de conexão ao tentar iniciar o login com Google.");
+        document.getElementById("btn-connect-google").disabled = false;
+        document.getElementById("oauth-loading-spinner").style.display = "none";
+    }
+};
+
+window.disconnectGoogleEmail = async function () {
+    if (!confirm("Tem certeza que deseja desconectar o email atual? As notificações não serão enviadas até que você reconecte.")) return;
+
+    try {
+        const token = localStorage.getItem("access_token");
+        const res = await fetch("/panel/config/email", {
+            method: "DELETE",
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (res.ok) {
+            alert("Email desconectado com sucesso.");
+            await window.loadEmailConfigStatus();
+        } else {
+            alert("Erro ao desconectar email.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Erro de conexão.");
+    }
+};
+
+window.sendTestEmail = async function (e) {
+    if (e) e.preventDefault();
+
+    const token = localStorage.getItem("access_token");
+    const toEmail = document.getElementById("test-email-to").value;
+    const subject = document.getElementById("test-email-subject").value;
+    const body = document.getElementById("test-email-body").value;
+    const btn = document.getElementById("btn-send-test-email");
+    const originalText = btn.innerHTML;
+
+    try {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+        btn.disabled = true;
+
+        const res = await fetch("/panel/config/email/test", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                to_email: toEmail,
+                subject: subject,
+                body: body
+            })
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+            alert(result.message || "Email de teste enviado com sucesso!");
+        } else {
+            alert("Falha: " + (result.detail || "Erro inesperado"));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Erro de conexão ao enviar email.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+

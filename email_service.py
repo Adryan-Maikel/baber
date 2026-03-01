@@ -1,53 +1,131 @@
 """
-Email Service - Sends emails using Gmail SMTP
-Uses Python native smtplib (no extra dependencies needed)
-Sends emails in a background thread to avoid blocking API responses
+Email Service - Sends emails using Gmail API or SMTP fallback
 """
 
 import smtplib
 import os
 import threading
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import base64
+from email.message import EmailMessage
 from datetime import datetime
 
+import google.auth.transport.requests
+import google.oauth2.credentials
+from googleapiclient.discovery import build
 
-# Email configuration from environment variables
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
-EMAIL_ENABLED = bool(EMAIL_ADDRESS and EMAIL_PASSWORD)
+from database import SessionLocal
+import models
 
-# PythonAnywhere uses specific SMTP settings
+
+# Legacy Email configuration from environment variables (Fallback)
+LEGACY_EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "")
+LEGACY_EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+LEGACY_EMAIL_ENABLED = bool(LEGACY_EMAIL_ADDRESS and LEGACY_EMAIL_PASSWORD)
+
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+
+def get_oauth_credentials():
+    """Retrieve OAuth credentials from the database"""
+    db = SessionLocal()
+    try:
+        config = db.query(models.AppConfig).filter(models.AppConfig.id == "default").first()
+        if config and config.google_refresh_token:
+            creds = google.oauth2.credentials.Credentials(
+                token=config.google_access_token,
+                refresh_token=config.google_refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=config.client_id or GOOGLE_CLIENT_ID,
+                client_secret=config.client_secret or GOOGLE_CLIENT_SECRET
+            )
+            
+            # Refresh token if expired or about to expire
+            if not creds.valid:
+                request = google.auth.transport.requests.Request()
+                try:
+                    creds.refresh(request)
+                    # Update token in DB
+                    config.google_access_token = creds.token
+                    db.commit()
+                except Exception as e:
+                    print(f"[EMAIL ERROR] Failed to refresh OAuth token: {e}")
+                    return None, None
+                    
+            return creds, config.email_address
+    finally:
+        db.close()
+        
+    return None, None
+
 
 def _send_email_background(to_email: str, subject: str, html_body: str):
-    """Send email in background thread"""
+    """Send email in background thread (OAuth or Legacy Fallback)"""
     try:
-        msg = MIMEMultipart("alternative")
-        msg["From"] = EMAIL_ADDRESS
-        msg["To"] = to_email
-        msg["Subject"] = subject
+        creds, sender_email = get_oauth_credentials()
         
-        html_part = MIMEText(html_body, "html", "utf-8")
-        msg.attach(html_part)
-        
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
-        
-        print(f"[EMAIL] Sent to {to_email}: {subject}")
+        if creds and sender_email:
+            # Send using Gmail API (OAuth)
+            service = build('gmail', 'v1', credentials=creds)
+            message = EmailMessage()
+            message.set_content("Por favor, ative o HTML no seu cliente de email para visualizar esta mensagem.")
+            message.add_alternative(html_body, subtype='html')
+            
+            message['To'] = to_email
+            message['From'] = sender_email
+            message['Subject'] = subject
+
+            # encoded message
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            create_message = {'raw': encoded_message}
+
+            service.users().messages().send(userId="me", body=create_message).execute()
+            print(f"[EMAIL] Sent via Gmail API (OAuth) to {to_email}: {subject}")
+            
+        elif LEGACY_EMAIL_ENABLED:
+            # Fallback to Legacy SMTP with App Password
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            
+            msg = MIMEMultipart("alternative")
+            msg["From"] = LEGACY_EMAIL_ADDRESS
+            msg["To"] = to_email
+            msg["Subject"] = subject
+            
+            html_part = MIMEText(html_body, "html", "utf-8")
+            msg.attach(html_part)
+            
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(LEGACY_EMAIL_ADDRESS, LEGACY_EMAIL_PASSWORD)
+                server.sendmail(LEGACY_EMAIL_ADDRESS, to_email, msg.as_string())
+            print(f"[EMAIL] Sent via Legacy SMTP to {to_email}: {subject}")
+        else:
+            print("[EMAIL] Error: No email configuration found in DB or Environment Variables.")
+            
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"[EMAIL ERROR] Failed to send to {to_email}: {e}")
 
 
 def send_email(to_email: str, subject: str, html_body: str):
     """Send email asynchronously (non-blocking)"""
-    if not EMAIL_ENABLED:
+    # Check if either OAuth or Legacy is configured before spawning thread
+    db = SessionLocal()
+    has_oauth = False
+    try:
+        config = db.query(models.AppConfig).filter(models.AppConfig.id == "default").first()
+        has_oauth = bool(config and config.google_refresh_token)
+    finally:
+        db.close()
+        
+    if not has_oauth and not LEGACY_EMAIL_ENABLED:
         print("[EMAIL] Email not configured. Skipping send.")
         return
     
