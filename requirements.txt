@@ -7,3 +7,7 @@ mysql-connector-python
 python-dotenv
 jinja2
 pydantic
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client

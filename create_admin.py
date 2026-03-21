@@ -10,6 +10,7 @@ def create_admin():
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
+    print(db.query(User))
     try:
         print("=== Criar Usuário Admin ===")
         username = input("Digite o nome de usuário (default: admin): ").strip()

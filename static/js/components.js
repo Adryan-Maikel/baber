@@ -306,8 +306,19 @@ window.initiateGoogleOAuth = async function () {
 
         if (res.ok) {
             const data = await res.json();
-            // Redirect to Google Authorization page
-            window.location.href = data.url;
+            // Open Google Authorization page in a popup window
+            const width = 500;
+            const height = 600;
+            const left = (window.innerWidth / 2) - (width / 2) + window.screenX;
+            const top = (window.innerHeight / 2) - (height / 2) + window.screenY;
+            window.open(data.url, 'GoogleOAuth', `width=${width},height=${height},top=${top},left=${left}`);
+
+            // Optionally clear the spinner and re-enable the button right away
+            // since the main window doesn't redirect anymore
+            setTimeout(() => {
+                btnConnect.disabled = false;
+                spinner.style.display = "none";
+            }, 3000);
         } else {
             const err = await res.json();
             alert(err.detail || "Erro ao solicitar URL de autorização.");

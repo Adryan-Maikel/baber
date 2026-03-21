@@ -700,6 +700,11 @@ def get_google_auth_flow(request):
     # We dynamically generate the redirect URI based on the request host
     redirect_uri = f"{request.url_root.rstrip('/')}/panel/config/email/callback"
     
+    # PythonAnywhere proxies HTTP -> HTTPS, so we must force HTTPS for the redirect_uri 
+    # to exactly match what Google expects and what the browser navigates to.
+    if "pythonanywhere.com" in redirect_uri and redirect_uri.startswith("http://"):
+        redirect_uri = redirect_uri.replace("http://", "https://")
+    
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
         client_config, 
         scopes=SCOPES,
@@ -793,8 +798,14 @@ def google_auth_callback():
         if code_verifier:
             kwargs['code_verifier'] = code_verifier
             
+        # Ensure the authorization response URL is HTTPS on PythonAnywhere 
+        # to match the initial redirect_uri and avoid InsecureTransport or invalid_grant
+        auth_response_url = request.url
+        if "pythonanywhere.com" in auth_response_url and auth_response_url.startswith("http://"):
+            auth_response_url = auth_response_url.replace("http://", "https://")
+            
         # Exchange auth code for access token, refresh token, and id token
-        flow.fetch_token(authorization_response=request.url, **kwargs)
+        flow.fetch_token(authorization_response=auth_response_url, **kwargs)
         credentials = flow.credentials
         
         # Build the userinfo service to get the email address
@@ -816,8 +827,21 @@ def google_auth_callback():
         
         db.commit()
         
-        # Redirect back to the admin panel settings tab
-        return '<script>window.location.href="/admin#settings"; window.location.reload();</script>'
+        # Close the popup window and refresh the parent admin panel
+        success_script = """
+        <html><body>
+        <script>
+            if (window.opener) {
+                window.opener.location.reload();
+                window.close();
+            } else {
+                window.location.href="/admin#settings";
+            }
+        </script>
+        <p>Autenticação concluída! Você pode fechar esta aba.</p>
+        </body></html>
+        """
+        return success_script
         
     except Exception as e:
         return f"Erro processando autenticação: {str(e)}", 500
