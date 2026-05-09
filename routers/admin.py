@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Dict, Any, Optional
@@ -879,9 +879,7 @@ def send_test_email():
     if not to_email:
         return jsonify({"detail": "Destinatário é obrigatório"}), 400
         
-    # We delay the import to avoid circular dependencies if any
-    from email_service import send_email, _base_template
-    from email_service import _send_email_background
+    from email_service import _send_email_background, _base_template
     
     # We will trigger the email synchronously for testing so we can return immediate errors
     try:

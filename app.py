@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import models  # Ensure all models are registered before create_all
+import models
 Base.metadata.create_all(bind=engine)
 
 app = Flask(__name__)

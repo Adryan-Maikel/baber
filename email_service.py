@@ -47,15 +47,23 @@ def get_oauth_credentials():
             if not creds.valid:
                 request = google.auth.transport.requests.Request()
                 try:
+                    print(f"[EMAIL] Attempting to refresh token for {config.email_address}...")
                     creds.refresh(request)
                     # Update token in DB
                     config.google_access_token = creds.token
                     db.commit()
+                    print(f"[EMAIL] Token refreshed successfully for {config.email_address}")
                 except Exception as e:
-                    print(f"[EMAIL ERROR] Failed to refresh OAuth token: {e}")
+                    print(f"[EMAIL ERROR] Failed to refresh OAuth token for {config.email_address}: {e}")
+                    # If invalid_grant, it means the connection is broken
+                    if "invalid_grant" in str(e).lower():
+                        print("[EMAIL ERROR] Connection broken (invalid_grant). User must reconnect in settings.")
                     return None, None
                     
             return creds, config.email_address
+    except Exception as e:
+        print(f"[EMAIL ERROR] Database error in get_oauth_credentials: {e}")
+        return None, None
     finally:
         db.close()
         
@@ -106,12 +114,14 @@ def _send_email_background(to_email: str, subject: str, html_body: str):
                 server.sendmail(LEGACY_EMAIL_ADDRESS, to_email, msg.as_string())
             print(f"[EMAIL] Sent via Legacy SMTP to {to_email}: {subject}")
         else:
-            print("[EMAIL] Error: No email configuration found in DB or Environment Variables.")
+            raise ValueError("Configuração de email não encontrada ou inválida (Token expirado ou SMTP não configurado).")
             
     except Exception as e:
         import traceback
         traceback.print_exc()
         print(f"[EMAIL ERROR] Failed to send to {to_email}: {e}")
+        # Re-raise so callers (like the test route) can catch it
+        raise
 
 
 def send_email(to_email: str, subject: str, html_body: str):
